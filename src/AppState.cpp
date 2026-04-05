@@ -289,6 +289,7 @@ UiPanelState parsePanelBlock(const std::string& block)
             widget.type = parseStringField(widgetBlock, "type");
             widget.label = parseStringField(widgetBlock, "label");
             widget.bind = parseOptionalStringField(widgetBlock, "bind").value_or("");
+            widget.arg = parseOptionalStringField(widgetBlock, "arg").value_or("");
             widget.onClick = parseOptionalStringField(widgetBlock, "onClick").value_or("");
             widget.onChange = parseOptionalStringField(widgetBlock, "onChange").value_or("");
             widget.unit = parseOptionalStringField(widgetBlock, "unit").value_or("");

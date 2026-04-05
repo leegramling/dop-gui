@@ -121,6 +121,7 @@ std::string canonicalizeCommandPath(const std::string& name)
     if (path == "help") return path;
     if (path == "app.exit") return path;
     if (path == "state.reset.bootstrap") return path;
+    if (path == "ui.theme.set") return path;
     if (path == "scene.load") return path;
     if (path == "scene.load.cubes") return path;
     if (path == "scene.load.shapes") return path;
@@ -184,6 +185,17 @@ std::string executeResetBootstrap(App& app, const CommandByPath&)
 {
     app.state() = createBootstrapAppState();
     return "{\"state\":\"bootstrap_reset\"}";
+}
+
+std::string executeSetTheme(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("ui.theme.set requires a theme mode argument.");
+    if (command.rawArg != "dark" && command.rawArg != "light")
+    {
+        throw std::runtime_error("ui.theme.set supports only dark or light.");
+    }
+    app.state().ui.themeMode = command.rawArg;
+    return "{\"themeMode\":\"" + escapeJson(command.rawArg) + "\"}";
 }
 
 std::string sceneLoadResult(const App& app, const std::string& sceneName)
@@ -381,6 +393,7 @@ const std::vector<CommandRoute>& commandRoutes()
         CommandRoute{.prefix = "noop", .execute = executeNoOp},
         CommandRoute{.prefix = "app.exit", .execute = executeAppExit},
         CommandRoute{.prefix = "state.reset.bootstrap", .execute = executeResetBootstrap},
+        CommandRoute{.prefix = "ui.theme.set", .execute = executeSetTheme},
         CommandRoute{.prefix = "scene.load", .execute = executeLoadScene},
         CommandRoute{.prefix = "scene.load.cubes", .execute = executeLoadCubes},
         CommandRoute{.prefix = "scene.load.shapes", .execute = executeLoadShapes},
@@ -480,6 +493,7 @@ std::vector<std::string> commandNames()
         "help",
         "app.exit",
         "state.reset.bootstrap",
+        "ui.theme.set=<mode>",
         "scene.load=<name>",
         "scene.load.cubes",
         "scene.load.shapes",

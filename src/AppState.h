@@ -91,6 +91,7 @@ struct UiWidgetSpecState
     std::string type;
     std::string label;
     std::string bind;
+    std::string arg;
     std::string onClick;
     std::string onChange;
     std::string unit;

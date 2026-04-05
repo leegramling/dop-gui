@@ -176,6 +176,19 @@ void UiLayer::render(AppState& state)
                         queueUiCommand(state.ui, widgetSpec.onChange, value);
                     }
                 }
+                else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
+                {
+                    const bool selected = state.ui.themeMode == widgetSpec.arg;
+                    if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) &&
+                        !widgetSpec.onClick.empty())
+                    {
+                        queueUiCommand(state.ui, widgetSpec.onClick, widgetSpec.arg);
+                    }
+                    if (auto* widget = findWidget(state.ui, widgetSpec.id))
+                    {
+                        widget->boolValue = selected;
+                    }
+                }
             }
 
             std::vector<std::string> objectIds;
@@ -196,22 +209,6 @@ void UiLayer::render(AppState& state)
             }
 
             Text(state.ui, "panel-theme-label", "Theme");
-            if (RadioButton(state.ui, "panel-theme-dark", "Dark", state.ui.themeMode == "dark"))
-            {
-                state.ui.themeMode = "dark";
-            }
-            if (RadioButton(state.ui, "panel-theme-light", "Light", state.ui.themeMode == "light"))
-            {
-                state.ui.themeMode = "light";
-            }
-            if (auto* darkWidget = findWidget(state.ui, "panel-theme-dark"))
-            {
-                darkWidget->boolValue = state.ui.themeMode == "dark";
-            }
-            if (auto* lightWidget = findWidget(state.ui, "panel-theme-light"))
-            {
-                lightWidget->boolValue = state.ui.themeMode == "light";
-            }
 
             const bool openSceneSummary = Button(state.ui, "panel-scene-summary-open", "Scene Summary");
             Popup(state.ui, "popup-scene-summary", "Scene Summary", openSceneSummary, [&]()

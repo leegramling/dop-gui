@@ -135,6 +135,7 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
         makeField("type", makeStringValue(widget.type)),
         makeField("label", makeStringValue(widget.label)),
         makeField("bind", makeStringValue(widget.bind)),
+        makeField("arg", makeStringValue(widget.arg)),
         makeField("onClick", makeStringValue(widget.onClick)),
         makeField("onChange", makeStringValue(widget.onChange)),
         makeField("unit", makeStringValue(widget.unit)),

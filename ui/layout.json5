@@ -23,6 +23,8 @@
         { id: "panel-display-grid", type: "checkbox", label: "Display Grid", bind: "ui.displayGrid", onChange: "ui.grid.set_visible" },
         { id: "panel-bgcolor", type: "input", label: "Background Color", bind: "view.backgroundColorHex", onChange: "view.background.set_hex" },
         { id: "panel-scene-select", type: "combo", label: "Scene", bind: "scene.name", onChange: "scene.load", options: ["bootstrap", "cubes", "shapes"] },
+        { id: "panel-theme-dark", type: "radio", label: "Dark", bind: "ui.themeMode", arg: "dark", onClick: "ui.theme.set" },
+        { id: "panel-theme-light", type: "radio", label: "Light", bind: "ui.themeMode", arg: "light", onClick: "ui.theme.set" },
       ],
     },
     {
