@@ -1,0 +1,13 @@
+{
+  // Minimal JSON5-style batch script for early CLI automation.
+  commands: [
+    'help',
+  ],
+  queries: [
+    'window.size',
+    'scene.objects',
+    'scene.object.bootstrap_triangle',
+    'camera.pose',
+    'runtime.capabilities',
+  ],
+}

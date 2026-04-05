@@ -31,6 +31,7 @@ A practical interpretation for this project is:
 
 We will drive work through four small markdown files in repo root:
 
+- [`spec.md`](/home/lgramling/dev/dop-gui/spec.md): stable top-level product and architecture specification
 - [`agents.md`](/home/lgramling/dev/dop-gui/agents.md): working agreements for Codex agents and human collaborators
 - [`plan.md`](/home/lgramling/dev/dop-gui/plan.md): current phased roadmap
 - [`task.md`](/home/lgramling/dev/dop-gui/task.md): the next small implementation steps
@@ -39,11 +40,12 @@ We will drive work through four small markdown files in repo root:
 Recommended loop:
 
 1. Start or switch to a dedicated feature branch for the slice.
-2. Capture intent and constraints in [`notes.md`](/home/lgramling/dev/dop-gui/notes.md).
-3. Convert the next milestone into concrete steps in [`plan.md`](/home/lgramling/dev/dop-gui/plan.md).
-4. Pull only the smallest executable slice into [`task.md`](/home/lgramling/dev/dop-gui/task.md).
-5. Use [`agents.md`](/home/lgramling/dev/dop-gui/agents.md) to keep prompts and implementation behavior aligned.
-6. Implement one slice, verify it, then update the docs before moving on.
+2. Capture stable application and architecture intent in [`spec.md`](/home/lgramling/dev/dop-gui/spec.md).
+3. Capture branch-specific intent and constraints in [`notes.md`](/home/lgramling/dev/dop-gui/notes.md).
+4. Convert the next milestone into concrete steps in [`plan.md`](/home/lgramling/dev/dop-gui/plan.md).
+5. Pull only the smallest executable slice into [`task.md`](/home/lgramling/dev/dop-gui/task.md).
+6. Use [`agents.md`](/home/lgramling/dev/dop-gui/agents.md) to keep prompts and implementation behavior aligned.
+7. Implement one slice, verify it, then update the docs before moving on.
 
 ## Proposed Application Direction
 
@@ -125,6 +127,7 @@ This repo now includes prompt specs in [`prompts/`](/home/lgramling/dev/dop-gui/
 
 Current prompt files:
 
+- [`prompts/spec-arch.md`](/home/lgramling/dev/dop-gui/prompts/spec-arch.md)
 - [`prompts/spec-init.md`](/home/lgramling/dev/dop-gui/prompts/spec-init.md)
 - [`prompts/spec-plan.md`](/home/lgramling/dev/dop-gui/prompts/spec-plan.md)
 - [`prompts/spec-task.md`](/home/lgramling/dev/dop-gui/prompts/spec-task.md)
@@ -188,3 +191,49 @@ Why shaders are built ahead of time:
 - the local VulkanSceneGraph install was not compiled with GLSLang support
 - runtime-generated VSG shader paths, such as `vsg::Builder`, fail in this environment
 - `dop-gui` therefore compiles its GLSL sources to SPIR-V during the build and loads `.spv` files at runtime
+
+## CLI Testing Surface
+
+The first test-facing interface is CLI-driven.
+
+Direct queries:
+
+```bash
+./build/dop-gui/dop-gui --query window.size
+./build/dop-gui/dop-gui --query view.window.size
+./build/dop-gui/dop-gui --query scene.objects
+./build/dop-gui/dop-gui --query scene.object.bootstrap_triangle
+./build/dop-gui/dop-gui --query scene.object.transform.bootstrap_triangle
+./build/dop-gui/dop-gui --query data.scene.object.properties.bootstrap_triangle
+./build/dop-gui/dop-gui --query camera.pose
+./build/dop-gui/dop-gui --query view.camera.pose
+./build/dop-gui/dop-gui --query data.scene.object.bootstrap_triangle
+./build/dop-gui/dop-gui --query runtime.capabilities
+./build/dop-gui/dop-gui --query help
+```
+
+Direct commands:
+
+```bash
+./build/dop-gui/dop-gui --command help
+./build/dop-gui/dop-gui --command noop
+./build/dop-gui/dop-gui --command state.reset.bootstrap
+./build/dop-gui/dop-gui --command data.scene.object.bootstrap_triangle.translate=1.0,0.0,2.0
+./build/dop-gui/dop-gui --command view.camera.set_pose=1.0,-3.0,2.0,0.0,0.0,0.0,0.0,0.0,1.0
+```
+
+Batch script mode:
+
+```bash
+./build/dop-gui/dop-gui --script tests/smoke_cli.json5
+./build/dop-gui/dop-gui --script tests/mutate_cli.json5
+```
+
+Current behavior:
+
+- command, query, and script results are emitted as JSON-compatible structured output
+- JSON5-style authored files are supported through a constrained first parser
+- the current script loader supports string arrays for `commands` and `queries`
+- non-window queries can run without XCB access
+- mutation commands can update `AppState` in headless mode and later queries in the same process can observe those changes
+- unknown commands, queries, and missing script files return structured JSON error output in machine mode

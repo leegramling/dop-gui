@@ -2,6 +2,7 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/app-input-visualizer-command`.
 - [x] Create feature branch `feature/vsgimgui-docking-external`.
 - [x] Vendor `vsgImGui` under `/home/lgramling/dev/dop-gui/external/vsgImGui`.
 - [x] Switch vendored `imgui` to `v1.91.6-docking`.
@@ -12,6 +13,9 @@
 - [x] Verify the top-level project builds successfully.
 - [x] Move shader compilation from runtime to build time.
 - [ ] Validate successful window creation in an environment with XCB access.
+- [x] Refactor the bootstrap app into `App`, `InputManager`, `VsgVisualizer`, and `Command`.
+- [x] Verify the refactored project still builds.
+- [x] Verify a non-window CLI command path works with `--command help`.
 
 ## Architecture Notes
 
@@ -118,3 +122,122 @@ Intent:
 Follow-up option:
 
 - [ ] If we want true command registration later, add a repo-local Codex plugin or skill wrapper.
+
+## Refactor Request: App, InputManager, VsgVisualizer, Command
+
+Requested architecture:
+
+- [x] `App` should own initialization and expose `run()`.
+- [x] `InputManager` should own window, event handling, docking integration, and future event record/playback.
+- [x] `VsgVisualizer` should own VSG scene creation, render updates, and visualization-facing state changes.
+- [x] `Command` should become the testable action surface for CLI, integration tests, unit tests, and future GUI widgets.
+
+Working interpretation:
+
+- [x] `main.cpp` should become thin and delegate to `App`.
+- [x] `App` should coordinate `InputManager` and `VsgVisualizer`, not absorb their responsibilities.
+- [x] `InputManager` should become the boundary between raw input/events and higher-level commands.
+- [x] `Command` should be designed so both tests and UI actions can invoke the same behavior.
+- [x] Recording/playback should target commands and/or normalized input events rather than ad hoc GUI callbacks.
+
+Open design notes:
+
+- [x] Decide whether `Command` is an abstract base type, a value type wrapping callable behavior, or a tagged command data model.
+- [ ] Decide whether event recording should capture raw events, normalized semantic events, commands, or both.
+- [ ] Decide how docking state persistence should be owned by `InputManager`.
+- [ ] Decide how `VsgVisualizer` exposes testable update seams without requiring a live window.
+
+Recommended first slice:
+
+- [x] Introduce `App`, `InputManager`, and `VsgVisualizer` as thin wrappers around the current behavior.
+- [x] Keep rendering behavior unchanged while moving code out of `main.cpp`.
+- [x] Add only the minimum `Command` abstraction needed to establish the direction.
+
+Implementation outcome:
+
+- [x] `main.cpp` now only constructs `App` and calls `run()`.
+- [x] `InputManager` owns current window creation and default event-handler wiring.
+- [x] `VsgVisualizer` owns the current triangle scene and VSG render setup.
+- [x] `Command` supports an initial CLI/test seam with `help` and `noop`.
+- [x] `help` executes without requiring window creation, which keeps the command seam usable in headless environments.
+
+## Spec Workflow Notes
+
+- [x] Add `spec.md` as the stable top-level specification file.
+- [x] Add `$spec-arch` to maintain long-lived architecture and product decisions.
+- [x] Keep `spec.md` focused on stable boundaries and responsibilities rather than branch-level progress.
+
+## Command And Query Direction
+
+- [x] Choose Option 1 as the testing direction: batch CLI command/query mode.
+- [x] Use JSON5 for authored command files and UI-related authored files.
+- [x] Prefer JSON-compatible structured output for machine-readable responses.
+- [x] Do not require Lua as part of the current architecture.
+- [x] Prefer semantic commands and queries over raw GUI callback testing.
+
+Planned capabilities:
+
+- [x] Query window size and related window state.
+- [x] Query scene object metadata and transforms.
+- [x] Query scene object data by object id.
+- [x] Query focused scene object transform and property slices by object id.
+- [x] Query bootstrap camera pose.
+- [x] Add initial `view.*` and `data.*` namespace-style query aliases.
+- [ ] Query panel rectangles and visibility when UI state exists.
+- [ ] Query model/view/data values as those data layers are introduced.
+- [x] Execute commands from CLI and JSON5 scripts.
+- [x] Produce structured output suitable for Robot Framework-driven automation.
+
+Architecture notes:
+
+- [x] Commands should mutate state through an explicit surface.
+- [x] Queries should read state through an explicit surface.
+- [x] CLI, tests, and future GUI widgets should converge on the same command/query runtime.
+- [x] Recording/playback should prefer semantic commands by default.
+- [x] Command and query parsing should convert early into typed tagged data.
+- [x] `std::variant` request/result models are a better fit than virtual command/query hierarchies for the current DOP/functional direction.
+- [x] Query growth should prefer path-based lookup plus functional prefix readers instead of adding `Query*` types for each path.
+
+Current implementation status:
+
+- [x] Add `Query` as a first-class abstraction.
+- [x] Replace the earlier polymorphic query implementation with `std::variant` request/result types and explicit execution functions.
+- [x] Replace the earlier polymorphic command implementation with `std::variant` request/result types and explicit execution functions.
+- [x] Collapse the concrete query surface into a single path-based request shape with canonical path aliases.
+- [x] Add a small functional query registry for `view.window`, `view.camera`, `data.scene`, and `runtime`.
+- [x] Return query values through a recursive generic value tree rather than bespoke per-query result structs.
+- [x] Add plain `AppState`, `SceneState`, and `ViewState` bootstrap data owned by `App`.
+- [x] Move bootstrap camera and scene metadata out of `VsgVisualizer` and into `AppState`.
+- [x] Make `data.scene.*` and `view.camera.*` queries read from application state instead of renderer-owned literals.
+- [x] Replace the earlier small command enum set with a path-based command request and explicit mutation handlers.
+- [x] Add `state.reset.bootstrap`.
+- [x] Add `data.scene.object.<id>.translate=<dx>,<dy>,<dz>`.
+- [x] Add `view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>`.
+- [x] Add `tests/mutate_cli.json5` to verify mutation commands followed by queries in one process.
+- [x] Add `--query window.size`.
+- [x] Add `--query scene.objects`.
+- [x] Add `--query scene.object.<id>`.
+- [x] Add `--query scene.object.transform.<id>`.
+- [x] Add `--query scene.object.properties.<id>`.
+- [x] Add `--query view.window.size`.
+- [x] Add `--query view.camera.pose`.
+- [x] Add `--query data.scene.objects`.
+- [x] Add `--query data.scene.object.<id>`.
+- [x] Add `--query data.scene.object.transform.<id>`.
+- [x] Add `--query data.scene.object.properties.<id>`.
+- [x] Add `--query camera.pose`.
+- [x] Add `--query runtime.capabilities`.
+- [x] Add `--query help`.
+- [x] Add `--script <file>` batch execution.
+- [x] Add a constrained JSON5-style parser for `commands` and `queries` string arrays.
+- [x] Add `tests/smoke_cli.json5` as the first batch example.
+- [x] Add JSON output for direct command execution.
+- [x] Keep these query/script flows usable without XCB window creation.
+- [x] Replace the earlier hard-coded command/query factory branches with explicit parsing and tagged dispatch.
+- [x] Return structured JSON errors for unknown commands, unknown queries, and missing script files.
+
+Remaining DOP gap:
+
+- [ ] Make live rendering and future UI observe state mutations while the app is running.
+- [ ] Introduce richer model data beyond bootstrap scene metadata and camera pose.
+- [ ] Replace the constrained string-array script format with a more expressive JSON5 command/query object format when richer arguments are needed.

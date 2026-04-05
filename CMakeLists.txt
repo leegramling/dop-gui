@@ -43,6 +43,13 @@ endforeach()
 add_custom_target(dop-gui-shaders DEPENDS ${DOP_GUI_SHADER_OUTPUTS})
 
 add_executable(dop-gui
+    src/App.cpp
+    src/AppState.cpp
+    src/Command.cpp
+    src/InputManager.cpp
+    src/Query.cpp
+    src/ScriptRunner.cpp
+    src/VsgVisualizer.cpp
     src/main.cpp
 )
 
