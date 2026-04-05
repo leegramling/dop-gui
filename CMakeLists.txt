@@ -155,6 +155,14 @@ if(BUILD_TESTING)
     )
 
     add_test(
+        NAME dop_gui_ui_layout_spec
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_layout_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_layout_spec PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"query\":\"ui.layout\".*panel-scene-info.*panel-properties;\"query\":\"ui.panel.panel-scene-info\".*panel-display-grid.*ui.grid.set_visible.*panel-scene-select.*scene.load;\"query\":\"ui.panel.panel-scene-info.widgets\".*view.background.set_hex"
+    )
+
+    add_test(
         NAME dop_gui_ui_properties_panel
         COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_properties_cli.json5"
     )

@@ -122,6 +122,40 @@ QueryValue makeWidgetValue(const WidgetState& widget)
     });
 }
 
+QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
+{
+    QueryArray options;
+    for (const auto& option : widget.options)
+    {
+        options.elements.push_back(makeValuePtr(makeStringValue(option)));
+    }
+
+    return makeObjectValue({
+        makeField("id", makeStringValue(widget.id)),
+        makeField("type", makeStringValue(widget.type)),
+        makeField("label", makeStringValue(widget.label)),
+        makeField("bind", makeStringValue(widget.bind)),
+        makeField("onClick", makeStringValue(widget.onClick)),
+        makeField("onChange", makeStringValue(widget.onChange)),
+        makeField("options", QueryValue{std::move(options)}),
+    });
+}
+
+QueryValue makePanelSpecValue(const UiPanelState& panel)
+{
+    QueryArray widgets;
+    for (const auto& widget : panel.widgets)
+    {
+        widgets.elements.push_back(makeValuePtr(makeWidgetSpecValue(widget)));
+    }
+
+    return makeObjectValue({
+        makeField("label", makeStringValue(panel.label)),
+        makeField("id", makeStringValue("panel-" + panel.label)),
+        makeField("widgets", QueryValue{std::move(widgets)}),
+    });
+}
+
 std::string canonicalizeQueryPath(const std::string& name)
 {
     if (name == "window.size") return "view.window.size";
@@ -135,6 +169,7 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name == "data.scene.selection") return name;
     if (name == "runtime.capabilities") return name;
     if (name == "ui.widgets") return name;
+    if (name == "ui.layout") return name;
     if (name == "help") return "runtime.capabilities";
 
     constexpr std::string_view uiWidgetPrefix = "ui.widget.";
@@ -142,6 +177,13 @@ std::string canonicalizeQueryPath(const std::string& name)
     {
         auto label = name.substr(uiWidgetPrefix.size());
         if (label.empty()) throw std::runtime_error("Unknown query: " + name);
+        return name;
+    }
+    constexpr std::string_view uiPanelPrefix = "ui.panel.";
+    if (name.rfind(uiPanelPrefix.data(), 0) == 0)
+    {
+        auto suffix = name.substr(uiPanelPrefix.size());
+        if (suffix.empty()) throw std::runtime_error("Unknown query: " + name);
         return name;
     }
 
@@ -295,6 +337,38 @@ QueryValue readRuntimeQuery(const App&, const Segments& segments)
 
 QueryValue readUiQuery(const App& app, const Segments& segments)
 {
+    if (segments.size() == 1 && segments[0] == "layout")
+    {
+        QueryArray menus;
+        for (const auto& menu : app.state().ui.layout.menus)
+        {
+            QueryArray items;
+            for (const auto& item : menu.items)
+            {
+                items.elements.push_back(makeValuePtr(makeObjectValue({
+                    makeField("label", makeStringValue(item.label)),
+                    makeField("command", makeStringValue(item.command)),
+                })));
+            }
+
+            menus.elements.push_back(makeValuePtr(makeObjectValue({
+                makeField("label", makeStringValue(menu.label)),
+                makeField("items", QueryValue{std::move(items)}),
+            })));
+        }
+
+        QueryArray panels;
+        for (const auto& panel : app.state().ui.layout.panels)
+        {
+            panels.elements.push_back(makeValuePtr(makePanelSpecValue(panel)));
+        }
+
+        return makeObjectValue({
+            makeField("menus", QueryValue{std::move(menus)}),
+            makeField("panels", QueryValue{std::move(panels)}),
+        });
+    }
+
     if (segments.size() == 1 && segments[0] == "widgets")
     {
         QueryArray array;
@@ -312,6 +386,41 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
         auto widget = findWidget(app.state().ui, label);
         if (!widget) throw std::runtime_error("Unknown UI widget: " + label);
         return makeWidgetValue(*widget);
+    }
+
+    if (segments.size() >= 2 && segments[0] == "panel")
+    {
+        std::string panelId = segments[1];
+        for (std::size_t i = 2; i < segments.size() && segments[i] != "widgets"; ++i) panelId += "." + segments[i];
+
+        const UiPanelState* panel = nullptr;
+        for (const auto& candidate : app.state().ui.layout.panels)
+        {
+            std::string candidateId = candidate.label;
+            for (auto& ch : candidateId)
+            {
+                if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+                else if (ch == ' ' || ch == '.') ch = '-';
+            }
+            candidateId = "panel-" + candidateId;
+            if (candidateId == panelId)
+            {
+                panel = &candidate;
+                break;
+            }
+        }
+
+        if (!panel) throw std::runtime_error("Unknown UI panel: " + panelId);
+        if (segments.size() == 2) return makePanelSpecValue(*panel);
+        if (segments.size() == 3 && segments[2] == "widgets")
+        {
+            QueryArray widgets;
+            for (const auto& widget : panel->widgets)
+            {
+                widgets.elements.push_back(makeValuePtr(makeWidgetSpecValue(widget)));
+            }
+            return QueryValue{std::move(widgets)};
+        }
     }
 
     throw std::runtime_error("Unknown ui query path.");
@@ -505,6 +614,9 @@ std::vector<std::string> queryNames()
         "scene.selection",
         "data.scene.objects",
         "data.scene.selection",
+        "ui.layout",
+        "ui.panel.<id>",
+        "ui.panel.<id>.widgets",
         "ui.widgets",
         "ui.widget.<label>",
         "camera.pose",
