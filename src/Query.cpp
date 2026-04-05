@@ -146,6 +146,12 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 
 QueryValue makePanelSpecValue(const UiPanelState& panel)
 {
+    QueryArray flags;
+    for (const auto& flag : panel.flags)
+    {
+        flags.elements.push_back(makeValuePtr(makeStringValue(flag)));
+    }
+
     QueryArray widgets;
     for (const auto& widget : panel.widgets)
     {
@@ -155,6 +161,9 @@ QueryValue makePanelSpecValue(const UiPanelState& panel)
     return makeObjectValue({
         makeField("label", makeStringValue(panel.label)),
         makeField("id", makeStringValue("panel-" + panel.label)),
+        makeField("open", makeBoolValue(panel.open)),
+        makeField("closable", makeBoolValue(panel.closable)),
+        makeField("flags", QueryValue{std::move(flags)}),
         makeField("widgets", QueryValue{std::move(widgets)}),
     });
 }

@@ -114,6 +114,9 @@ struct UiMenuState
 struct UiPanelState
 {
     std::string label;
+    bool open = true;
+    bool closable = true;
+    std::vector<std::string> flags;
     std::vector<UiWidgetSpecState> widgets;
 };
 

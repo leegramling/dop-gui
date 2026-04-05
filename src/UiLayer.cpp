@@ -128,7 +128,8 @@ void UiLayer::render(AppState& state)
     for (const auto& panelState : state.ui.layout.panels)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
-        Panel panel(state.ui, panelId.c_str(), panelState.label.c_str());
+        bool panelOpen = panelState.open;
+        Panel panel(state.ui, panelId.c_str(), panelState.label.c_str(), panelOpen, panelState.closable, panelState.flags);
         if (!panel.begin()) continue;
 
         if (panelId == "panel-scene-info")

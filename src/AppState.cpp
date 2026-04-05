@@ -146,6 +146,14 @@ std::optional<int> parseOptionalIntField(const std::string& block, const std::st
     return std::stoi(match[1].str());
 }
 
+std::optional<bool> parseOptionalBoolField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*(true|false))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return match[1].str() == "true";
+}
+
 std::optional<vsg::dvec3> parseOptionalVec3Field(const std::string& block, const std::string& key)
 {
     const std::regex pattern(
@@ -279,6 +287,9 @@ UiMenuState parseMenuBlock(const std::string& block)
 UiPanelState parsePanelBlock(const std::string& block)
 {
     UiPanelState panel{.label = parseStringField(block, "label")};
+    panel.open = parseOptionalBoolField(block, "open").value_or(true);
+    panel.closable = parseOptionalBoolField(block, "closable").value_or(true);
+    if (block.find("flags") != std::string::npos) panel.flags = parseStringArray(extractArrayBlock(block, "flags"));
 
     if (block.find("widgets") != std::string::npos)
     {

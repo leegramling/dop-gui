@@ -17,6 +17,9 @@
   panels: [
     {
       label: "Scene Info",
+      open: true,
+      closable: false,
+      flags: ["NoCollapse"],
       widgets: [
         { id: "panel-fps", type: "text", label: "FPS", bind: "view.fps.text" },
         { id: "panel-object-count", type: "text", label: "Objects", bind: "scene.objectCount.text" },
@@ -29,6 +32,9 @@
     },
     {
       label: "Properties",
+      open: true,
+      closable: true,
+      flags: ["NoCollapse"],
       widgets: [
         { id: "panel-selected-object", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object" },
         { id: "input-properties-position-x", type: "input_double", label: "Location X", bind: "scene.selected.position.x", unit: "m", precision: 2 },
