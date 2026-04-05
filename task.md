@@ -2,7 +2,7 @@
 
 ## Active Slice
 
-- [x] Add the first richer wrapped widgets through the existing testable UI seam.
+- [x] Add the first Yoga-backed panel-local layout path.
 
 ## Next Tasks
 
@@ -23,7 +23,7 @@
 - [x] Add richer command argument and script-object formats beyond simple numeric path commands.
 - [ ] Add more authored widget properties and panel/window options to the JSON5 UI format.
 - [ ] Add Yoga-backed layout state and queries where layout rects become inspectable.
-- [ ] Add a `WindowManager` boundary for primary-window ownership and future tear-out callbacks/windows.
+- [x] Add a `WindowManager` boundary for primary-window ownership and future tear-out callbacks/windows.
 - [x] Add test commands and queries for the first richer widgets such as radio groups and combos.
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.

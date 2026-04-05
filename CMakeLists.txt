@@ -19,6 +19,7 @@ find_package(vsg 1.1.13 REQUIRED)
 find_program(GLSLANG_VALIDATOR NAMES glslangValidator REQUIRED)
 
 add_subdirectory(external/vsgImGui)
+add_subdirectory("../vsgLayt/yoga/yoga" "${CMAKE_CURRENT_BINARY_DIR}/external-yoga")
 
 set(DOP_GUI_SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 set(DOP_GUI_SHADER_SOURCES
@@ -57,6 +58,7 @@ add_executable(dop-gui
     src/VsgVisualizer.cpp
     src/WindowManager.cpp
     src/Widgets.cpp
+    src/YogaLayout.cpp
     src/main.cpp
 )
 
@@ -66,6 +68,7 @@ target_link_libraries(dop-gui
     PRIVATE
         vsg::vsg
         vsgImGui
+        yogacore
 )
 
 target_compile_features(dop-gui PRIVATE cxx_std_20)
@@ -170,6 +173,7 @@ if(BUILD_TESTING)
     set_tests_properties(dop_gui_ui_properties_panel PROPERTIES
         PASS_REGULAR_EXPRESSION
         "\"query\":\"data.scene.selection\".*bootstrap_cube;\
+\"query\":\"ui.widget.panel-selected-object\".*combo.*bootstrap_cube.*\"layout\":\\{\"enabled\":true.*\"width\":236.*\"height\":24\\};\
 \"query\":\"ui.widget.input-properties-position-x\".*input_double.*1.25 m;\
 \"query\":\"ui.widget.input-properties-rotation-z\".*45.00 deg;\
 \"query\":\"ui.widget.input-properties-scale-z\".*input_double.*0.900000;\

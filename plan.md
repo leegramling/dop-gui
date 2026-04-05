@@ -128,17 +128,15 @@
 
 ## Current Focus
 
-Current focus is `Phase 4A`, the current authored UI slices, and the first slice of `Phase 3F`.
+Current focus is the first implemented slice of `Phase 3E`, while `Phase 3F` remains a deferred architectural seam for later tear-out work.
 
 Success criteria:
 
-- establish the documentation baseline with Doxygen comments on current public interfaces
-- define the next expanded widget and panel responsibilities in the repo docs before code growth
-- keep the tested command/query and live playback seams stable while widget and layout scope expands
-- introduce `WindowManager` without destabilizing the single-window path
+- keep the tested command/query and live playback seams stable while Yoga-backed placement starts
+- prove one real panel can use a Yoga-backed builder/resize/rect path
+- keep deeper window/tear-out work documented but deferred until the callback path is viable
 
 Next focus after current slice:
 
-- add the next wrapped widget types and panel/window options
-- decide how Yoga layout objects and `setPos` placement fit into the current panel wrapper layer
-- plan the first `.glb` scene-loading slice and the scene-model changes it requires
+- expand Yoga-backed placement from the first panel slice to more authored widgets
+- add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

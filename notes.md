@@ -23,6 +23,8 @@
 - [x] Add authored popup/table metadata and runtime-inspectable widget layout rects.
 - [x] Enable in-window ImGui docking and confirm the current `vsgImGui` path does not expose platform window create/destroy callbacks for tear-out viewports.
 - [x] Introduce `WindowManager` as the current boundary for primary-window registration and ImGui platform callback observation.
+- [x] Use the local `../vsgLayt/yoga` source as the first Yoga implementation reference and dependency source instead of cloning a new Yoga repo.
+- [x] Add the first repo-local `YogaLayout` adapter and use it for the `Properties` panel header row.
 
 ## Architecture Notes
 

@@ -4,6 +4,7 @@
 #include "Theme.h"
 #include "Widgets.h"
 #include "WindowManager.h"
+#include "YogaLayout.h"
 
 #include <vsgImGui/SendEventsToImGui.h>
 
@@ -60,6 +61,43 @@ void queueUiCommand(UiState& uiState, const std::string& commandName, const std:
 {
     if (commandName.empty()) return;
     uiState.requestedCommands.push_back(value.empty() ? commandName : (commandName + "=" + value));
+}
+
+YogaLayout::Spec buildPropertiesHeaderLayout()
+{
+    using Axis = YogaLayout::Axis;
+    using Builder = YogaLayout::Builder;
+    using Length = YogaLayout::Length;
+    using Style = YogaLayout::Style;
+
+    Style root;
+    root.direction = Axis::Column;
+    root.gap = 8.0f;
+    root.width = Length::percent(100.0f);
+    root.height = Length::px(64.0f);
+
+    Style row;
+    row.direction = Axis::Row;
+    row.gap = 8.0f;
+    row.width = Length::percent(100.0f);
+    row.height = Length::px(28.0f);
+
+    Style label;
+    label.width = Length::px(116.0f);
+    label.height = Length::px(24.0f);
+
+    Style input;
+    input.width = Length::flex(1.0f);
+    input.height = Length::px(24.0f);
+
+    return Builder{}
+        .root("properties-root", root)
+            .begin("properties-selection-row", row)
+                .item("panel-properties-selected-object-label", label)
+                .item("panel-selected-object", input)
+            .end()
+            .item("panel-properties-selected-object", row)
+        .build();
 }
 }
 
@@ -305,11 +343,66 @@ void UiLayer::render(AppState& state)
         else if (panelId == "panel-properties")
         {
             auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
+            static const auto propertiesHeaderSpec = buildPropertiesHeaderLayout();
+            YogaLayout propertiesHeaderLayout;
+            propertiesHeaderLayout.setLayout(propertiesHeaderSpec);
+            ImVec2 headerOrigin{0.0f, 0.0f};
+            ImVec2 headerAvail{
+                panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) : 320.0f,
+                64.0f};
+            if (!state.ui.testMode)
+            {
+                headerOrigin = ImGui::GetCursorPos();
+                headerAvail = ImGui::GetContentRegionAvail();
+            }
+            propertiesHeaderLayout.resize(headerOrigin.x, headerOrigin.y, headerAvail.x, 64.0f);
+
+            if (propertiesHeaderLayout.has("panel-properties-selected-object-label"))
+            {
+                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-properties-selected-object-label"));
+            }
+            Text(state.ui, "panel-properties-selected-object-label", "Selected Object");
+
+            std::vector<std::string> objectIds;
+            objectIds.reserve(state.scene.objects.size());
+            for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
+
+            if (propertiesHeaderLayout.has("panel-selected-object"))
+            {
+                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-selected-object"));
+            }
+            const auto selectedValue = ComboBox(
+                state.ui,
+                "panel-selected-object",
+                "",
+                state.scene.selectedObjectId,
+                objectIds);
+            if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
+            {
+                queueUiCommand(state.ui, "scene.select_object", selectedValue);
+            }
+
+            if (propertiesHeaderLayout.has("panel-properties-selected-object"))
+            {
+                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-properties-selected-object"));
+            }
             Text(
                 state.ui,
                 "panel-properties-selected-object",
                 state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
-            const std::size_t widgetRowCount = panelState.widgets.empty() ? 1u : panelState.widgets.size();
+
+            if (propertiesHeaderLayout.has("properties-root"))
+            {
+                const auto& rootRect = propertiesHeaderLayout.rect("properties-root");
+                if (!state.ui.testMode) ImGui::SetCursorPosY(static_cast<float>(rootRect.y + rootRect.height + 8.0));
+            }
+
+            std::size_t widgetRowCount = 0;
+            for (const auto& widgetSpec : panelState.widgets)
+            {
+                if (!(widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")) ++widgetRowCount;
+            }
+            if (widgetRowCount == 0) widgetRowCount = 1;
             Table(state.ui, "panel-properties-table", 2, widgetRowCount, [&]()
             {
                 if (!state.ui.testMode)
@@ -403,16 +496,11 @@ void UiLayer::render(AppState& state)
                     emitPropertyRow("Selected Object", "none");
                     return;
                 }
-
-                std::vector<std::string> objectIds;
-                objectIds.reserve(state.scene.objects.size());
-                for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-
                 for (const auto& widgetSpec : panelState.widgets)
                 {
                     if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
                     {
-                        emitComboPropertyRow(widgetSpec.label, widgetSpec, objectIds);
+                        continue;
                     }
                     else if (widgetSpec.type == "input_double")
                     {
