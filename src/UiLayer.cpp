@@ -121,7 +121,7 @@ void UiLayer::render(AppState& state)
 
     if (!state.ui.testMode && state.ui.dockingEnabled)
     {
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_None);
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
     }
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())
