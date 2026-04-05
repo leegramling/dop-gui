@@ -105,6 +105,7 @@ QueryValue makeSceneObjectValue(const SceneObjectState& object, bool includeTran
     if (includeTransform)
     {
         fields.push_back(makeField("position", makeVec3Value(object.position)));
+        fields.push_back(makeField("rotation", makeVec3Value(object.rotation)));
         fields.push_back(makeField("scale", makeVec3Value(object.scale)));
     }
 
@@ -130,6 +131,8 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name == "view.background.color") return name;
     if (name == "scene.objects") return "data.scene.objects";
     if (name == "data.scene.objects") return name;
+    if (name == "scene.selection") return "data.scene.selection";
+    if (name == "data.scene.selection") return name;
     if (name == "runtime.capabilities") return name;
     if (name == "ui.widgets") return name;
     if (name == "help") return "runtime.capabilities";
@@ -240,6 +243,13 @@ QueryValue readSceneQuery(const App& app, const Segments& segments)
             array.elements.push_back(makeValuePtr(makeSceneObjectValue(object, true, true)));
         }
         return QueryValue{std::move(array)};
+    }
+
+    if (segments.size() == 1 && segments[0] == "selection")
+    {
+        return makeObjectValue({
+            makeField("selectedObjectId", makeStringValue(app.state().scene.selectedObjectId)),
+        });
     }
 
     if (segments.size() >= 2 && segments[0] == "object")
@@ -492,7 +502,9 @@ std::vector<std::string> queryNames()
         "window.size",
         "view.window.size",
         "scene.objects",
+        "scene.selection",
         "data.scene.objects",
+        "data.scene.selection",
         "ui.widgets",
         "ui.widget.<label>",
         "camera.pose",

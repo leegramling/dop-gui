@@ -139,6 +139,35 @@ if(BUILD_TESTING)
     )
 
     add_test(
+        NAME dop_gui_ui_extended_widgets
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_extended_widgets_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_extended_widgets PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*panel-scene-select.*shapes.*panel-theme-light.*\"boolValue\":true.*shape_strip"
+    )
+
+    add_test(
+        NAME dop_gui_ui_popup_table
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_popup_table_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_popup_table PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*popup-scene-summary.*\"boolValue\":true.*popup-scene-summary-name.*Scene: bootstrap.*panel-scene-table.*\"textValue\":\"4\".*table-scene-objects-row-bootstrap_triangle-kind.*triangle"
+    )
+
+    add_test(
+        NAME dop_gui_ui_properties_panel
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_properties_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_properties_panel PROPERTIES
+        PASS_REGULAR_EXPRESSION
+        "\"query\":\"data.scene.selection\".*bootstrap_cube;\
+\"query\":\"ui.widget.input-properties-position-x\".*input_double.*1.25 m;\
+\"query\":\"ui.widget.input-properties-rotation-z\".*45.00 deg;\
+\"query\":\"ui.widget.input-properties-scale-z\".*input_double.*0.900000;\
+\"query\":\"data.scene.object.bootstrap_cube.transform\".*1.25.*0.25.*45.*0.9"
+    )
+
+    add_test(
         NAME dop_gui_regression_cli
         COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression_cli.json5"
     )

@@ -34,6 +34,12 @@ Those belong in:
 
 The application should remain small, testable, and modular while growing toward a richer interactive tool.
 
+Documentation requirement:
+
+- public classes, structs, enums, methods, and free functions should carry Doxygen-style doc comments as they are introduced or refactored
+- the repo should include a contributor-facing `HowToAddTestCommands` guide for extending the command/query and UI test surfaces safely
+- contributor-facing workflow docs should explain how to add, serialize, and verify new command/query/UI-test actions
+
 ## Core Architectural Goals
 
 - keep domain state separate from VSG node ownership
@@ -117,6 +123,7 @@ Responsibilities:
 - define default ImGui look-and-feel choices for the application
 - provide a stable styling boundary for wrapped UI widgets
 - allow later extension or overload without coupling callers to raw ImGui styling setup
+- own named theme colors, widget variants, and panel/window flag defaults
 
 Non-responsibilities:
 
@@ -130,6 +137,7 @@ Responsibilities:
 - represent a testable wrapped ImGui panel boundary
 - own unique labeling and panel-level layout concerns
 - provide a narrow wrapper over raw ImGui panel/window calls
+- expose panel callbacks, docking policy, and future tear-out behavior through explicit state and options
 
 Non-responsibilities:
 
@@ -140,12 +148,13 @@ Non-responsibilities:
 
 Responsibilities:
 
-- provide wrapped `Text`, `Input`, `Button`, and `Checkbox` functions over raw ImGui widgets
+- provide wrapped `Text`, `Input`, `Button`, `Checkbox`, `RadioButton`, `ComboBox`, `Popup`, `Table`, and additional input variants over raw ImGui widgets
 - default to basic styling while allowing overloads or richer options later
 - use unique labels so widgets can be registered, queried, and tested consistently
 - support headless or test-mode evaluation against explicit state where practical
 - accept explicit test input so headless tests and GUI-driven simulation can control widget behavior deliberately
 - return enough widget result/state so tests can verify button presses, checkbox changes, input edits, and displayed text
+- support explicit callbacks or callback adapters so panel/widget behavior can remain testable rather than being buried in ad hoc ImGui code
 
 Non-responsibilities:
 
@@ -234,6 +243,12 @@ Initial ImGui surface should include:
 - wrapped input widgets
 - wrapped button widgets
 - wrapped checkbox widgets
+- radio buttons
+- combo boxes
+- popups
+- tables
+- theme colors and window flags
+- docking and tear-out aware panel behavior
 
 Required direction:
 
@@ -245,6 +260,7 @@ Required direction:
 - wrapped widgets should be able to consume explicit test input such as "clicked", "checked", or "input text"
 - in live GUI mode, tests should still be able to simulate those UI interactions against the same wrapped widgets
 - UI layout and properties should be authorable in JSON5 rather than hard-coded everywhere
+- panel layout should be able to use a Yoga-based rect computation path, informed by the local `../vsgLayt` examples and `setPos`-style placement model
 
 State ownership guidance:
 
@@ -258,6 +274,19 @@ Initial UI target:
 - a menubar with `File -> Exit`
 - a menubar with `Scene -> cubes`
 - a menubar with `Scene -> Shapes`
+
+Next UI expansion target:
+
+- richer widget coverage including radio groups, combos, popups, and tables
+- panel callbacks that trigger explicit commands or state updates
+- docking and tear-out capable panels where supported by the local ImGui integration
+- Yoga-backed layout definitions in panel init code, using the local `../vsgLayt` examples as the first reference point
+
+## Scene Growth Direction
+
+- bootstrap scenes should grow from simple generated primitives toward authored mixed scenes
+- scene data should support `.gltf` and `.glb` assets in addition to current primitive records
+- scene structures should be able to represent larger composed scenes rather than only a flat bootstrap object list
 - a panel showing FPS
 - a panel showing object count
 - a panel input for background color expressed as a hex string such as `#0000FF`

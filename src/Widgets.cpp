@@ -3,6 +3,10 @@
 #include <vsgImGui/imgui.h>
 
 #include <array>
+#include <cstdio>
+#include <iomanip>
+#include <optional>
+#include <sstream>
 
 namespace
 {
@@ -56,6 +60,44 @@ bool consumeText(UiState& uiState, std::string_view label, std::string& value)
 std::string imguiLabel(std::string_view id, std::string_view displayLabel)
 {
     return std::string(displayLabel) + "##" + std::string(id);
+}
+
+std::string formatDouble(double value, int precision, std::string_view unitSuffix)
+{
+    std::ostringstream out;
+    out.setf(std::ios::fixed);
+    out.precision(precision);
+    out << value;
+    if (!unitSuffix.empty()) out << " " << unitSuffix;
+    return out.str();
+}
+
+std::optional<double> parseDoubleText(std::string text, std::string_view unitSuffix)
+{
+    if (!unitSuffix.empty())
+    {
+        const auto unitPos = text.find(unitSuffix);
+        if (unitPos != std::string::npos)
+        {
+            text = text.substr(0, unitPos);
+        }
+    }
+
+    while (!text.empty() && text.back() == ' ') text.pop_back();
+    while (!text.empty() && text.front() == ' ') text.erase(text.begin());
+    if (text.empty()) return std::nullopt;
+
+    try
+    {
+        std::size_t consumed = 0;
+        const double parsed = std::stod(text, &consumed);
+        if (consumed != text.size()) return std::nullopt;
+        return parsed;
+    }
+    catch (const std::exception&)
+    {
+        return std::nullopt;
+    }
 }
 }
 
@@ -144,4 +186,146 @@ std::string Input(UiState& uiState, const char* id, const char* displayLabel, co
     ImGui::InputText(label.c_str(), buffer.data(), buffer.size());
     widget.textValue = buffer.data();
     return widget.textValue;
+}
+
+double InputDouble(
+    UiState& uiState,
+    const char* id,
+    const char* displayLabel,
+    double value,
+    int precision,
+    const char* unitSuffix)
+{
+    auto& widget = ensureWidget(uiState, id, "input_double");
+    const std::string unit = unitSuffix ? unitSuffix : "";
+    double currentValue = value;
+    std::string formattedValue = formatDouble(currentValue, precision, unit);
+    consumeText(uiState, id, formattedValue);
+    if (auto parsed = parseDoubleText(formattedValue, unit)) currentValue = *parsed;
+    widget.textValue = formatDouble(currentValue, precision, unit);
+
+    if (uiState.testMode) return currentValue;
+
+    const auto label = imguiLabel(id, displayLabel);
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::InputDouble(label.c_str(), &currentValue, 0.0, 0.0, nullptr, ImGuiInputTextFlags_CharsScientific);
+    if (!unit.empty())
+    {
+        ImGui::SameLine();
+        ImGui::TextUnformatted(unit.c_str());
+    }
+    widget.textValue = formatDouble(currentValue, precision, unit);
+    return currentValue;
+}
+
+bool RadioButton(UiState& uiState, const char* id, const char* displayLabel, bool selected)
+{
+    auto& widget = ensureWidget(uiState, id, "radio");
+    const bool clicked = consumeClick(uiState, id);
+    widget.boolValue = selected || clicked;
+    if (uiState.testMode) return clicked;
+
+    const auto label = imguiLabel(id, displayLabel);
+    const bool changed = ImGui::RadioButton(label.c_str(), selected);
+    widget.boolValue = selected || changed;
+    return clicked || changed;
+}
+
+std::string ComboBox(
+    UiState& uiState,
+    const char* id,
+    const char* displayLabel,
+    const std::string& currentValue,
+    const std::vector<std::string>& options)
+{
+    auto& widget = ensureWidget(uiState, id, "combo");
+    std::string selectedValue = currentValue;
+    consumeText(uiState, id, selectedValue);
+    widget.textValue = selectedValue;
+    if (uiState.testMode) return selectedValue;
+
+    int selectedIndex = 0;
+    for (std::size_t i = 0; i < options.size(); ++i)
+    {
+        if (options[i] == selectedValue)
+        {
+            selectedIndex = static_cast<int>(i);
+            break;
+        }
+    }
+
+    const auto label = imguiLabel(id, displayLabel);
+    if (ImGui::BeginCombo(label.c_str(), selectedValue.c_str()))
+    {
+        for (std::size_t i = 0; i < options.size(); ++i)
+        {
+            const bool isSelected = static_cast<int>(i) == selectedIndex;
+            if (ImGui::Selectable(options[i].c_str(), isSelected))
+            {
+                selectedValue = options[i];
+                selectedIndex = static_cast<int>(i);
+            }
+            if (isSelected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    widget.textValue = selectedValue;
+    return selectedValue;
+}
+
+bool Popup(
+    UiState& uiState,
+    const char* id,
+    const char* displayLabel,
+    bool requestOpen,
+    const std::function<void()>& emitContents)
+{
+    auto& widget = ensureWidget(uiState, id, "popup");
+    const bool clicked = consumeClick(uiState, id);
+    const bool shouldOpen = requestOpen || clicked;
+
+    if (uiState.testMode)
+    {
+        widget.boolValue = shouldOpen;
+        widget.textValue = displayLabel;
+        if (shouldOpen) emitContents();
+        return shouldOpen;
+    }
+
+    const auto label = imguiLabel(id, displayLabel);
+    if (shouldOpen) ImGui::OpenPopup(label.c_str());
+    const bool open = ImGui::BeginPopup(label.c_str());
+    widget.boolValue = open;
+    widget.textValue = displayLabel;
+    if (open)
+    {
+        emitContents();
+        ImGui::EndPopup();
+    }
+    return open;
+}
+
+void Table(
+    UiState& uiState,
+    const char* id,
+    int columnCount,
+    std::size_t rowCount,
+    const std::function<void()>& emitRows)
+{
+    auto& widget = ensureWidget(uiState, id, "table");
+    widget.textValue = std::to_string(rowCount);
+    widget.boolValue = rowCount > 0;
+
+    if (uiState.testMode)
+    {
+        emitRows();
+        return;
+    }
+
+    if (ImGui::BeginTable(id, columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+    {
+        emitRows();
+        ImGui::EndTable();
+    }
 }

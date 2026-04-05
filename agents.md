@@ -46,6 +46,7 @@ During implementation:
 
 After implementation:
 
+- git add and commit with detailed commit message
 - mark completed tasks
 - add follow-up items
 - prune stale notes so the docs remain operational rather than archival

@@ -1,0 +1,56 @@
+/** \page testing_workflow Testing And Command Workflow
+
+\section commands Commands
+
+Commands mutate application or UI state and are intended to be shared by:
+
+- CLI automation
+- headless tests
+- live GUI simulation
+- scripted playback
+
+The current model prefers tagged, path-based command data rather than one class
+per action.
+
+Examples include:
+
+- `scene.load.cubes`
+- `scene.load.shapes`
+- `app.exit`
+- `sleep.ms=500`
+- `ui.test.click.menuitem-scene-cubes`
+- `ui.test.set_text.panel-bgcolor=#0000FF`
+
+\section queries Queries
+
+Queries are read-only and should return serializable data structures that
+reflect the current application state.
+
+Examples include:
+
+- `view.background.color`
+- `view.camera.pose`
+- `data.scene.objects`
+- `ui.widget.panel-bgcolor`
+- `runtime.capabilities`
+
+\section ui_testing UI Testing
+
+Wrapped widgets are expected to use stable labels so tests can address them by
+name. The current pattern is:
+
+1. render the live UI through the wrapper layer
+2. register the widget by stable label
+3. accept explicit test actions against that label
+4. expose the resulting widget state through a query
+
+For the exact contributor workflow, see the repository root guide
+`HowToAddTestCommands.md`.
+
+\section scripts Scripts
+
+JSON5 scripts in `tests/` are the preferred way to compose reusable test
+scenarios. The ordered `actions` format is preferred when command/query order
+matters or when timing is required.
+
+*/

@@ -77,6 +77,20 @@
 - map authored UI descriptions into wrapped ImGui elements
 - expose enough UI state for test queries such as labels, checkbox state, and panel visibility/geometry
 
+## Phase 3D: Expanded Widget And Panel System
+
+- add more wrapped widget types including radio buttons, combo boxes, popups, tables, and richer input variants
+- add explicit panel callbacks and panel/window flag support
+- expand `Theme` to include named colors and reusable widget/window variants
+- introduce docking and tear-out aware panel options where the local ImGui/vsgImGui path supports them
+
+## Phase 3E: Yoga Layout Integration
+
+- evaluate the local `../vsgLayt` examples and notes as the first implementation reference
+- add a Yoga-backed layout adapter for panel-local widget placement
+- support `setPos`-style widget placement driven by Yoga-computed rects in panel init code
+- keep the layout computation testable and separate from widget rendering where possible
+
 ## Phase 3C: First Tool UI
 
 - add a menubar with `File -> Exit`
@@ -93,18 +107,30 @@
 - add task-oriented examples
 - add tests for pure data transforms and serialization paths
 
+## Phase 4A: Documentation Quality
+
+- add Doxygen-style doc comments to public classes, structs, enums, methods, and free functions
+- add a `HowToAddTestCommands` guide for extending the command/query and UI test surfaces
+- expand the repository docs so command/query/UI-test additions have a documented workflow and verification path
+
+## Phase 4B: Scene Asset Growth
+
+- add scene support for `.gltf` and `.glb` assets
+- grow the scene model so larger composed scenes can be constructed and queried cleanly
+- keep primitive-generated objects available for tests and lightweight bootstrap scenes
+
 ## Current Focus
 
-Current focus is `Phase 3B`.
+Current focus is `Phase 4A` plus the first slice of `Phase 3D`.
 
 Success criteria:
 
-- expand the authored JSON5 UI format beyond the current first menu/panel slice
-- add richer `ui.*`, `model.*`, `view.*`, and `data.*` inspection paths where needed
-- keep the tested command/query and live playback seams stable while the authored UI grows
+- establish the documentation baseline with Doxygen comments on current public interfaces
+- define the next expanded widget and panel responsibilities in the repo docs before code growth
+- keep the tested command/query and live playback seams stable while widget and layout scope expands
 
 Next focus after current slice:
 
-- add more authored widget properties and panel structure to `ui/layout.json5`
-- introduce more application-bound inputs and outputs through the wrapper layer
-- decide whether widget registry metadata should become a dedicated UI subsystem record rather than staying under `UiState`
+- add the next wrapped widget types and panel/window options
+- decide how Yoga layout objects and `setPos` placement fit into the current panel wrapper layer
+- plan the first `.glb` scene-loading slice and the scene-model changes it requires

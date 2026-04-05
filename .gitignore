@@ -1,3 +1,4 @@
 /build/
 /external/
 /external/*/build/
+/docs/doxygen/

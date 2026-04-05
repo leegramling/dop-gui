@@ -15,6 +15,16 @@
     },
   ],
   panels: [
-    { label: "Scene Info" },
+    {
+      label: "Scene Info",
+      widgets: [
+        { id: "panel-fps", type: "text", label: "FPS", bind: "view.fps.text" },
+        { id: "panel-object-count", type: "text", label: "Objects", bind: "scene.objectCount.text" },
+        { id: "panel-display-grid", type: "checkbox", label: "Display Grid", bind: "ui.displayGrid", onChange: "ui.grid.set_visible" },
+        { id: "panel-bgcolor", type: "input", label: "Background Color", bind: "view.backgroundColorHex", onChange: "view.background.set_hex" },
+        { id: "panel-scene-select", type: "combo", label: "Scene", bind: "scene.name", onChange: "scene.load", options: ["bootstrap", "cubes", "shapes"] },
+      ],
+    },
+    { label: "Properties" },
   ],
 }

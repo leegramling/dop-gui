@@ -121,8 +121,12 @@ std::string canonicalizeCommandPath(const std::string& name)
     if (path == "help") return path;
     if (path == "app.exit") return path;
     if (path == "state.reset.bootstrap") return path;
+    if (path == "scene.load") return path;
     if (path == "scene.load.cubes") return path;
     if (path == "scene.load.shapes") return path;
+    if (path == "scene.select_object") return path;
+    if (path == "ui.grid.set_visible") return path;
+    if (path == "view.background.set_hex") return path;
     if (path == "sleep.ms") return path;
 
     constexpr std::string_view translatePrefix = "data.scene.object.";
@@ -208,6 +212,60 @@ std::string executeLoadShapes(App& app, const CommandByPath&)
 {
     app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5");
     return sceneLoadResult(app, "shapes");
+}
+
+std::string executeLoadScene(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("scene.load requires a scene name argument.");
+    if (command.rawArg == "bootstrap")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/bootstrap_scene.json5");
+        return sceneLoadResult(app, "bootstrap");
+    }
+    if (command.rawArg == "cubes")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/cubes.json5");
+        return sceneLoadResult(app, "cubes");
+    }
+    if (command.rawArg == "shapes")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5");
+        return sceneLoadResult(app, "shapes");
+    }
+
+    throw std::runtime_error("Unknown scene.load target: " + command.rawArg);
+}
+
+std::string executeSelectObject(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("scene.select_object requires an object id argument.");
+    auto* object = findSceneObject(app.state().scene, command.rawArg);
+    if (!object) throw std::runtime_error("Unknown scene object: " + command.rawArg);
+    app.state().scene.selectedObjectId = object->id;
+    return "{\"selectedObjectId\":\"" + escapeJson(object->id) + "\"}";
+}
+
+std::string executeSetGridVisible(App& app, const CommandByPath& command)
+{
+    bool visible = false;
+    if (command.rawArg == "1" || command.rawArg == "true") visible = true;
+    else if (command.rawArg == "0" || command.rawArg == "false") visible = false;
+    else throw std::runtime_error("ui.grid.set_visible requires true/false or 1/0.");
+    app.state().ui.displayGrid = visible;
+    return std::string("{\"displayGrid\":") + (visible ? "true}" : "false}");
+}
+
+std::string executeSetBackgroundHex(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("view.background.set_hex requires a hex string.");
+    vsg::vec4 parsed{};
+    if (!tryParseHexColor(command.rawArg, parsed))
+    {
+        throw std::runtime_error("view.background.set_hex requires a valid hex color.");
+    }
+    app.state().view.backgroundColorHex = command.rawArg;
+    app.state().view.backgroundColor = parsed;
+    return "{\"hex\":\"" + escapeJson(command.rawArg) + "\"}";
 }
 
 std::string executeSceneTranslate(App& app, const CommandByPath& command)
@@ -323,8 +381,12 @@ const std::vector<CommandRoute>& commandRoutes()
         CommandRoute{.prefix = "noop", .execute = executeNoOp},
         CommandRoute{.prefix = "app.exit", .execute = executeAppExit},
         CommandRoute{.prefix = "state.reset.bootstrap", .execute = executeResetBootstrap},
+        CommandRoute{.prefix = "scene.load", .execute = executeLoadScene},
         CommandRoute{.prefix = "scene.load.cubes", .execute = executeLoadCubes},
         CommandRoute{.prefix = "scene.load.shapes", .execute = executeLoadShapes},
+        CommandRoute{.prefix = "scene.select_object", .execute = executeSelectObject},
+        CommandRoute{.prefix = "ui.grid.set_visible", .execute = executeSetGridVisible},
+        CommandRoute{.prefix = "view.background.set_hex", .execute = executeSetBackgroundHex},
         CommandRoute{.prefix = "data.scene.object.", .execute = executeSceneTranslate},
         CommandRoute{.prefix = "view.camera.set_pose", .execute = executeSetCameraPose},
         CommandRoute{.prefix = "sleep.ms", .execute = executeSleep},
@@ -418,8 +480,12 @@ std::vector<std::string> commandNames()
         "help",
         "app.exit",
         "state.reset.bootstrap",
+        "scene.load=<name>",
         "scene.load.cubes",
         "scene.load.shapes",
+        "scene.select_object=<id>",
+        "ui.grid.set_visible=<true|false>",
+        "view.background.set_hex=<hex>",
         "data.scene.object.<id>.translate=<dx>,<dy>,<dz>",
         "view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>",
         "sleep.ms=<milliseconds>",

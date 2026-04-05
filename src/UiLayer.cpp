@@ -10,6 +10,13 @@
 
 namespace
 {
+std::string vec3Text(const vsg::dvec3& value)
+{
+    std::ostringstream out;
+    out << value.x << ", " << value.y << ", " << value.z;
+    return out.str();
+}
+
 std::string fpsText(double fps)
 {
     std::ostringstream out;
@@ -47,6 +54,12 @@ bool menuHasPendingClick(const UiState& uiState, const std::string& menuLabel, c
 
     return false;
 }
+
+void queueUiCommand(UiState& uiState, const std::string& commandName, const std::string& value = {})
+{
+    if (commandName.empty()) return;
+    uiState.requestedCommands.push_back(value.empty() ? commandName : (commandName + "=" + value));
+}
 }
 
 void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::RenderGraph> renderGraph, AppState& state)
@@ -74,7 +87,7 @@ void UiLayer::evaluate(AppState& state)
 
 void UiLayer::render(AppState& state)
 {
-    if (!state.ui.testMode) Theme::applyDefault();
+    if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
     state.ui.registry.clear();
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())
@@ -102,18 +115,7 @@ void UiLayer::render(AppState& state)
                     if (!state.ui.testMode) clicked = clicked || ImGui::MenuItem(item.label.c_str());
                     if (clicked)
                     {
-                        if (item.command == "app.exit")
-                        {
-                            state.ui.exitRequested = true;
-                        }
-                        else if (item.command == "scene.load.cubes")
-                        {
-                            state.ui.requestedSceneFile = std::string(DOP_GUI_SOURCE_DIR) + "/scenes/cubes.json5";
-                        }
-                        else if (item.command == "scene.load.shapes")
-                        {
-                            state.ui.requestedSceneFile = std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5";
-                        }
+                        queueUiCommand(state.ui, item.command);
                     }
                 }
                 if (menuOpened) ImGui::EndMenu();
@@ -129,21 +131,221 @@ void UiLayer::render(AppState& state)
         Panel panel(state.ui, panelId.c_str(), panelState.label.c_str());
         if (!panel.begin()) continue;
 
-        Text(state.ui, "panel-fps", fpsText(state.view.fps));
-        Text(state.ui, "panel-object-count", objectCountText(state));
-        Checkbox(state.ui, "panel-display-grid", "Display Grid", state.ui.displayGrid);
-
-        const auto backgroundValue = Input(
-            state.ui,
-            "panel-bgcolor",
-            "Background Color",
-            state.view.backgroundColorHex);
-        state.view.backgroundColorHex = backgroundValue;
-
-        vsg::vec4 parsedColor;
-        if (tryParseHexColor(backgroundValue, parsedColor))
+        if (panelId == "panel-scene-info")
         {
-            state.view.backgroundColor = parsedColor;
+            for (const auto& widgetSpec : panelState.widgets)
+            {
+                if (widgetSpec.type == "text")
+                {
+                    if (widgetSpec.bind == "view.fps.text")
+                    {
+                        Text(state.ui, widgetSpec.id.c_str(), fpsText(state.view.fps));
+                    }
+                    else if (widgetSpec.bind == "scene.objectCount.text")
+                    {
+                        Text(state.ui, widgetSpec.id.c_str(), objectCountText(state));
+                    }
+                }
+                else if (widgetSpec.type == "checkbox" && widgetSpec.bind == "ui.displayGrid")
+                {
+                    bool value = state.ui.displayGrid;
+                    const bool changed = Checkbox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), value);
+                    state.ui.displayGrid = value;
+                    if (changed && !widgetSpec.onChange.empty())
+                    {
+                        queueUiCommand(state.ui, widgetSpec.onChange, value ? "true" : "false");
+                    }
+                }
+                else if (widgetSpec.type == "input" && widgetSpec.bind == "view.backgroundColorHex")
+                {
+                    const auto previousValue = state.view.backgroundColorHex;
+                    const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
+                    state.view.backgroundColorHex = value;
+                    if (value != previousValue && !widgetSpec.onChange.empty()) queueUiCommand(state.ui, widgetSpec.onChange, value);
+                }
+                else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
+                {
+                    const auto value = ComboBox(
+                        state.ui,
+                        widgetSpec.id.c_str(),
+                        widgetSpec.label.c_str(),
+                        state.scene.name,
+                        widgetSpec.options);
+                    if (value != state.scene.name && !widgetSpec.onChange.empty())
+                    {
+                        queueUiCommand(state.ui, widgetSpec.onChange, value);
+                    }
+                }
+            }
+
+            std::vector<std::string> objectIds;
+            objectIds.reserve(state.scene.objects.size());
+            for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
+            if (!objectIds.empty())
+            {
+                const auto selectedObject = ComboBox(
+                    state.ui,
+                    "panel-selected-object",
+                    "Selected Object",
+                    state.scene.selectedObjectId,
+                    objectIds);
+                if (!selectedObject.empty() && selectedObject != state.scene.selectedObjectId)
+                {
+                    queueUiCommand(state.ui, "scene.select_object", selectedObject);
+                }
+            }
+
+            Text(state.ui, "panel-theme-label", "Theme");
+            if (RadioButton(state.ui, "panel-theme-dark", "Dark", state.ui.themeMode == "dark"))
+            {
+                state.ui.themeMode = "dark";
+            }
+            if (RadioButton(state.ui, "panel-theme-light", "Light", state.ui.themeMode == "light"))
+            {
+                state.ui.themeMode = "light";
+            }
+            if (auto* darkWidget = findWidget(state.ui, "panel-theme-dark"))
+            {
+                darkWidget->boolValue = state.ui.themeMode == "dark";
+            }
+            if (auto* lightWidget = findWidget(state.ui, "panel-theme-light"))
+            {
+                lightWidget->boolValue = state.ui.themeMode == "light";
+            }
+
+            const bool openSceneSummary = Button(state.ui, "panel-scene-summary-open", "Scene Summary");
+            Popup(state.ui, "popup-scene-summary", "Scene Summary", openSceneSummary, [&]()
+            {
+                Text(state.ui, "popup-scene-summary-name", "Scene: " + state.scene.name);
+                Text(state.ui, "popup-scene-summary-object-count", objectCountText(state));
+            });
+
+            Text(state.ui, "panel-scene-table-label", "Scene Objects");
+            Table(state.ui, "panel-scene-table", 4, state.scene.objects.size(), [&]()
+            {
+                if (!state.ui.testMode)
+                {
+                    ImGui::TableSetupColumn("Select");
+                    ImGui::TableSetupColumn("Id");
+                    ImGui::TableSetupColumn("Kind");
+                    ImGui::TableSetupColumn("Position");
+                    ImGui::TableHeadersRow();
+                }
+
+                for (const auto& object : state.scene.objects)
+                {
+                    const auto rowPrefix = "table-scene-objects-row-" + object.id;
+
+                    if (!state.ui.testMode)
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                    }
+                    if (Button(state.ui, (rowPrefix + "-select").c_str(), "Select"))
+                    {
+                        queueUiCommand(state.ui, "scene.select_object", object.id);
+                    }
+
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    Text(state.ui, (rowPrefix + "-id").c_str(), object.id);
+
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(2);
+                    Text(state.ui, (rowPrefix + "-kind").c_str(), object.kind);
+
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(3);
+                    Text(state.ui, (rowPrefix + "-position").c_str(), vec3Text(object.position));
+                }
+            });
+            if (auto* selectedWidget = findWidget(state.ui, "panel-selected-object"))
+            {
+                selectedWidget->textValue = state.scene.selectedObjectId;
+            }
+        }
+        else if (panelId == "panel-properties")
+        {
+            auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
+            Text(
+                state.ui,
+                "panel-properties-selected-object",
+                state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
+            Table(state.ui, "panel-properties-table", 2, selectedObject ? 8u : 1u, [&]()
+            {
+                if (!state.ui.testMode)
+                {
+                    ImGui::TableSetupColumn("Property");
+                    ImGui::TableSetupColumn("Value");
+                    ImGui::TableHeadersRow();
+                }
+
+                auto emitPropertyRow = [&](const std::string& key, const std::string& value)
+                {
+                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
+                    if (!state.ui.testMode)
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                    }
+                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    Text(state.ui, (rowPrefix + "-value").c_str(), value);
+                };
+
+                auto emitEditablePropertyRow = [&](const std::string& key, const std::string& inputId, double& value)
+                {
+                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
+                    if (!state.ui.testMode)
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                    }
+                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    value = InputDouble(
+                        state.ui,
+                        inputId.c_str(),
+                        "",
+                        value,
+                        6);
+                };
+
+                auto emitUnitEditablePropertyRow =
+                    [&](const std::string& key, const std::string& inputId, double& value, const char* unit)
+                {
+                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
+                    if (!state.ui.testMode)
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                    }
+                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    value = InputDouble(
+                        state.ui,
+                        inputId.c_str(),
+                        "",
+                        value,
+                        2,
+                        unit);
+                };
+
+                if (!selectedObject)
+                {
+                    emitPropertyRow("Selected Object", "none");
+                    return;
+                }
+
+                emitPropertyRow("Id", selectedObject->id);
+                emitPropertyRow("Kind", selectedObject->kind);
+                emitUnitEditablePropertyRow("Location X", "input-properties-position-x", selectedObject->position.x, "m");
+                emitUnitEditablePropertyRow("Location Y", "input-properties-position-y", selectedObject->position.y, "m");
+                emitUnitEditablePropertyRow("Location Z", "input-properties-position-z", selectedObject->position.z, "m");
+                emitUnitEditablePropertyRow("Rotation X", "input-properties-rotation-x", selectedObject->rotation.x, "deg");
+                emitUnitEditablePropertyRow("Rotation Y", "input-properties-rotation-y", selectedObject->rotation.y, "deg");
+                emitUnitEditablePropertyRow("Rotation Z", "input-properties-rotation-z", selectedObject->rotation.z, "deg");
+                emitEditablePropertyRow("Scale X", "input-properties-scale-x", selectedObject->scale.x);
+                emitEditablePropertyRow("Scale Y", "input-properties-scale-y", selectedObject->scale.y);
+                emitEditablePropertyRow("Scale Z", "input-properties-scale-z", selectedObject->scale.z);
+            });
         }
     }
 

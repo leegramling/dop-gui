@@ -328,11 +328,33 @@ void App::refreshUiState()
 
 bool App::applyStateRequests()
 {
-    if (!_state.ui.requestedSceneFile) return false;
+    bool changed = false;
 
-    loadSceneFile(*_state.ui.requestedSceneFile);
-    _state.ui.requestedSceneFile.reset();
-    return true;
+    if (!_state.ui.requestedCommands.empty())
+    {
+        auto commands = _state.ui.requestedCommands;
+        _state.ui.requestedCommands.clear();
+        for (const auto& commandText : commands)
+        {
+            auto command = parseCommandRequest(commandText);
+            if (!command) continue;
+            auto result = ::executeCommand(*this, *command);
+            if (const auto* error = std::get_if<CommandError>(&result))
+            {
+                throw std::runtime_error(error->message);
+            }
+            changed = true;
+        }
+    }
+
+    if (_state.ui.requestedSceneFile)
+    {
+        loadSceneFile(*_state.ui.requestedSceneFile);
+        _state.ui.requestedSceneFile.reset();
+        changed = true;
+    }
+
+    return changed;
 }
 
 void App::loadSceneFile(const std::string& filename)

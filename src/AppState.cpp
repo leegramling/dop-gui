@@ -119,6 +119,14 @@ std::string parseStringField(const std::string& block, const std::string& key)
     return match[1].matched ? match[1].str() : match[2].str();
 }
 
+std::optional<std::string> parseOptionalStringField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"__JSON5__(\s*:\s*(?:"([^"]*)"|'([^']*)'))__JSON5__");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return match[1].matched ? match[1].str() : match[2].str();
+}
+
 uint32_t parseUIntField(const std::string& block, const std::string& key)
 {
     const std::regex pattern(key + R"(\s*:\s*([0-9]+))");
@@ -128,6 +136,21 @@ uint32_t parseUIntField(const std::string& block, const std::string& key)
         throw std::runtime_error("Missing unsigned integer field: " + key);
     }
     return static_cast<uint32_t>(std::stoul(match[1].str()));
+}
+
+std::optional<vsg::dvec3> parseOptionalVec3Field(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(
+        key +
+        R"(\s*:\s*\[\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\])");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+
+    return vsg::dvec3{
+        std::stod(match[1].str()),
+        std::stod(match[2].str()),
+        std::stod(match[3].str()),
+    };
 }
 
 vsg::dvec3 parseVec3Field(const std::string& block, const std::string& key)
@@ -189,6 +212,9 @@ AppState loadSceneStateFromFile(const std::string& filename)
     const auto objectsBlock = extractArrayBlock(text, "objects");
 
     AppState state;
+    if (filename.find("cubes") != std::string::npos) state.scene.name = "cubes";
+    else if (filename.find("shapes") != std::string::npos) state.scene.name = "shapes";
+    else state.scene.name = "bootstrap";
     state.view.cameraPose.eye = parseVec3Field(cameraBlock, "eye");
     state.view.cameraPose.center = parseVec3Field(cameraBlock, "center");
     state.view.cameraPose.up = parseVec3Field(cameraBlock, "up");
@@ -200,9 +226,12 @@ AppState loadSceneStateFromFile(const std::string& filename)
             .kind = parseStringField(objectBlock, "kind"),
             .vertexCount = parseUIntField(objectBlock, "vertexCount"),
             .position = parseVec3Field(objectBlock, "position"),
+            .rotation = parseOptionalVec3Field(objectBlock, "rotation").value_or(vsg::dvec3{0.0, 0.0, 0.0}),
             .scale = parseVec3Field(objectBlock, "scale"),
         });
     }
+
+    if (!state.scene.objects.empty()) state.scene.selectedObjectId = state.scene.objects.front().id;
 
     return state;
 }
@@ -241,7 +270,25 @@ UiMenuState parseMenuBlock(const std::string& block)
 
 UiPanelState parsePanelBlock(const std::string& block)
 {
-    return UiPanelState{.label = parseStringField(block, "label")};
+    UiPanelState panel{.label = parseStringField(block, "label")};
+
+    if (block.find("widgets") != std::string::npos)
+    {
+        for (const auto& widgetBlock : extractObjectEntriesForKey(block, "widgets"))
+        {
+            UiWidgetSpecState widget;
+            widget.id = parseStringField(widgetBlock, "id");
+            widget.type = parseStringField(widgetBlock, "type");
+            widget.label = parseStringField(widgetBlock, "label");
+            widget.bind = parseOptionalStringField(widgetBlock, "bind").value_or("");
+            widget.onClick = parseOptionalStringField(widgetBlock, "onClick").value_or("");
+            widget.onChange = parseOptionalStringField(widgetBlock, "onChange").value_or("");
+            if (widgetBlock.find("options") != std::string::npos) widget.options = parseStringArray(extractArrayBlock(widgetBlock, "options"));
+            panel.widgets.push_back(std::move(widget));
+        }
+    }
+
+    return panel;
 }
 
 int hexDigitValue(char ch)

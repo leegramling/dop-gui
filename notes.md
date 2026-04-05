@@ -2,6 +2,7 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/widget-layout-doxygen-gltf`.
 - [x] Create feature branch `feature/imgui-ui-layout-testable`.
 - [x] Create feature branch `feature/app-input-visualizer-command`.
 - [x] Create feature branch `feature/vsgimgui-docking-external`.
@@ -17,6 +18,8 @@
 - [x] Refactor the bootstrap app into `App`, `InputManager`, `VsgVisualizer`, and `Command`.
 - [x] Verify the refactored project still builds.
 - [x] Verify a non-window CLI command path works with `--command help`.
+- [x] Add Doxygen scaffolding with repo-local `.dox` pages and a working `Doxyfile`.
+- [x] Add popup and table wrappers through the existing testable UI seam.
 
 ## Architecture Notes
 
@@ -312,6 +315,9 @@ Implementation status:
 - [x] Add `tests/regression_cli.json5` as the first combined command/UI regression script.
 - [x] Add `tests/live_regression.json5` plus scheduled live script playback for staged desktop validation in one session.
 - [x] Add ordered object-based script actions via `actions: [{ command: ... }, { query: ... }, { sleepMs: ... }]`.
+- [x] Add the first richer wrapped widgets: `ComboBox` and `RadioButton`.
+- [x] Add `panel-scene-select` as the first combo-backed panel widget.
+- [x] Add `panel-theme-dark` and `panel-theme-light` as the first radio-backed panel widgets.
 - [x] Route `Scene -> cubes` and `Scene -> Shapes` through scene-file requests in application state.
 - [x] Route `File -> Exit` through application state so the live loop can honor it.
 - [x] Add `scenes/shapes.json5` as the first dedicated shapes scene for the UI menu.
@@ -324,3 +330,31 @@ Verification notes:
 - [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5` switches the loaded scene to the cube scene.
 - [x] Add live desktop helper scripts `tests/live_ui_bg_blue.json5`, `tests/live_ui_grid_off.json5`, and `tests/live_ui_scene_cubes.json5` plus matching `test_run.sh` modes.
 - [x] Desktop validation confirmed `live-bg`, `live-grid-off`, `live-scene-cubes`, and `live-regression` behave as expected in the real app session.
+- [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_extended_widgets_cli.json5` verifies combo/radio widgets through the existing `ui.test.*` path.
+
+## New Branch Scope: Expanded Widgets, Yoga Layout, Docs, And Scene Assets
+
+Requested additions:
+
+- [x] Expand the widget set beyond the current basics.
+- [x] Add richer panel functionality including docking and tear-out expectations.
+- [x] Expand `Theme` to cover more colors and window/panel flags.
+- [x] Add panel callbacks as a first-class part of the UI design.
+- [x] Add Doxygen-style doc comments across the code surface as an explicit requirement.
+- [x] Add a `HowToAddTestCommands` guide.
+- [x] Use the local `../vsgLayt` repo as the first reference point for Yoga integration.
+- [x] Grow the scene toward `.gltf` / `.glb` assets and larger composed scene structures.
+- [x] Add contributor-facing workflow docs for test command/script authoring.
+
+Local reference check:
+
+- [x] `../vsgLayt` exists locally and includes Yoga-related material such as `yoga-layout.md`, `uiStyleAndBiz.md`, and `include/vmap/Layt.h`.
+- [x] `../vsgLayt` documents a `setPos`-style placement model and Yoga-backed layout ideas that are relevant to the next slice.
+
+Open design notes for this branch:
+
+- [ ] Decide how far panel docking and tear-out can be supported with the current `vsgImGui`/ImGui integration.
+- [ ] Decide whether panel callbacks are plain function objects, command dispatch adapters, or both.
+- [ ] Decide how Yoga-computed rects feed into wrapped widget placement without bypassing the current widget wrapper layer.
+- [ ] Decide whether richer widget state should remain under `UiState` or move into a more dedicated UI model record.
+- [ ] Decide how primitive scene objects and loaded asset instances coexist in the scene model.

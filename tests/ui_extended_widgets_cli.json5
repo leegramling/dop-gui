@@ -1,0 +1,12 @@
+{
+  commands: [
+    "ui.test.set_text.panel-scene-select=shapes",
+    "ui.test.click.panel-theme-light",
+  ],
+  queries: [
+    "ui.widget.panel-scene-select",
+    "ui.widget.panel-theme-light",
+    "data.scene.objects",
+    "ui.widgets",
+  ],
+}
