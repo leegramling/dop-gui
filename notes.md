@@ -22,6 +22,7 @@
 - [x] Add popup and table wrappers through the existing testable UI seam.
 - [x] Add authored popup/table metadata and runtime-inspectable widget layout rects.
 - [x] Enable in-window ImGui docking and confirm the current `vsgImGui` path does not expose platform window create/destroy callbacks for tear-out viewports.
+- [x] Introduce `WindowManager` as the current boundary for primary-window registration and ImGui platform callback observation.
 
 ## Architecture Notes
 

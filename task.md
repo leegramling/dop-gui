@@ -23,6 +23,7 @@
 - [x] Add richer command argument and script-object formats beyond simple numeric path commands.
 - [ ] Add more authored widget properties and panel/window options to the JSON5 UI format.
 - [ ] Add Yoga-backed layout state and queries where layout rects become inspectable.
+- [ ] Add a `WindowManager` boundary for primary-window ownership and future tear-out callbacks/windows.
 - [x] Add test commands and queries for the first richer widgets such as radio groups and combos.
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
@@ -32,6 +33,7 @@
 - [x] Confirm Doxygen coverage is applied consistently to the currently public code surface.
 - [x] Confirm the widget expansion still preserves headless/live simulation symmetry.
 - [ ] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
+- [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 
 ## Constraints

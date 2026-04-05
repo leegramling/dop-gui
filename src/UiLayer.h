@@ -24,8 +24,13 @@ public:
      * @param window Target window for ImGui rendering.
      * @param renderGraph Render graph that receives the ImGui node.
      * @param state Application state used by the overlay.
+     * @param windowManager Window lifecycle manager used to observe ImGui platform callbacks.
      */
-    void initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::RenderGraph> renderGraph, AppState& state);
+    void initialize(
+        vsg::ref_ptr<vsg::Window> window,
+        vsg::ref_ptr<vsg::RenderGraph> renderGraph,
+        AppState& state,
+        class WindowManager& windowManager);
     /**
      * @brief Evaluate the UI in test mode without a live window.
      * @param state Application state to evaluate against.
@@ -46,6 +51,7 @@ private:
     void render(AppState& state);
 
     AppState* _state = nullptr;
+    class WindowManager* _windowManager = nullptr;
     vsg::ref_ptr<vsgImGui::RenderImGui> _renderImGui;
     vsg::ref_ptr<vsg::Visitor> _sendEventsToImGui;
 };

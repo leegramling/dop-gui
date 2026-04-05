@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Theme.h"
 #include "Widgets.h"
+#include "WindowManager.h"
 
 #include <vsgImGui/SendEventsToImGui.h>
 
@@ -10,29 +11,6 @@
 
 namespace
 {
-void syncDockingStatus(UiState& uiState)
-{
-    if (!ImGui::GetCurrentContext())
-    {
-        uiState.dockingEnabled = false;
-        uiState.viewportsEnabled = false;
-        uiState.platformCreateWindowCallback = false;
-        uiState.platformDestroyWindowCallback = false;
-        uiState.rendererCreateWindowCallback = false;
-        uiState.rendererDestroyWindowCallback = false;
-        return;
-    }
-
-    const auto& io = ImGui::GetIO();
-    const auto& platformIo = ImGui::GetPlatformIO();
-    uiState.dockingEnabled = (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0;
-    uiState.viewportsEnabled = (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
-    uiState.platformCreateWindowCallback = platformIo.Platform_CreateWindow != nullptr;
-    uiState.platformDestroyWindowCallback = platformIo.Platform_DestroyWindow != nullptr;
-    uiState.rendererCreateWindowCallback = platformIo.Renderer_CreateWindow != nullptr;
-    uiState.rendererDestroyWindowCallback = platformIo.Renderer_DestroyWindow != nullptr;
-}
-
 std::string vec3Text(const vsg::dvec3& value)
 {
     std::ostringstream out;
@@ -85,9 +63,14 @@ void queueUiCommand(UiState& uiState, const std::string& commandName, const std:
 }
 }
 
-void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::RenderGraph> renderGraph, AppState& state)
+void UiLayer::initialize(
+    vsg::ref_ptr<vsg::Window> window,
+    vsg::ref_ptr<vsg::RenderGraph> renderGraph,
+    AppState& state,
+    WindowManager& windowManager)
 {
     _state = &state;
+    _windowManager = &windowManager;
 
     _renderImGui = vsgImGui::RenderImGui::create(window, [this]() -> bool
     {
@@ -101,14 +84,14 @@ void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::Ren
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    syncDockingStatus(state.ui);
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
 }
 
 void UiLayer::evaluate(AppState& state)
 {
     const bool previousTestMode = state.ui.testMode;
     state.ui.testMode = true;
-    syncDockingStatus(state.ui);
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     render(state);
     state.ui.testMode = previousTestMode;
 }
@@ -116,7 +99,7 @@ void UiLayer::evaluate(AppState& state)
 void UiLayer::render(AppState& state)
 {
     if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
-    syncDockingStatus(state.ui);
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     state.ui.registry.clear();
 
     if (!state.ui.testMode && state.ui.dockingEnabled)

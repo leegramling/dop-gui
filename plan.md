@@ -91,6 +91,13 @@
 - support `setPos`-style widget placement driven by Yoga-computed rects in panel init code
 - keep the layout computation testable and separate from widget rendering where possible
 
+## Phase 3F: Window Management And Tear-Out Preparation
+
+- introduce `WindowManager` as the lifecycle boundary for the primary window and future tear-out windows
+- route ImGui docking/platform callback observation through `WindowManager`
+- prepare `VsgVisualizer` ownership boundaries for per-window render resources and command graphs
+- defer actual tear-out window creation until the callback path and VSG window policy are explicit
+
 ## Phase 3C: First Tool UI
 
 - add a menubar with `File -> Exit`
@@ -121,13 +128,14 @@
 
 ## Current Focus
 
-Current focus is `Phase 4A` plus the first slice of `Phase 3D`.
+Current focus is `Phase 4A`, the current authored UI slices, and the first slice of `Phase 3F`.
 
 Success criteria:
 
 - establish the documentation baseline with Doxygen comments on current public interfaces
 - define the next expanded widget and panel responsibilities in the repo docs before code growth
 - keep the tested command/query and live playback seams stable while widget and layout scope expands
+- introduce `WindowManager` without destabilizing the single-window path
 
 Next focus after current slice:
 

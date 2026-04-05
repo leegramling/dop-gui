@@ -6,6 +6,7 @@
 #include "ScriptRunner.h"
 #include "UiLayer.h"
 #include "VsgVisualizer.h"
+#include "WindowManager.h"
 
 #include <vsg/all.h>
 
@@ -91,6 +92,7 @@ App::App(int argc, char** argv) :
     _argv(argv),
     _state(),
     _inputManager(std::make_unique<InputManager>()),
+    _windowManager(std::make_unique<WindowManager>()),
     _visualizer(std::make_unique<VsgVisualizer>()),
     _uiLayer(std::make_unique<UiLayer>()),
     _scriptRunner(std::make_unique<ScriptRunner>())
@@ -157,9 +159,10 @@ int App::run()
         }
 
         viewer->addWindow(window);
+        _windowManager->registerPrimaryWindow(window);
 
         _visualizer->initialize(_state, window);
-        _uiLayer->initialize(window, _visualizer->renderGraph(), _state);
+        _uiLayer->initialize(window, _visualizer->renderGraph(), _state, *_windowManager);
         if (auto uiHandler = _uiLayer->eventHandler()) viewer->addEventHandler(uiHandler);
         _inputManager->attachDefaultHandlers(viewer, _visualizer->camera());
         _visualizer->connect(viewer);
@@ -302,6 +305,16 @@ InputManager& App::inputManager()
 const InputManager& App::inputManager() const
 {
     return *_inputManager;
+}
+
+WindowManager& App::windowManager()
+{
+    return *_windowManager;
+}
+
+const WindowManager& App::windowManager() const
+{
+    return *_windowManager;
 }
 
 AppState& App::state()

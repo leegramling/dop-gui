@@ -55,6 +55,7 @@ add_executable(dop-gui
     src/Theme.cpp
     src/UiLayer.cpp
     src/VsgVisualizer.cpp
+    src/WindowManager.cpp
     src/Widgets.cpp
     src/main.cpp
 )

@@ -16,6 +16,7 @@ class ScriptRunner;
 struct TimedScriptAction;
 class UiLayer;
 class VsgVisualizer;
+class WindowManager;
 
 /**
  * @brief Top-level application object that wires startup, runtime state, and the main loop.
@@ -64,6 +65,16 @@ public:
      */
     const InputManager& inputManager() const;
     /**
+     * @brief Access the window manager subsystem.
+     * @return Mutable window manager reference.
+     */
+    WindowManager& windowManager();
+    /**
+     * @brief Access the window manager subsystem.
+     * @return Immutable window manager reference.
+     */
+    const WindowManager& windowManager() const;
+    /**
      * @brief Access mutable application state.
      * @return Mutable application state reference.
      */
@@ -106,6 +117,7 @@ private:
     AppState _state;
 
     std::unique_ptr<InputManager> _inputManager;
+    std::unique_ptr<WindowManager> _windowManager;
     std::unique_ptr<VsgVisualizer> _visualizer;
     std::unique_ptr<UiLayer> _uiLayer;
     std::optional<CommandRequest> _startupCommand;

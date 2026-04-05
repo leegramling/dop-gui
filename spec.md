@@ -98,6 +98,22 @@ Non-responsibilities:
 - VSG scene construction
 - rendering policy
 - domain visualization updates
+- long-lived ownership of ImGui platform-window callback state
+
+### `WindowManager`
+
+Responsibilities:
+
+- own window lifecycle metadata for the primary window and future tear-out windows
+- observe and eventually own ImGui platform/renderer window callbacks
+- provide a stable boundary where ImGui tear-out requests can be translated into VSG window creation and destruction
+- keep window creation policy separate from `UiLayer` and from scene/render synchronization
+
+Non-responsibilities:
+
+- direct scene graph construction
+- per-frame UI content rendering
+- replacing `InputManager` as the source of raw input events
 
 ### `VsgVisualizer`
 
@@ -108,6 +124,7 @@ Responsibilities:
 - translate application state into VSG structures
 - expose a narrow API to update the visualization
 - own optional scene helpers such as a display grid when requested by state
+- prepare to own per-window render resources, command graphs, and scene/UI presentation for future managed windows
 
 Non-responsibilities:
 
