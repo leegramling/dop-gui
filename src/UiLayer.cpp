@@ -268,7 +268,8 @@ void UiLayer::render(AppState& state)
                 state.ui,
                 "panel-properties-selected-object",
                 state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
-            Table(state.ui, "panel-properties-table", 2, selectedObject ? 8u : 1u, [&]()
+            const std::size_t widgetRowCount = panelState.widgets.empty() ? 1u : panelState.widgets.size();
+            Table(state.ui, "panel-properties-table", 2, widgetRowCount, [&]()
             {
                 if (!state.ui.testMode)
                 {
@@ -328,23 +329,84 @@ void UiLayer::render(AppState& state)
                         unit);
                 };
 
+                auto emitComboPropertyRow =
+                    [&](const std::string& key, const UiWidgetSpecState& widgetSpec, const std::vector<std::string>& options)
+                {
+                    if (!state.ui.testMode)
+                    {
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(0);
+                    }
+                    Text(state.ui, ("table-properties-row-" + sanitizeLabel(key) + "-name").c_str(), key);
+                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    const auto selectedValue = ComboBox(
+                        state.ui,
+                        widgetSpec.id.c_str(),
+                        "",
+                        state.scene.selectedObjectId,
+                        options);
+                    if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId && !widgetSpec.onChange.empty())
+                    {
+                        queueUiCommand(state.ui, widgetSpec.onChange, selectedValue);
+                    }
+                };
+
                 if (!selectedObject)
                 {
                     emitPropertyRow("Selected Object", "none");
                     return;
                 }
 
-                emitPropertyRow("Id", selectedObject->id);
-                emitPropertyRow("Kind", selectedObject->kind);
-                emitUnitEditablePropertyRow("Location X", "input-properties-position-x", selectedObject->position.x, "m");
-                emitUnitEditablePropertyRow("Location Y", "input-properties-position-y", selectedObject->position.y, "m");
-                emitUnitEditablePropertyRow("Location Z", "input-properties-position-z", selectedObject->position.z, "m");
-                emitUnitEditablePropertyRow("Rotation X", "input-properties-rotation-x", selectedObject->rotation.x, "deg");
-                emitUnitEditablePropertyRow("Rotation Y", "input-properties-rotation-y", selectedObject->rotation.y, "deg");
-                emitUnitEditablePropertyRow("Rotation Z", "input-properties-rotation-z", selectedObject->rotation.z, "deg");
-                emitEditablePropertyRow("Scale X", "input-properties-scale-x", selectedObject->scale.x);
-                emitEditablePropertyRow("Scale Y", "input-properties-scale-y", selectedObject->scale.y);
-                emitEditablePropertyRow("Scale Z", "input-properties-scale-z", selectedObject->scale.z);
+                std::vector<std::string> objectIds;
+                objectIds.reserve(state.scene.objects.size());
+                for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
+
+                for (const auto& widgetSpec : panelState.widgets)
+                {
+                    if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
+                    {
+                        emitComboPropertyRow(widgetSpec.label, widgetSpec, objectIds);
+                    }
+                    else if (widgetSpec.type == "input_double")
+                    {
+                        if (widgetSpec.bind == "scene.selected.position.x")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.x, "m");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.position.y")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.y, "m");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.position.z")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.z, "m");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.rotation.x")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.x, "deg");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.rotation.y")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.y, "deg");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.rotation.z")
+                        {
+                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.z, "deg");
+                        }
+                        else if (widgetSpec.bind == "scene.selected.scale.x")
+                        {
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.x);
+                        }
+                        else if (widgetSpec.bind == "scene.selected.scale.y")
+                        {
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.y);
+                        }
+                        else if (widgetSpec.bind == "scene.selected.scale.z")
+                        {
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.z);
+                        }
+                    }
+                }
             });
         }
     }
