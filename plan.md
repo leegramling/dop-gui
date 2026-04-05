@@ -53,6 +53,40 @@
 - add scene inspection/debug panels
 - validate whether docking is needed enough to justify an ImGui dependency change
 
+## Phase 3A: Testable UI Core
+
+- add the first `Theme` boundary for default ImGui styling
+- add the first `Panel` wrapper boundary for labeled panels
+- add wrapped `Text`, `Input`, `Button`, and `Checkbox` functions with sane defaults
+- ensure wrapped widgets can run in a headless or test-mode path against explicit UI state
+- add unique-label registration so UI elements can be queried predictably
+
+## Phase 3A1: UI Simulation And State Cleanup
+
+- separate UI-local state from unrelated application/model values such as FPS and object count
+- make wrapped widgets consume explicit test input rather than inferring all behavior from a coarse test flag
+- add a `test_command` path for UI interaction by unique label
+- support both headless widget simulation and live GUI widget simulation through the same wrapper layer
+- ensure input widgets propagate edited values back into application data instead of only storing UI-local copies
+- use those seams on a real panel input such as background color so render-facing state can be edited and queried consistently
+
+## Phase 3B: JSON5 UI Specification
+
+- define a JSON5 format for menu, panel, and widget layout/properties
+- load the first authored UI layout from a repo scene or UI file
+- map authored UI descriptions into wrapped ImGui elements
+- expose enough UI state for test queries such as labels, checkbox state, and panel visibility/geometry
+
+## Phase 3C: First Tool UI
+
+- add a menubar with `File -> Exit`
+- add a menubar with `Scene -> cubes`
+- add a menubar with `Scene -> Shapes`
+- add a panel showing FPS
+- add a panel showing object count
+- add a panel checkbox for `display grid`
+- add a grid helper to `VsgVisualizer` controlled by application/UI state
+
 ## Phase 4: Content And Iteration
 
 - add scene loading/saving
@@ -61,11 +95,17 @@
 
 ## Current Focus
 
-Current focus is `Phase 2C`.
+Current focus is `Phase 3A1`.
 
 Success criteria:
 
-- define the first command/query runtime shape
-- support CLI-driven commands and queries
-- use JSON5 for authored script files
-- expose structured responses for test automation
+- define the first wrapped ImGui UI boundaries
+- keep UI labels unique and queryable
+- preserve headless testability for wrapped widgets
+- establish the first menubar/panel slice without overbuilding the full UI schema
+
+Next focus after current slice:
+
+- validate live GUI simulation against the same labeled widget paths used in headless mode
+- expand the first panel with more application-bound inputs rather than UI-local placeholders
+- move menu actions onto the same explicit simulation and command path used by wrapped widgets

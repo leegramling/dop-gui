@@ -189,6 +189,10 @@ Quick probe:
 ./test_run.sh script tests/mutate_cli.json5 --startup-delay-ms 5000
 ./test_run.sh command state.reset.bootstrap
 ./test_run.sh command data.scene.object.bootstrap_triangle.translate=1.0,0.0,2.0
+./test_run.sh live-bg
+./test_run.sh live-grid-off
+./test_run.sh live-scene-cubes
+./test_run.sh live-regression
 ```
 
 Current result in this session:
@@ -224,6 +228,7 @@ Direct queries:
 ./build/dop-gui/dop-gui --query data.scene.object.properties.bootstrap_triangle
 ./build/dop-gui/dop-gui --query camera.pose
 ./build/dop-gui/dop-gui --query view.camera.pose
+./build/dop-gui/dop-gui --query view.background.color
 ./build/dop-gui/dop-gui --query data.scene.object.bootstrap_triangle
 ./build/dop-gui/dop-gui --query runtime.capabilities
 ./build/dop-gui/dop-gui --query help
@@ -234,9 +239,16 @@ Direct commands:
 ```bash
 ./build/dop-gui/dop-gui --command help
 ./build/dop-gui/dop-gui --command noop
+./build/dop-gui/dop-gui --command app.exit
 ./build/dop-gui/dop-gui --command state.reset.bootstrap
+./build/dop-gui/dop-gui --command scene.load.cubes
+./build/dop-gui/dop-gui --command scene.load.shapes
 ./build/dop-gui/dop-gui --command data.scene.object.bootstrap_triangle.translate=1.0,0.0,2.0
 ./build/dop-gui/dop-gui --command view.camera.set_pose=1.0,-3.0,2.0,0.0,0.0,0.0,0.0,0.0,1.0
+./build/dop-gui/dop-gui --command sleep.ms=250
+./build/dop-gui/dop-gui --ui-test-mode --command ui.test.set_text.panel-bgcolor=#0000FF
+./build/dop-gui/dop-gui --ui-test-mode --command ui.test.set_bool.panel-display-grid=false
+./build/dop-gui/dop-gui --ui-test-mode --command ui.test.click.menuitem-scene-cubes
 ```
 
 Batch script mode:
@@ -244,11 +256,19 @@ Batch script mode:
 ```bash
 ./build/dop-gui/dop-gui --script tests/smoke_cli.json5
 ./build/dop-gui/dop-gui --script tests/mutate_cli.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_background_cli.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_grid_cli.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/regression_cli.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/regression_actions.json5
 ```
 
 Current behavior:
 
 - command, query, and script results are emitted as JSON-compatible structured output
+- direct scene-load commands now report the loaded scene and object ids
+- `app.exit` reports `exitRequested: true`
+- `sleep.ms=<milliseconds>` is available for scripted pauses
 - JSON5-style authored files are supported through a constrained first parser
 - the current script loader supports string arrays for `commands` and `queries`
 - non-window queries can run without XCB access
@@ -257,3 +277,12 @@ Current behavior:
 - unknown commands, queries, and missing script files return structured JSON error output in machine mode
 - `ctest` currently covers the headless smoke path for direct queries, baseline scripts, and mutation scripts
 - `data.scene.objects` now reflects authored scene data loaded from `scenes/bootstrap_scene.json5`, including multiple shape kinds and positions
+- `--ui-test-mode` can populate a headless UI registry, and `ui.widgets` / `ui.widget.<label>` queries can inspect labeled UI state without a window
+- widget labels now use flat test-oriented IDs such as `panel-fps`, `panel-display-grid`, `panel-bgcolor`, and `menuitem-scene-cubes`
+- the first application-bound UI input is `panel-bgcolor`, which defaults from the current render background and can update `view.background.color`
+- `ui.test.*` commands can now simulate labeled menu clicks, checkbox changes, and text input in headless mode
+- headless UI smoke coverage now exercises `panel-bgcolor`, `panel-display-grid`, and `menuitem-scene-cubes`
+- `tests/regression_cli.json5` is the first combined CLI regression script and reports the resulting scene load, grid state, background color state, sleep, and exit request in one run
+- `tests/regression_actions.json5` is the object-based equivalent using ordered `actions: [...]` entries with `command`, `query`, and `sleepMs`, and it returns results in the same ordered `actions` list
+- `test_run.sh` now includes live desktop helpers that apply the same labeled UI actions after a 5 second delay so the default scene is visible first
+- `./test_run.sh live-regression` now runs a timed desktop sequence in one app session: load cubes, hide grid, change background to blue, then exit

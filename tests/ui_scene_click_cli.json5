@@ -1,0 +1,9 @@
+{
+  commands: [
+    "ui.test.click.menuitem-scene-cubes",
+  ],
+  queries: [
+    "ui.widget.menuitem-scene-cubes",
+    "data.scene.objects",
+  ],
+}

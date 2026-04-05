@@ -1,0 +1,30 @@
+{
+  cameraPose: {
+    eye: [0.0, -6.0, 3.0],
+    center: [0.0, 0.0, 0.2],
+    up: [0.0, 0.0, 1.0],
+  },
+  objects: [
+    {
+      id: "shape_triangle",
+      kind: "triangle",
+      vertexCount: 3,
+      position: [-1.5, 0.0, 0.0],
+      scale: [0.8, 0.8, 0.8],
+    },
+    {
+      id: "shape_rectangle",
+      kind: "rectangle",
+      vertexCount: 6,
+      position: [1.5, 0.0, 0.0],
+      scale: [0.8, 0.8, 0.8],
+    },
+    {
+      id: "shape_strip",
+      kind: "tristrip",
+      vertexCount: 8,
+      position: [0.0, 1.5, -0.1],
+      scale: [0.8, 0.8, 0.8],
+    },
+  ],
+}

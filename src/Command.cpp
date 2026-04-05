@@ -3,9 +3,11 @@
 #include "App.h"
 #include "AppState.h"
 
+#include <chrono>
 #include <functional>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
 
 namespace
 {
@@ -94,7 +96,21 @@ std::vector<double> commandArgs(const std::string& name)
 {
     auto separator = name.find('=');
     if (separator == std::string::npos) return {};
-    return parseNumericArgs(name.substr(separator + 1));
+    try
+    {
+        return parseNumericArgs(name.substr(separator + 1));
+    }
+    catch (const std::exception&)
+    {
+        return {};
+    }
+}
+
+std::string commandRawArg(const std::string& name)
+{
+    auto separator = name.find('=');
+    if (separator == std::string::npos) return {};
+    return name.substr(separator + 1);
 }
 
 std::string canonicalizeCommandPath(const std::string& name)
@@ -103,7 +119,11 @@ std::string canonicalizeCommandPath(const std::string& name)
 
     if (path == "noop") return path;
     if (path == "help") return path;
+    if (path == "app.exit") return path;
     if (path == "state.reset.bootstrap") return path;
+    if (path == "scene.load.cubes") return path;
+    if (path == "scene.load.shapes") return path;
+    if (path == "sleep.ms") return path;
 
     constexpr std::string_view translatePrefix = "data.scene.object.";
     if (path.rfind(translatePrefix.data(), 0) == 0)
@@ -117,6 +137,14 @@ std::string canonicalizeCommandPath(const std::string& name)
     }
 
     if (path == "view.camera.set_pose") return path;
+
+    constexpr std::string_view uiClickPrefix = "ui.test.click.";
+    constexpr std::string_view uiSetBoolPrefix = "ui.test.set_bool.";
+    constexpr std::string_view uiSetTextPrefix = "ui.test.set_text.";
+
+    if (path.rfind(uiClickPrefix.data(), 0) == 0 && path.size() > uiClickPrefix.size()) return path;
+    if (path.rfind(uiSetBoolPrefix.data(), 0) == 0 && path.size() > uiSetBoolPrefix.size()) return path;
+    if (path.rfind(uiSetTextPrefix.data(), 0) == 0 && path.size() > uiSetTextPrefix.size()) return path;
 
     throw std::runtime_error("Unknown command: " + name);
 }
@@ -142,10 +170,44 @@ std::string executeNoOp(App&, const CommandByPath&)
     return "{}";
 }
 
+std::string executeAppExit(App& app, const CommandByPath&)
+{
+    app.state().ui.exitRequested = true;
+    return "{\"exitRequested\":true}";
+}
+
 std::string executeResetBootstrap(App& app, const CommandByPath&)
 {
     app.state() = createBootstrapAppState();
     return "{\"state\":\"bootstrap_reset\"}";
+}
+
+std::string sceneLoadResult(const App& app, const std::string& sceneName)
+{
+    std::ostringstream json;
+    json << "{"
+         << "\"scene\":\"" << escapeJson(sceneName) << "\","
+         << "\"objectCount\":" << app.state().scene.objects.size() << ","
+         << "\"objectIds\":[";
+    for (std::size_t i = 0; i < app.state().scene.objects.size(); ++i)
+    {
+        if (i > 0) json << ",";
+        json << "\"" << escapeJson(app.state().scene.objects[i].id) << "\"";
+    }
+    json << "]}";
+    return json.str();
+}
+
+std::string executeLoadCubes(App& app, const CommandByPath&)
+{
+    app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/cubes.json5");
+    return sceneLoadResult(app, "cubes");
+}
+
+std::string executeLoadShapes(App& app, const CommandByPath&)
+{
+    app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5");
+    return sceneLoadResult(app, "shapes");
 }
 
 std::string executeSceneTranslate(App& app, const CommandByPath& command)
@@ -196,14 +258,79 @@ std::string executeSetCameraPose(App& app, const CommandByPath& command)
     return json.str();
 }
 
+std::string executeSleep(App&, const CommandByPath& command)
+{
+    if (command.numericArgs.size() != 1)
+    {
+        throw std::runtime_error("sleep.ms requires exactly 1 numeric argument.");
+    }
+
+    const auto sleepMs = static_cast<int>(command.numericArgs[0]);
+    if (sleepMs < 0) throw std::runtime_error("sleep.ms requires a non-negative duration.");
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+
+    return "{\"sleptMs\":" + std::to_string(sleepMs) + "}";
+}
+
+std::string executeUiClick(App& app, const CommandByPath& command)
+{
+    constexpr std::string_view prefix = "ui.test.click.";
+    const auto label = command.canonicalPath.substr(prefix.size());
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = label,
+        .kind = "click",
+    });
+
+    return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"click\"}";
+}
+
+std::string executeUiSetBool(App& app, const CommandByPath& command)
+{
+    constexpr std::string_view prefix = "ui.test.set_bool.";
+    const auto label = command.canonicalPath.substr(prefix.size());
+
+    bool boolValue = false;
+    if (command.rawArg == "1" || command.rawArg == "true") boolValue = true;
+    else if (command.rawArg == "0" || command.rawArg == "false") boolValue = false;
+    else throw std::runtime_error("ui.test.set_bool requires true/false or 1/0.");
+
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = label,
+        .kind = "set_bool",
+        .boolValue = boolValue,
+    });
+
+    return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_bool\",\"value\":" + (boolValue ? "true" : "false") + "}";
+}
+
+std::string executeUiSetText(App& app, const CommandByPath& command)
+{
+    constexpr std::string_view prefix = "ui.test.set_text.";
+    const auto label = command.canonicalPath.substr(prefix.size());
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = label,
+        .kind = "set_text",
+        .textValue = command.rawArg,
+    });
+
+    return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_text\",\"value\":\"" + escapeJson(command.rawArg) + "\"}";
+}
+
 const std::vector<CommandRoute>& commandRoutes()
 {
     static const std::vector<CommandRoute> routes{
         CommandRoute{.prefix = "help", .execute = executeHelp},
         CommandRoute{.prefix = "noop", .execute = executeNoOp},
+        CommandRoute{.prefix = "app.exit", .execute = executeAppExit},
         CommandRoute{.prefix = "state.reset.bootstrap", .execute = executeResetBootstrap},
+        CommandRoute{.prefix = "scene.load.cubes", .execute = executeLoadCubes},
+        CommandRoute{.prefix = "scene.load.shapes", .execute = executeLoadShapes},
         CommandRoute{.prefix = "data.scene.object.", .execute = executeSceneTranslate},
         CommandRoute{.prefix = "view.camera.set_pose", .execute = executeSetCameraPose},
+        CommandRoute{.prefix = "sleep.ms", .execute = executeSleep},
+        CommandRoute{.prefix = "ui.test.click.", .execute = executeUiClick},
+        CommandRoute{.prefix = "ui.test.set_bool.", .execute = executeUiSetBool},
+        CommandRoute{.prefix = "ui.test.set_text.", .execute = executeUiSetText},
     };
     return routes;
 }
@@ -215,6 +342,7 @@ std::optional<CommandRequest> parseCommandRequest(const std::string& name)
     return CommandByPath{
         .commandName = name,
         .canonicalPath = canonicalizeCommandPath(name),
+        .rawArg = commandRawArg(name),
         .numericArgs = commandArgs(name),
     };
 }
@@ -288,8 +416,15 @@ std::vector<std::string> commandNames()
     return {
         "noop",
         "help",
+        "app.exit",
         "state.reset.bootstrap",
+        "scene.load.cubes",
+        "scene.load.shapes",
         "data.scene.object.<id>.translate=<dx>,<dy>,<dz>",
         "view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>",
+        "sleep.ms=<milliseconds>",
+        "ui.test.click.<label>",
+        "ui.test.set_bool.<label>=<true|false>",
+        "ui.test.set_text.<label>=<value>",
     };
 }

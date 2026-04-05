@@ -14,6 +14,27 @@ vsg::vec4 colorForKind(const std::string& kind)
     if (kind == "cube") return {0.95f, 0.80f, 0.25f, 1.0f};
     return {0.85f, 0.85f, 0.85f, 1.0f};
 }
+
+vsg::ref_ptr<vsg::Node> createGridGeometry()
+{
+    auto vertices = vsg::vec3Array::create({
+        {-5.0f, -0.03f, -0.01f}, {5.0f, -0.03f, -0.01f}, {5.0f, 0.03f, -0.01f}, {-5.0f, 0.03f, -0.01f},
+        {-0.03f, -5.0f, -0.01f}, {0.03f, -5.0f, -0.01f}, {0.03f, 5.0f, -0.01f}, {-0.03f, 5.0f, -0.01f},
+    });
+    auto colors = vsg::vec4Array::create(8);
+    for (std::size_t i = 0; i < 8; ++i) (*colors)[i] = vsg::vec4(0.35f, 0.35f, 0.35f, 1.0f);
+
+    auto indices = vsg::uintArray::create({0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7});
+    auto draw = vsg::VertexIndexDraw::create();
+    draw->assignArrays(vsg::DataList{vertices, colors});
+    draw->assignIndices(indices);
+    draw->indexCount = indices->width();
+    draw->instanceCount = 1;
+
+    auto stateGroup = vsg::StateGroup::create();
+    stateGroup->addChild(draw);
+    return stateGroup;
+}
 }
 
 vsg::ref_ptr<vsg::BindGraphicsPipeline> VsgVisualizer::createBindGraphicsPipeline() const
@@ -163,6 +184,13 @@ vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
         _objectTransforms.push_back(objectTransform);
     }
 
+    _gridTransform = vsg::MatrixTransform::create();
+    auto gridStateGroup = vsg::StateGroup::create();
+    gridStateGroup->add(bindPipeline);
+    gridStateGroup->addChild(createGridGeometry());
+    _gridTransform->addChild(gridStateGroup);
+    scene->addChild(_gridTransform);
+
     return scene;
 }
 
@@ -194,6 +222,12 @@ void VsgVisualizer::connect(vsg::ref_ptr<vsg::Viewer> viewer)
 
 void VsgVisualizer::syncFromState(const AppState& state)
 {
+    syncCameraFromState(state);
+    syncSceneFromState(state);
+}
+
+void VsgVisualizer::syncCameraFromState(const AppState& state)
+{
     if (_lookAt)
     {
         const auto& pose = state.view.cameraPose;
@@ -201,7 +235,10 @@ void VsgVisualizer::syncFromState(const AppState& state)
         _lookAt->center = pose.center;
         _lookAt->up = pose.up;
     }
+}
 
+void VsgVisualizer::syncSceneFromState(const AppState& state)
+{
     const auto count = std::min(_objectTransforms.size(), state.scene.objects.size());
     for (std::size_t i = 0; i < count; ++i)
     {
@@ -209,6 +246,26 @@ void VsgVisualizer::syncFromState(const AppState& state)
         _objectTransforms[i]->matrix =
             vsg::translate(object.position) *
             vsg::scale(object.scale.x, object.scale.y, object.scale.z);
+    }
+    for (std::size_t i = count; i < _objectTransforms.size(); ++i)
+    {
+        _objectTransforms[i]->matrix = vsg::scale(0.0, 0.0, 0.0);
+    }
+
+    if (_gridTransform)
+    {
+        _gridTransform->matrix = state.ui.displayGrid ? vsg::scale(1.0, 1.0, 1.0) : vsg::scale(0.0, 0.0, 0.0);
+    }
+
+    if (_renderGraph)
+    {
+        VkClearColorValue clearColor = {{
+            state.view.backgroundColor.r,
+            state.view.backgroundColor.g,
+            state.view.backgroundColor.b,
+            state.view.backgroundColor.a,
+        }};
+        _renderGraph->setClearValues(clearColor, {0.0f, 0});
     }
 }
 
@@ -225,4 +282,9 @@ vsg::ref_ptr<vsg::Camera> VsgVisualizer::camera() const
 vsg::ref_ptr<vsg::CommandGraph> VsgVisualizer::commandGraph() const
 {
     return _commandGraph;
+}
+
+vsg::ref_ptr<vsg::RenderGraph> VsgVisualizer::renderGraph() const
+{
+    return _renderGraph;
 }

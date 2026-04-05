@@ -30,6 +30,10 @@ usage() {
 Usage:
   ./test_run.sh script [script_file] [extra dop-gui args...]
   ./test_run.sh command [command_text] [extra dop-gui args...]
+  ./test_run.sh live-bg [extra dop-gui args...]
+  ./test_run.sh live-grid-off [extra dop-gui args...]
+  ./test_run.sh live-scene-cubes [extra dop-gui args...]
+  ./test_run.sh live-regression [extra dop-gui args...]
 
 Examples:
   ./test_run.sh
@@ -41,6 +45,10 @@ Examples:
   ./test_run.sh command data.scene.object.bootstrap_triangle.translate=1.0,0.0,2.0 --startup-delay-ms 5000
   ./test_run.sh command view.camera.set_pose=1.0,-3.0,2.0,0.0,0.0,0.0,0.0,0.0,1.0
   ./test_run.sh script tests/mutate_cli.json5 -f 600
+  ./test_run.sh live-bg
+  ./test_run.sh live-grid-off
+  ./test_run.sh live-scene-cubes
+  ./test_run.sh live-regression
 
 Notes:
   - The script configures and builds the app before launch.
@@ -58,6 +66,22 @@ case "$MODE" in
     command)
         build_app
         run_command_mode "$@"
+        ;;
+    live-bg)
+        build_app
+        exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_ui_bg_blue.json5" --stay-open --startup-delay-ms 5000 "${@:2}"
+        ;;
+    live-grid-off)
+        build_app
+        exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_ui_grid_off.json5" --stay-open --startup-delay-ms 5000 "${@:2}"
+        ;;
+    live-scene-cubes)
+        build_app
+        exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_ui_scene_cubes.json5" --stay-open --startup-delay-ms 5000 "${@:2}"
+        ;;
+    live-regression)
+        build_app
+        exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_regression.json5" --stay-open "${@:2}"
         ;;
     help|-h|--help)
         usage

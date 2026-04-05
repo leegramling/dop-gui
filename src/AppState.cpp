@@ -1,6 +1,7 @@
 #include "AppState.h"
 
 #include <fstream>
+#include <iomanip>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -205,16 +206,91 @@ AppState loadSceneStateFromFile(const std::string& filename)
 
     return state;
 }
+
+std::vector<std::string> parseStringArray(const std::string& block)
+{
+    std::vector<std::string> values;
+    const std::regex pattern(R"__JSON5__(["']([^"']+)["'])__JSON5__");
+    for (auto i = std::sregex_iterator(block.begin(), block.end(), pattern); i != std::sregex_iterator(); ++i)
+    {
+        values.push_back((*i)[1].str());
+    }
+    return values;
+}
+
+std::vector<std::string> extractObjectEntriesForKey(const std::string& text, const std::string& key)
+{
+    return extractObjectEntries(extractArrayBlock(text, key));
+}
+
+UiMenuState parseMenuBlock(const std::string& block)
+{
+    UiMenuState menu;
+    menu.label = parseStringField(block, "label");
+
+    for (const auto& itemBlock : extractObjectEntriesForKey(block, "items"))
+    {
+        menu.items.push_back(UiMenuItemState{
+            .label = parseStringField(itemBlock, "label"),
+            .command = parseStringField(itemBlock, "command"),
+        });
+    }
+
+    return menu;
+}
+
+UiPanelState parsePanelBlock(const std::string& block)
+{
+    return UiPanelState{.label = parseStringField(block, "label")};
+}
+
+int hexDigitValue(char ch)
+{
+    if (ch >= '0' && ch <= '9') return ch - '0';
+    if (ch >= 'a' && ch <= 'f') return 10 + (ch - 'a');
+    if (ch >= 'A' && ch <= 'F') return 10 + (ch - 'A');
+    return -1;
+}
+
+float parseHexByte(const std::string& text, std::size_t offset)
+{
+    const int high = hexDigitValue(text[offset]);
+    const int low = hexDigitValue(text[offset + 1]);
+    if (high < 0 || low < 0) throw std::runtime_error("Invalid hex color component.");
+    return static_cast<float>((high * 16) + low) / 255.0f;
+}
 }
 
 AppState loadAppStateFromSceneFile(const std::string& filename)
 {
-    return loadSceneStateFromFile(filename);
+    auto state = loadSceneStateFromFile(filename);
+    state.view.backgroundColorHex = colorHexFromVec4(state.view.backgroundColor);
+    return state;
+}
+
+UiLayoutState loadUiLayoutFromFile(const std::string& filename)
+{
+    const auto text = stripComments(readFile(filename));
+    UiLayoutState layout;
+
+    for (const auto& menuBlock : extractObjectEntriesForKey(text, "menus"))
+    {
+        layout.menus.push_back(parseMenuBlock(menuBlock));
+    }
+
+    for (const auto& panelBlock : extractObjectEntriesForKey(text, "panels"))
+    {
+        layout.panels.push_back(parsePanelBlock(panelBlock));
+    }
+
+    return layout;
 }
 
 AppState createBootstrapAppState()
 {
-    return loadSceneStateFromFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/bootstrap_scene.json5");
+    auto state = loadSceneStateFromFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/bootstrap_scene.json5");
+    state.view.backgroundColorHex = colorHexFromVec4(state.view.backgroundColor);
+    return state;
 }
 
 const SceneObjectState* findSceneObject(const SceneState& scene, const std::string& id)
@@ -233,4 +309,67 @@ SceneObjectState* findSceneObject(SceneState& scene, const std::string& id)
         if (object.id == id) return &object;
     }
     return nullptr;
+}
+
+WidgetState* findWidget(UiState& ui, const std::string& label)
+{
+    for (auto& widget : ui.registry)
+    {
+        if (widget.label == label) return &widget;
+    }
+    return nullptr;
+}
+
+const WidgetState* findWidget(const UiState& ui, const std::string& label)
+{
+    for (const auto& widget : ui.registry)
+    {
+        if (widget.label == label) return &widget;
+    }
+    return nullptr;
+}
+
+UiTestAction* findPendingUiAction(UiState& ui, const std::string& label, const std::string& kind)
+{
+    for (auto& action : ui.pendingActions)
+    {
+        if (action.label == label && action.kind == kind) return &action;
+    }
+    return nullptr;
+}
+
+std::string colorHexFromVec4(const vsg::vec4& color)
+{
+    auto clampByte = [](float component) -> int
+    {
+        if (component < 0.0f) component = 0.0f;
+        if (component > 1.0f) component = 1.0f;
+        return static_cast<int>(component * 255.0f + 0.5f);
+    };
+
+    std::ostringstream out;
+    out << "#"
+        << std::uppercase << std::hex << std::setfill('0')
+        << std::setw(2) << clampByte(color.r)
+        << std::setw(2) << clampByte(color.g)
+        << std::setw(2) << clampByte(color.b);
+    return out.str();
+}
+
+bool tryParseHexColor(const std::string& text, vsg::vec4& color)
+{
+    if (text.size() != 7 || text[0] != '#') return false;
+
+    try
+    {
+        color.r = parseHexByte(text, 1);
+        color.g = parseHexByte(text, 3);
+        color.b = parseHexByte(text, 5);
+        color.a = 1.0f;
+        return true;
+    }
+    catch (const std::runtime_error&)
+    {
+        return false;
+    }
 }

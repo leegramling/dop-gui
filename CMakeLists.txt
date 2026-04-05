@@ -49,9 +49,13 @@ add_executable(dop-gui
     src/AppState.cpp
     src/Command.cpp
     src/InputManager.cpp
+    src/Panel.cpp
     src/Query.cpp
     src/ScriptRunner.cpp
+    src/Theme.cpp
+    src/UiLayer.cpp
     src/VsgVisualizer.cpp
+    src/Widgets.cpp
     src/main.cpp
 )
 
@@ -76,6 +80,78 @@ if(BUILD_TESTING)
     )
     set_tests_properties(dop_gui_query_window_size PROPERTIES
         PASS_REGULAR_EXPRESSION "\"ok\":true.*\"query\":\"view.window.size\".*\"width\":1280.*\"height\":720"
+    )
+
+    add_test(
+        NAME dop_gui_command_scene_load
+        COMMAND dop-gui --command scene.load.cubes
+    )
+    set_tests_properties(dop_gui_command_scene_load PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"command\":\"scene.load.cubes\".*\"scene\":\"cubes\".*cube_left.*cube_center.*cube_right"
+    )
+
+    add_test(
+        NAME dop_gui_command_app_exit
+        COMMAND dop-gui --command app.exit
+    )
+    set_tests_properties(dop_gui_command_app_exit PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"command\":\"app.exit\".*\"exitRequested\":true"
+    )
+
+    add_test(
+        NAME dop_gui_command_sleep
+        COMMAND dop-gui --command sleep.ms=1
+    )
+    set_tests_properties(dop_gui_command_sleep PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"command\":\"sleep.ms=1\".*\"sleptMs\":1"
+    )
+
+    add_test(
+        NAME dop_gui_ui_registry
+        COMMAND dop-gui --ui-test-mode --query ui.widgets
+    )
+    set_tests_properties(dop_gui_ui_registry PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*menubar-main.*panel-display-grid.*panel-bgcolor"
+    )
+
+    add_test(
+        NAME dop_gui_ui_background_input
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_background_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_background_input PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*panel-bgcolor.*#0000FF.*\"query\":\"view.background.color\".*#0000FF"
+    )
+
+    add_test(
+        NAME dop_gui_ui_grid_toggle
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_grid_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_grid_toggle PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*panel-display-grid.*\"boolValue\":false"
+    )
+
+    add_test(
+        NAME dop_gui_ui_scene_click
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_scene_click_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_scene_click PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*menuitem-scene-cubes.*cube_left.*cube_center.*cube_right"
+    )
+
+    add_test(
+        NAME dop_gui_regression_cli
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression_cli.json5"
+    )
+    set_tests_properties(dop_gui_regression_cli PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"scene\":\"cubes\".*\"exitRequested\":true.*cube_left.*panel-display-grid.*\"boolValue\":false.*panel-bgcolor.*#0000FF.*\"query\":\"view.background.color\".*#0000FF"
+    )
+
+    add_test(
+        NAME dop_gui_regression_actions
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression_actions.json5"
+    )
+    set_tests_properties(dop_gui_regression_actions PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"actions\":\\[.*\"scene\":\"cubes\".*cube_left.*panel-display-grid.*\"boolValue\":false.*panel-bgcolor.*#0000FF.*\"query\":\"view.background.color\".*#0000FF.*\"exitRequested\":true"
     )
 
     add_test(

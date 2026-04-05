@@ -4,6 +4,7 @@
 #include "InputManager.h"
 #include "Query.h"
 #include "ScriptRunner.h"
+#include "UiLayer.h"
 #include "VsgVisualizer.h"
 
 #include <vsg/all.h>
@@ -91,6 +92,7 @@ App::App(int argc, char** argv) :
     _state(),
     _inputManager(std::make_unique<InputManager>()),
     _visualizer(std::make_unique<VsgVisualizer>()),
+    _uiLayer(std::make_unique<UiLayer>()),
     _scriptRunner(std::make_unique<ScriptRunner>())
 {
 }
@@ -103,12 +105,14 @@ int App::run()
     std::string queryName;
     std::string scriptFilename;
     bool stayOpen = false;
+    bool uiTestMode = false;
     int startupDelayMs = 0;
 
     try
     {
         const auto scenePath = findScenePathArgument(_argc, _argv);
         _state = scenePath.empty() ? createBootstrapAppState() : loadAppStateFromSceneFile(scenePath);
+        _state.ui.layout = loadUiLayoutFromFile(std::string(DOP_GUI_SOURCE_DIR) + "/ui/layout.json5");
 
         vsg::CommandLine arguments(&_argc, _argv);
 
@@ -118,10 +122,13 @@ int App::run()
         queryName = arguments.value(std::string{}, "--query");
         scriptFilename = arguments.value(std::string{}, "--script");
         stayOpen = arguments.read("--stay-open");
+        uiTestMode = arguments.read("--ui-test-mode");
 
         _inputManager->configure(arguments);
         _startupCommand = parseCommandRequest(commandName);
         _startupQuery = parseQueryRequest(queryName);
+        _state.ui.testMode = uiTestMode;
+        if (_state.ui.testMode) _uiLayer->evaluate(_state);
 
         if (arguments.errors())
         {
@@ -152,6 +159,8 @@ int App::run()
         viewer->addWindow(window);
 
         _visualizer->initialize(_state, window);
+        _uiLayer->initialize(window, _visualizer->renderGraph(), _state);
+        if (auto uiHandler = _uiLayer->eventHandler()) viewer->addEventHandler(uiHandler);
         _inputManager->attachDefaultHandlers(viewer, _visualizer->camera());
         _visualizer->connect(viewer);
 
@@ -159,6 +168,14 @@ int App::run()
         {
             if (startupScript)
             {
+                if (stayOpen)
+                {
+                    _scheduledScriptActions = _scriptRunner->createTimedActions(*startupScript);
+                    _scheduledScriptIndex = 0;
+                    startupScript.reset();
+                    return 0;
+                }
+
                 auto exitCode = _scriptRunner->execute(*this, *startupScript);
                 startupScript.reset();
                 if (!stayOpen) return exitCode;
@@ -182,22 +199,56 @@ int App::run()
         const bool hasDelayedStartupActions = stayOpen && startupDelayMs > 0 &&
             hasStartupActions;
         auto startupDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(startupDelayMs);
+        auto scheduledScriptStart = std::chrono::steady_clock::time_point{};
 
         if (hasStartupActions && !hasDelayedStartupActions)
         {
             auto exitCode = executeStartupActions();
+            if (!_scheduledScriptActions.empty()) scheduledScriptStart = std::chrono::steady_clock::now();
             if (!stayOpen) return exitCode;
         }
 
         viewer->compile();
 
+        auto previousFrameTime = std::chrono::steady_clock::now();
         while (viewer->advanceToNextFrame() && (_numFrames < 0 || (_numFrames--) > 0))
         {
+            const auto now = std::chrono::steady_clock::now();
+            const auto frameSeconds = std::chrono::duration<double>(now - previousFrameTime).count();
+            previousFrameTime = now;
+            _state.view.fps = frameSeconds > 0.0 ? (1.0 / frameSeconds) : 0.0;
+
+            if (applyStateRequests() && _visualizer->isInitialized())
+            {
+                _visualizer->syncFromState(_state);
+            }
+
+            if (_state.ui.exitRequested) return 0;
+            _visualizer->syncSceneFromState(_state);
+
             if (hasDelayedStartupActions && (startupScript || _startupCommand || _startupQuery) &&
                 std::chrono::steady_clock::now() >= startupDeadline)
             {
                 auto exitCode = executeStartupActions();
+                if (!_scheduledScriptActions.empty()) scheduledScriptStart = std::chrono::steady_clock::now();
                 if (!stayOpen) return exitCode;
+            }
+
+            if (!_scheduledScriptActions.empty() && _scheduledScriptIndex < _scheduledScriptActions.size())
+            {
+                const auto elapsedMs = static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - scheduledScriptStart)
+                        .count());
+
+                while (_scheduledScriptIndex < _scheduledScriptActions.size() &&
+                       _scheduledScriptActions[_scheduledScriptIndex].offsetMs <= elapsedMs)
+                {
+                    auto exitCode = executeTimedAction(_scheduledScriptActions[_scheduledScriptIndex]);
+                    ++_scheduledScriptIndex;
+                    if (exitCode != 0) return exitCode;
+                    if (_state.ui.exitRequested) return 0;
+                }
             }
             viewer->handleEvents();
             viewer->update();
@@ -263,9 +314,52 @@ const AppState& App::state() const
     return _state;
 }
 
+void App::refreshUiState()
+{
+    if (_state.ui.testMode)
+    {
+        _uiLayer->evaluate(_state);
+        if (applyStateRequests())
+        {
+            _uiLayer->evaluate(_state);
+        }
+    }
+}
+
+bool App::applyStateRequests()
+{
+    if (!_state.ui.requestedSceneFile) return false;
+
+    loadSceneFile(*_state.ui.requestedSceneFile);
+    _state.ui.requestedSceneFile.reset();
+    return true;
+}
+
+void App::loadSceneFile(const std::string& filename)
+{
+    auto preservedUi = _state.ui;
+    _state = loadAppStateFromSceneFile(filename);
+    _state.ui = preservedUi;
+}
+
+int App::executeTimedAction(const TimedScriptAction& action)
+{
+    if (action.kind == TimedScriptAction::Kind::command)
+    {
+        auto command = parseCommandRequest(action.text);
+        if (!command) return 0;
+        return executeCommand(*command);
+    }
+
+    auto query = parseQueryRequest(action.text);
+    if (!query) return 0;
+    return executeQuery(*query);
+}
+
 int App::executeCommand(const CommandRequest& command)
 {
     auto result = ::executeCommand(*this, command);
+    refreshUiState();
     if (std::holds_alternative<CommandSuccess>(result) && _visualizer->isInitialized())
     {
         _visualizer->syncFromState(_state);

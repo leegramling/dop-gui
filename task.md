@@ -2,52 +2,48 @@
 
 ## Active Slice
 
-- [x] Add the first CLI command/query interface for testing and automation.
+- [ ] Refine the UI test model so widget simulation works cleanly in both headless and GUI modes.
 
 ## Next Tasks
 
-- [x] Define a first query abstraction alongside the current command abstraction.
-- [x] Add direct CLI support for simple queries.
-- [x] Add a query for window size.
-- [x] Add a query for current scene object information.
-- [x] Add a query for camera pose.
-- [x] Add a runtime capabilities query.
-- [x] Define JSON5 as the authored script/config format for command/query batches.
-- [x] Add a first batch script loading path, even if only partially implemented.
-- [x] Return structured machine-readable output for command/query execution.
-- [x] Return structured machine-readable output for direct command execution.
+- [x] Remove unrelated data such as FPS from `UiState` when it should come from application/model state instead.
+- [x] Define explicit widget test input/result data for `Text`, `Input`, `Button`, and `Checkbox`.
+- [x] Add a `test_command` path for UI interaction by unique label.
+- [x] Support headless simulation of button clicks, checkbox changes, and input edits through wrapped widgets.
+- [ ] Support live GUI simulation of the same labeled UI interactions without bypassing the wrapper layer.
+- [x] Support timed live script playback for the same labeled UI interactions in one desktop session.
+- [x] Make input widgets propagate edited values into application data rather than only UI-local storage.
+- [ ] Add a panel input for background color and validate that it updates live render clear color in a desktop session.
 
 ## Next Slice Candidates
 
-- [x] Add object-specific queries by id instead of only aggregate scene metadata.
-- [x] Add a command/query registry instead of hard-coded factory branches.
-- [x] Add structured error JSON for unknown commands, unknown queries, and script parse failures.
-- [x] Add initial `view.*` and `data.*` query namespaces while keeping compatibility aliases.
-- [x] Move queries from polymorphic classes to a tagged `std::variant` request/result model.
-- [x] Move commands from polymorphic classes to a tagged `std::variant` request/result model.
-- [x] Collapse the query type explosion into a path-based query request plus a prefix registry and generic value tree.
 - [ ] Add richer model/view/data query namespaces as those layers are introduced.
-- [x] Add object transform and property namespaces beyond the current bootstrap metadata.
-- [x] Introduce plain `AppState` and `SceneState` data so `data.*` queries are backed by stable model data instead of bootstrap visualizer-owned literals.
-- [x] Add the first mutation commands that update `AppState` in headless CLI/script mode.
-- [x] Drive `VsgVisualizer` updates from mutated state during a live running app.
-- [x] Add `ctest` smoke coverage for the headless CLI query and script paths.
-- [x] Add a repo-local desktop runner script for `--stay-open` startup command/script testing.
-- [x] Load bootstrap scene data from JSON5 and include multiple shape records for scene inspection tests.
+- [x] Add `ui.*` query namespaces for panels, menu items, widgets, and theme-facing state.
 - [ ] Add richer command argument and script-object formats beyond simple numeric path commands.
+- [x] Add direct commands for `app.exit`, `scene.load.*`, and `sleep.ms`.
+- [x] Add an authored combined CLI regression script that exercises scene load, UI state changes, sleep, and exit.
+- [x] Add an object-based ordered `actions` script format with `command`, `query`, and `sleepMs`.
+- [x] Add JSON5 UI layout loading for menu and panel definitions.
+- [x] Route menu actions through existing command/state seams instead of raw ImGui callbacks.
+- [x] Add `ui.test_command.*` or equivalent command namespaces for simulated UI interaction.
+- [x] Add `ui.*` queries for widget values/results after simulated interaction.
 
 ## Follow-Up Validation
 
-- [ ] Run `./build/dop-gui/dop-gui` in a desktop session with XCB/X11 access.
-- [ ] Confirm the window opens and the generated scene renders outside the sandbox.
-- [x] Confirm CLI queries can run in a useful way for tests.
-- [x] Confirm JSON5-authored scripts can drive at least one command/query batch.
-- [x] Confirm `ctest` can execute headless smoke coverage in the build tree.
+- [ ] Confirm the menubar renders and menu actions behave in a desktop session.
+- [x] Confirm the panel shows FPS, object count, `display grid`, and background color input.
+- [x] Confirm the headless/test flag can evaluate wrapped widgets without opening a window.
+- [ ] Confirm the grid toggle changes live visualization state.
+- [ ] Confirm a simulated UI click or input edit works in both headless and live GUI mode.
+- [x] Confirm a simulated UI input edit updates application state in headless mode.
+- [x] Confirm a simulated UI menu click can switch scenes in headless mode.
+- [x] Confirm a simulated UI checkbox change updates wrapped widget state in headless mode.
+- [x] Add repeatable desktop-run helper scripts for live UI action validation.
 
 ## Constraints
 
 - [x] Use the local external `external/vsgImGui/src/imgui` checkout at `v1.91.6-docking`.
-- [x] Preserve the current triangle app behavior while adding test-facing interfaces.
+- [x] Preserve the current scene-loading and multi-object render behavior while adding UI.
 - [x] Keep platform assumptions minimal.
 - [x] Avoid runtime GLSL compilation because the local VSG build lacks GLSLang support.
 - [x] Use JSON5 for authored command and UI files.
@@ -56,11 +52,10 @@
 
 ## Done Definition
 
-- [x] The first query seam exists next to the command seam.
-- [x] The app supports at least one useful CLI query for tests.
-- [x] JSON5 is the documented authored format for scripts/config.
+- [x] The app has a wrapped menubar and panel path instead of direct raw ImGui calls everywhere.
+- [x] Wrapped widgets are uniquely labeled and queryable.
+- [x] Wrapped widgets accept explicit test input and return stable result/state objects.
+- [x] A `test_command` path exists for simulated UI interaction by label.
+- [ ] Headless and GUI modes both support simulated widget interaction through the same wrapper logic.
+- [x] The first panel can show FPS, object count, `display grid`, and background color input.
 - [x] The project still builds locally.
-- [x] Docs reflect the chosen CLI testing direction.
-- [x] Commands and queries both use tagged request/result data instead of inheritance-heavy runtime polymorphism.
-- [x] Query growth no longer requires a new C++ request/result type for each inspectable path.
-- [x] At least one command can mutate `AppState` and a later query in the same process can observe the change.

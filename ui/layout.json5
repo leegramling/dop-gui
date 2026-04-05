@@ -1,0 +1,20 @@
+{
+  menus: [
+    {
+      label: "File",
+      items: [
+        { label: "Exit", command: "app.exit" },
+      ],
+    },
+    {
+      label: "Scene",
+      items: [
+        { label: "cubes", command: "scene.load.cubes" },
+        { label: "Shapes", command: "scene.load.shapes" },
+      ],
+    },
+  ],
+  panels: [
+    { label: "Scene Info" },
+  ],
+}
