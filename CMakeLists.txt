@@ -159,7 +159,7 @@ if(BUILD_TESTING)
         COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_layout_cli.json5"
     )
     set_tests_properties(dop_gui_ui_layout_spec PROPERTIES
-        PASS_REGULAR_EXPRESSION "\"query\":\"ui.layout\".*panel-scene-info.*panel-properties;\"query\":\"ui.panel.panel-scene-info\".*panel-display-grid.*ui.grid.set_visible.*panel-scene-select.*scene.load;\"query\":\"ui.panel.panel-scene-info.widgets\".*view.background.set_hex;\"query\":\"ui.panel.panel-properties\".*panel-selected-object.*scene.select_object;\"query\":\"ui.panel.panel-properties.widgets\".*input-properties-rotation-z.*scene.selected.rotation.z"
+        PASS_REGULAR_EXPRESSION "\"query\":\"ui.layout\".*panel-scene-info.*panel-properties;\"query\":\"ui.panel.panel-scene-info\".*panel-display-grid.*ui.grid.set_visible.*panel-scene-select.*scene.load;\"query\":\"ui.panel.panel-scene-info.widgets\".*view.background.set_hex;\"query\":\"ui.panel.panel-properties\".*panel-selected-object.*scene.select_object;\"query\":\"ui.panel.panel-properties.widgets\".*input-properties-rotation-z.*scene.selected.rotation.z.*\"unit\":\"deg\".*\"precision\":2.*input-properties-scale-z.*\"precision\":6"
     )
 
     add_test(

@@ -137,6 +137,8 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
         makeField("bind", makeStringValue(widget.bind)),
         makeField("onClick", makeStringValue(widget.onClick)),
         makeField("onChange", makeStringValue(widget.onChange)),
+        makeField("unit", makeStringValue(widget.unit)),
+        makeField("precision", makeIntValue(widget.precision)),
         makeField("options", QueryValue{std::move(options)}),
     });
 }

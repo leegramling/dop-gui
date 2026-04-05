@@ -93,6 +93,8 @@ struct UiWidgetSpecState
     std::string bind;
     std::string onClick;
     std::string onChange;
+    std::string unit;
+    int precision = 3;
     std::vector<std::string> options;
 };
 

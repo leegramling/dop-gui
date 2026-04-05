@@ -291,7 +291,7 @@ void UiLayer::render(AppState& state)
                     Text(state.ui, (rowPrefix + "-value").c_str(), value);
                 };
 
-                auto emitEditablePropertyRow = [&](const std::string& key, const std::string& inputId, double& value)
+                auto emitEditablePropertyRow = [&](const std::string& key, const std::string& inputId, double& value, int precision)
                 {
                     const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
                     if (!state.ui.testMode)
@@ -306,11 +306,11 @@ void UiLayer::render(AppState& state)
                         inputId.c_str(),
                         "",
                         value,
-                        6);
+                        precision);
                 };
 
                 auto emitUnitEditablePropertyRow =
-                    [&](const std::string& key, const std::string& inputId, double& value, const char* unit)
+                    [&](const std::string& key, const std::string& inputId, double& value, int precision, const char* unit)
                 {
                     const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
                     if (!state.ui.testMode)
@@ -325,7 +325,7 @@ void UiLayer::render(AppState& state)
                         inputId.c_str(),
                         "",
                         value,
-                        2,
+                        precision,
                         unit);
                 };
 
@@ -371,39 +371,69 @@ void UiLayer::render(AppState& state)
                     {
                         if (widgetSpec.bind == "scene.selected.position.x")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.x, "m");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->position.x,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.position.y")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.y, "m");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->position.y,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.position.z")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->position.z, "m");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->position.z,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.rotation.x")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.x, "deg");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->rotation.x,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.rotation.y")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.y, "deg");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->rotation.y,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.rotation.z")
                         {
-                            emitUnitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->rotation.z, "deg");
+                            emitUnitEditablePropertyRow(
+                                widgetSpec.label,
+                                widgetSpec.id,
+                                selectedObject->rotation.z,
+                                widgetSpec.precision,
+                                widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.x")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.x);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.x, widgetSpec.precision);
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.y")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.y);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.y, widgetSpec.precision);
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.z")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.z);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.z, widgetSpec.precision);
                         }
                     }
                 }

@@ -138,6 +138,14 @@ uint32_t parseUIntField(const std::string& block, const std::string& key)
     return static_cast<uint32_t>(std::stoul(match[1].str()));
 }
 
+std::optional<int> parseOptionalIntField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*([-+]?[0-9]+))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return std::stoi(match[1].str());
+}
+
 std::optional<vsg::dvec3> parseOptionalVec3Field(const std::string& block, const std::string& key)
 {
     const std::regex pattern(
@@ -283,6 +291,8 @@ UiPanelState parsePanelBlock(const std::string& block)
             widget.bind = parseOptionalStringField(widgetBlock, "bind").value_or("");
             widget.onClick = parseOptionalStringField(widgetBlock, "onClick").value_or("");
             widget.onChange = parseOptionalStringField(widgetBlock, "onChange").value_or("");
+            widget.unit = parseOptionalStringField(widgetBlock, "unit").value_or("");
+            widget.precision = parseOptionalIntField(widgetBlock, "precision").value_or(3);
             if (widgetBlock.find("options") != std::string::npos) widget.options = parseStringArray(extractArrayBlock(widgetBlock, "options"));
             panel.widgets.push_back(std::move(widget));
         }
