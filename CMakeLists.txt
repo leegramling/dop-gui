@@ -6,6 +6,8 @@ project(dop_gui
     LANGUAGES CXX
 )
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -43,6 +45,13 @@ endforeach()
 add_custom_target(dop-gui-shaders DEPENDS ${DOP_GUI_SHADER_OUTPUTS})
 
 add_executable(dop-gui
+    src/App.cpp
+    src/AppState.cpp
+    src/Command.cpp
+    src/InputManager.cpp
+    src/Query.cpp
+    src/ScriptRunner.cpp
+    src/VsgVisualizer.cpp
     src/main.cpp
 )
 
@@ -55,4 +64,33 @@ target_link_libraries(dop-gui
 )
 
 target_compile_features(dop-gui PRIVATE cxx_std_20)
-target_compile_definitions(dop-gui PRIVATE DOP_GUI_SHADER_DIR="${DOP_GUI_SHADER_DIR}")
+target_compile_definitions(dop-gui PRIVATE
+    DOP_GUI_SHADER_DIR="${DOP_GUI_SHADER_DIR}"
+    DOP_GUI_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+if(BUILD_TESTING)
+    add_test(
+        NAME dop_gui_query_window_size
+        COMMAND dop-gui --query view.window.size
+    )
+    set_tests_properties(dop_gui_query_window_size PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"query\":\"view.window.size\".*\"width\":1280.*\"height\":720"
+    )
+
+    add_test(
+        NAME dop_gui_script_smoke
+        COMMAND dop-gui --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke_cli.json5"
+    )
+    set_tests_properties(dop_gui_script_smoke PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*bootstrap_cube.*bootstrap_rectangle.*bootstrap_strip.*\"query\":\"runtime.capabilities\""
+    )
+
+    add_test(
+        NAME dop_gui_script_mutate
+        COMMAND dop-gui --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/mutate_cli.json5"
+    )
+    set_tests_properties(dop_gui_script_mutate PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"position\":\\[0.5,0,0.5\\].*\"eye\":\\[0.5,-4.5,2.5\\]"
+    )
+endif()

@@ -1,0 +1,37 @@
+{
+  cameraPose: {
+    eye: [0.0, -4.5, 2.5],
+    center: [0.0, 0.0, 0.0],
+    up: [0.0, 0.0, 1.0],
+  },
+  objects: [
+    {
+      id: "bootstrap_triangle",
+      kind: "triangle",
+      vertexCount: 3,
+      position: [0.0, 0.0, 0.0],
+      scale: [1.0, 1.0, 1.0],
+    },
+    {
+      id: "bootstrap_cube",
+      kind: "cube",
+      vertexCount: 36,
+      position: [-1.75, 0.0, 0.25],
+      scale: [0.6, 0.6, 0.6],
+    },
+    {
+      id: "bootstrap_rectangle",
+      kind: "rectangle",
+      vertexCount: 6,
+      position: [1.75, 0.0, -0.15],
+      scale: [0.9, 0.5, 1.0],
+    },
+    {
+      id: "bootstrap_strip",
+      kind: "tristrip",
+      vertexCount: 8,
+      position: [0.0, 1.4, -0.35],
+      scale: [0.7, 0.7, 0.7],
+    },
+  ],
+}

@@ -1,0 +1,6 @@
+{
+  commands: [
+    "state.reset.bootstrap"
+  ],
+  queries: []
+}

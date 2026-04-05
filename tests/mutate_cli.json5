@@ -1,0 +1,10 @@
+{
+  commands: [
+    "data.scene.object.bootstrap_triangle.translate=0.5,0.0,0.5",
+    "view.camera.set_pose=0.5,-4.5,2.5,0.5,0.0,0.5,0.0,0.0,1.0"
+  ],
+  queries: [
+    "data.scene.object.bootstrap_triangle",
+    "view.camera.pose"
+  ]
+}
