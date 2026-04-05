@@ -9,7 +9,7 @@
     "ui.widget.table-scene-objects-row-bootstrap_cube-select",
     "ui.widget.panel-selected-object",
     "data.scene.selection",
-    "ui.widget.panel-properties-table",
+    "ui.widget.panel-properties-selected-object-label",
     "ui.widget.input-properties-position-x",
     "ui.widget.input-properties-rotation-z",
     "ui.widget.input-properties-scale-z",

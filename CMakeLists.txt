@@ -174,6 +174,7 @@ if(BUILD_TESTING)
         PASS_REGULAR_EXPRESSION
         "\"query\":\"data.scene.selection\".*bootstrap_cube;\
 \"query\":\"ui.widget.panel-selected-object\".*combo.*bootstrap_cube.*\"layout\":\\{\"enabled\":true.*\"width\":236.*\"height\":24\\};\
+\"query\":\"ui.widget.panel-properties-selected-object-label\".*text.*Selected Object.*\"layout\":\\{\"enabled\":true.*\"width\":116.*\"height\":24\\};\
 \"query\":\"ui.widget.input-properties-position-x\".*input_double.*1.25 m;\
 \"query\":\"ui.widget.input-properties-rotation-z\".*45.00 deg;\
 \"query\":\"ui.widget.input-properties-scale-z\".*input_double.*0.900000;\

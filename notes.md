@@ -25,6 +25,7 @@
 - [x] Introduce `WindowManager` as the current boundary for primary-window registration and ImGui platform callback observation.
 - [x] Use the local `../vsgLayt/yoga` source as the first Yoga implementation reference and dependency source instead of cloning a new Yoga repo.
 - [x] Add the first repo-local `YogaLayout` adapter and use it for the `Properties` panel header row.
+- [x] Extend the builder-based Yoga path to the full `Properties` panel so the property rows no longer depend on table placement.
 
 ## Architecture Notes
 

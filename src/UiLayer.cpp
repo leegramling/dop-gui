@@ -63,7 +63,7 @@ void queueUiCommand(UiState& uiState, const std::string& commandName, const std:
     uiState.requestedCommands.push_back(value.empty() ? commandName : (commandName + "=" + value));
 }
 
-YogaLayout::Spec buildPropertiesHeaderLayout()
+YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
 {
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
@@ -74,13 +74,16 @@ YogaLayout::Spec buildPropertiesHeaderLayout()
     root.direction = Axis::Column;
     root.gap = 8.0f;
     root.width = Length::percent(100.0f);
-    root.height = Length::px(64.0f);
+    root.height = Length::autoV();
 
     Style row;
     row.direction = Axis::Row;
     row.gap = 8.0f;
     row.width = Length::percent(100.0f);
-    row.height = Length::px(28.0f);
+    row.height = Length::px(24.0f);
+
+    Style valueOnlyRow = row;
+    valueOnlyRow.height = Length::px(20.0f);
 
     Style label;
     label.width = Length::px(116.0f);
@@ -90,14 +93,31 @@ YogaLayout::Spec buildPropertiesHeaderLayout()
     input.width = Length::flex(1.0f);
     input.height = Length::px(24.0f);
 
-    return Builder{}
-        .root("properties-root", root)
-            .begin("properties-selection-row", row)
-                .item("panel-properties-selected-object-label", label)
-                .item("panel-selected-object", input)
-            .end()
-            .item("panel-properties-selected-object", row)
-        .build();
+    Style fullWidth;
+    fullWidth.width = Length::percent(100.0f);
+    fullWidth.height = Length::px(20.0f);
+
+    Builder builder;
+    builder.root("properties-root", root)
+        .begin("properties-selection-row", row)
+            .item("panel-properties-selected-object-label", label)
+            .item("panel-selected-object", input)
+        .end()
+        .item("panel-properties-selected-object", fullWidth);
+
+    for (const auto& widgetSpec : panelState.widgets)
+    {
+        if (!(widgetSpec.type == "input_double")) continue;
+
+        const auto rowId = "row-" + widgetSpec.id;
+        const auto labelId = widgetSpec.id + "-label";
+        builder.begin(rowId, row)
+            .item(labelId, label)
+            .item(widgetSpec.id, input)
+        .end();
+    }
+
+    return builder.build();
 }
 }
 
@@ -343,23 +363,23 @@ void UiLayer::render(AppState& state)
         else if (panelId == "panel-properties")
         {
             auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
-            static const auto propertiesHeaderSpec = buildPropertiesHeaderLayout();
-            YogaLayout propertiesHeaderLayout;
-            propertiesHeaderLayout.setLayout(propertiesHeaderSpec);
-            ImVec2 headerOrigin{0.0f, 0.0f};
-            ImVec2 headerAvail{
+            const auto propertiesSpec = buildPropertiesPanelLayout(panelState);
+            YogaLayout propertiesLayout;
+            propertiesLayout.setLayout(propertiesSpec);
+            ImVec2 propertiesOrigin{0.0f, 0.0f};
+            ImVec2 propertiesAvail{
                 panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) : 320.0f,
-                64.0f};
+                panelState.layout.height > 0.0 ? static_cast<float>(panelState.layout.height) : 520.0f};
             if (!state.ui.testMode)
             {
-                headerOrigin = ImGui::GetCursorPos();
-                headerAvail = ImGui::GetContentRegionAvail();
+                propertiesOrigin = ImGui::GetCursorPos();
+                propertiesAvail = ImGui::GetContentRegionAvail();
             }
-            propertiesHeaderLayout.resize(headerOrigin.x, headerOrigin.y, headerAvail.x, 64.0f);
+            propertiesLayout.resize(propertiesOrigin.x, propertiesOrigin.y, propertiesAvail.x, propertiesAvail.y);
 
-            if (propertiesHeaderLayout.has("panel-properties-selected-object-label"))
+            if (propertiesLayout.has("panel-properties-selected-object-label"))
             {
-                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-properties-selected-object-label"));
+                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-properties-selected-object-label"));
             }
             Text(state.ui, "panel-properties-selected-object-label", "Selected Object");
 
@@ -367,9 +387,9 @@ void UiLayer::render(AppState& state)
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
 
-            if (propertiesHeaderLayout.has("panel-selected-object"))
+            if (propertiesLayout.has("panel-selected-object"))
             {
-                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-selected-object"));
+                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-selected-object"));
             }
             const auto selectedValue = ComboBox(
                 state.ui,
@@ -382,197 +402,119 @@ void UiLayer::render(AppState& state)
                 queueUiCommand(state.ui, "scene.select_object", selectedValue);
             }
 
-            if (propertiesHeaderLayout.has("panel-properties-selected-object"))
+            if (propertiesLayout.has("panel-properties-selected-object"))
             {
-                setNextWidgetLayout(state.ui, propertiesHeaderLayout.rect("panel-properties-selected-object"));
+                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-properties-selected-object"));
             }
             Text(
                 state.ui,
                 "panel-properties-selected-object",
                 state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
 
-            if (propertiesHeaderLayout.has("properties-root"))
+            auto emitPropertyRow = [&](const std::string& key, const std::string& value)
             {
-                const auto& rootRect = propertiesHeaderLayout.rect("properties-root");
-                if (!state.ui.testMode) ImGui::SetCursorPosY(static_cast<float>(rootRect.y + rootRect.height + 8.0));
+                const auto labelId = "row-" + sanitizeLabel(key) + "-label";
+                const auto valueId = "row-" + sanitizeLabel(key) + "-value";
+                Text(state.ui, labelId.c_str(), key);
+                Text(state.ui, valueId.c_str(), value);
+            };
+
+            auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision)
+            {
+                const auto labelSlot = widgetSpec.id + "-label";
+                if (propertiesLayout.has(labelSlot))
+                {
+                    setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
+                }
+                Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+
+                if (propertiesLayout.has(widgetSpec.id))
+                {
+                    setNextWidgetLayout(state.ui, propertiesLayout.rect(widgetSpec.id));
+                }
+                value = InputDouble(
+                    state.ui,
+                    widgetSpec.id.c_str(),
+                    "",
+                    value,
+                    precision);
+            };
+
+            auto emitUnitEditablePropertyRow =
+                [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
+            {
+                const auto labelSlot = widgetSpec.id + "-label";
+                if (propertiesLayout.has(labelSlot))
+                {
+                    setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
+                }
+                Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+
+                if (propertiesLayout.has(widgetSpec.id))
+                {
+                    setNextWidgetLayout(state.ui, propertiesLayout.rect(widgetSpec.id));
+                }
+                value = InputDouble(
+                    state.ui,
+                    widgetSpec.id.c_str(),
+                    "",
+                    value,
+                    precision,
+                    unit);
+            };
+
+            if (!selectedObject)
+            {
+                emitPropertyRow("Selected Object", "none");
+                continue;
             }
 
-            std::size_t widgetRowCount = 0;
             for (const auto& widgetSpec : panelState.widgets)
             {
-                if (!(widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")) ++widgetRowCount;
+                if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
+                {
+                    continue;
+                }
+                else if (widgetSpec.type == "input_double")
+                {
+                    if (widgetSpec.bind == "scene.selected.position.x")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->position.x, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.position.y")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->position.y, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.position.z")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->position.z, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.rotation.x")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->rotation.x, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.rotation.y")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->rotation.y, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.rotation.z")
+                    {
+                        emitUnitEditablePropertyRow(widgetSpec, selectedObject->rotation.z, widgetSpec.precision, widgetSpec.unit.c_str());
+                    }
+                    else if (widgetSpec.bind == "scene.selected.scale.x")
+                    {
+                        emitEditablePropertyRow(widgetSpec, selectedObject->scale.x, widgetSpec.precision);
+                    }
+                    else if (widgetSpec.bind == "scene.selected.scale.y")
+                    {
+                        emitEditablePropertyRow(widgetSpec, selectedObject->scale.y, widgetSpec.precision);
+                    }
+                    else if (widgetSpec.bind == "scene.selected.scale.z")
+                    {
+                        emitEditablePropertyRow(widgetSpec, selectedObject->scale.z, widgetSpec.precision);
+                    }
+                }
             }
-            if (widgetRowCount == 0) widgetRowCount = 1;
-            Table(state.ui, "panel-properties-table", 2, widgetRowCount, [&]()
-            {
-                if (!state.ui.testMode)
-                {
-                    ImGui::TableSetupColumn("Property");
-                    ImGui::TableSetupColumn("Value");
-                    ImGui::TableHeadersRow();
-                }
-
-                auto emitPropertyRow = [&](const std::string& key, const std::string& value)
-                {
-                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
-                    if (!state.ui.testMode)
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                    }
-                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
-                    Text(state.ui, (rowPrefix + "-value").c_str(), value);
-                };
-
-                auto emitEditablePropertyRow = [&](const std::string& key,
-                                                  const UiWidgetSpecState& widgetSpec,
-                                                  double& value,
-                                                  int precision)
-                {
-                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
-                    if (!state.ui.testMode)
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                    }
-                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
-                    value = InputDouble(
-                        state.ui,
-                        widgetSpec.id.c_str(),
-                        "",
-                        value,
-                        precision);
-                };
-
-                auto emitUnitEditablePropertyRow =
-                    [&](const std::string& key, const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
-                {
-                    const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
-                    if (!state.ui.testMode)
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                    }
-                    Text(state.ui, (rowPrefix + "-name").c_str(), key);
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
-                    value = InputDouble(
-                        state.ui,
-                        widgetSpec.id.c_str(),
-                        "",
-                        value,
-                        precision,
-                        unit);
-                };
-
-                auto emitComboPropertyRow =
-                    [&](const std::string& key, const UiWidgetSpecState& widgetSpec, const std::vector<std::string>& options)
-                {
-                    if (!state.ui.testMode)
-                    {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                    }
-                    Text(state.ui, ("table-properties-row-" + sanitizeLabel(key) + "-name").c_str(), key);
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
-                    const auto selectedValue = ComboBox(
-                        state.ui,
-                        widgetSpec.id.c_str(),
-                        "",
-                        state.scene.selectedObjectId,
-                        options);
-                    if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId && !widgetSpec.onChange.empty())
-                    {
-                        queueUiCommand(state.ui, widgetSpec.onChange, selectedValue);
-                    }
-                };
-
-                if (!selectedObject)
-                {
-                    emitPropertyRow("Selected Object", "none");
-                    return;
-                }
-                for (const auto& widgetSpec : panelState.widgets)
-                {
-                    if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
-                    {
-                        continue;
-                    }
-                    else if (widgetSpec.type == "input_double")
-                    {
-                        if (widgetSpec.bind == "scene.selected.position.x")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->position.x,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.position.y")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->position.y,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.position.z")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->position.z,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.rotation.x")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->rotation.x,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.rotation.y")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->rotation.y,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.rotation.z")
-                        {
-                            emitUnitEditablePropertyRow(
-                                widgetSpec.label,
-                                widgetSpec,
-                                selectedObject->rotation.z,
-                                widgetSpec.precision,
-                                widgetSpec.unit.c_str());
-                        }
-                        else if (widgetSpec.bind == "scene.selected.scale.x")
-                        {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.x, widgetSpec.precision);
-                        }
-                        else if (widgetSpec.bind == "scene.selected.scale.y")
-                        {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.y, widgetSpec.precision);
-                        }
-                        else if (widgetSpec.bind == "scene.selected.scale.z")
-                        {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.z, widgetSpec.precision);
-                        }
-                    }
-                }
-            });
         }
     }
 
