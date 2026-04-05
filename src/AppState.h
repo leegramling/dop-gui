@@ -40,5 +40,6 @@ struct AppState
 };
 
 AppState createBootstrapAppState();
+AppState loadAppStateFromSceneFile(const std::string& filename);
 SceneObjectState* findSceneObject(SceneState& scene, const std::string& id);
 const SceneObjectState* findSceneObject(const SceneState& scene, const std::string& id);

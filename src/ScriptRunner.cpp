@@ -3,6 +3,7 @@
 #include "App.h"
 #include "Command.h"
 #include "Query.h"
+#include "VsgVisualizer.h"
 
 #include <fstream>
 #include <iostream>
@@ -54,6 +55,10 @@ int ScriptRunner::execute(App& app, const ScriptRequest& request) const
         auto command = parseCommandRequest(commandName);
         if (!command) continue;
         auto result = executeCommand(app, *command);
+        if (std::holds_alternative<CommandSuccess>(result) && app.visualizer().isInitialized())
+        {
+            app.visualizer().syncFromState(app.state());
+        }
         json << serializeCommandResult(result);
     }
 

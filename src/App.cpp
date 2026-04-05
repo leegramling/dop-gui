@@ -8,9 +8,12 @@
 
 #include <vsg/all.h>
 
+#include <chrono>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace
 {
@@ -43,12 +46,49 @@ void printJsonError(const std::string& type, const std::string& message)
     std::cerr << "{\"ok\":false,\"error\":{\"type\":\"" << escapeJson(type)
               << "\",\"message\":\"" << escapeJson(message) << "\"}}\n";
 }
+
+bool consumesNextArgument(std::string_view argument)
+{
+    return argument == "-f" ||
+           argument == "--command" ||
+           argument == "--query" ||
+           argument == "--script" ||
+           argument == "--startup-delay-ms";
+}
+
+std::string findScenePathArgument(int argc, char** argv)
+{
+    bool skipNext = false;
+    for (int i = 1; i < argc; ++i)
+    {
+        const std::string argument = argv[i];
+
+        if (skipNext)
+        {
+            skipNext = false;
+            continue;
+        }
+
+        if (consumesNextArgument(argument))
+        {
+            skipNext = true;
+            continue;
+        }
+
+        if (!argument.empty() && argument[0] != '-')
+        {
+            return argument;
+        }
+    }
+
+    return {};
+}
 }
 
 App::App(int argc, char** argv) :
     _argc(argc),
     _argv(argv),
-    _state(createBootstrapAppState()),
+    _state(),
     _inputManager(std::make_unique<InputManager>()),
     _visualizer(std::make_unique<VsgVisualizer>()),
     _scriptRunner(std::make_unique<ScriptRunner>())
@@ -62,15 +102,22 @@ int App::run()
     std::string commandName;
     std::string queryName;
     std::string scriptFilename;
+    bool stayOpen = false;
+    int startupDelayMs = 0;
 
     try
     {
+        const auto scenePath = findScenePathArgument(_argc, _argv);
+        _state = scenePath.empty() ? createBootstrapAppState() : loadAppStateFromSceneFile(scenePath);
+
         vsg::CommandLine arguments(&_argc, _argv);
 
         _numFrames = arguments.value(-1, "-f");
+        startupDelayMs = arguments.value(0, "--startup-delay-ms");
         commandName = arguments.value(std::string{}, "--command");
         queryName = arguments.value(std::string{}, "--query");
         scriptFilename = arguments.value(std::string{}, "--script");
+        stayOpen = arguments.read("--stay-open");
 
         _inputManager->configure(arguments);
         _startupCommand = parseCommandRequest(commandName);
@@ -81,14 +128,18 @@ int App::run()
             return arguments.writeErrorMessages(std::cerr);
         }
 
+        std::optional<ScriptRequest> startupScript;
         if (!scriptFilename.empty())
         {
-            auto request = _scriptRunner->parse(scriptFilename);
-            return _scriptRunner->execute(*this, request);
+            startupScript = _scriptRunner->parse(scriptFilename);
+            if (!stayOpen) return _scriptRunner->execute(*this, *startupScript);
         }
 
-        if (_startupCommand && !requiresInitializedApp(*_startupCommand)) return executeCommand(*_startupCommand);
-        if (_startupQuery) return executeQuery(*_startupQuery);
+        if (!stayOpen)
+        {
+            if (_startupCommand && !requiresInitializedApp(*_startupCommand)) return executeCommand(*_startupCommand);
+            if (_startupQuery) return executeQuery(*_startupQuery);
+        }
 
         auto viewer = vsg::Viewer::create();
         auto window = _inputManager->createWindow();
@@ -104,13 +155,50 @@ int App::run()
         _inputManager->attachDefaultHandlers(viewer, _visualizer->camera());
         _visualizer->connect(viewer);
 
-        if (_startupCommand) return executeCommand(*_startupCommand);
-        if (_startupQuery) return executeQuery(*_startupQuery);
+        auto executeStartupActions = [&]() -> int
+        {
+            if (startupScript)
+            {
+                auto exitCode = _scriptRunner->execute(*this, *startupScript);
+                startupScript.reset();
+                if (!stayOpen) return exitCode;
+            }
+            if (_startupCommand)
+            {
+                auto exitCode = executeCommand(*_startupCommand);
+                _startupCommand.reset();
+                if (!stayOpen) return exitCode;
+            }
+            if (_startupQuery)
+            {
+                auto exitCode = executeQuery(*_startupQuery);
+                _startupQuery.reset();
+                if (!stayOpen) return exitCode;
+            }
+            return 0;
+        };
+
+        const bool hasStartupActions = startupScript.has_value() || _startupCommand.has_value() || _startupQuery.has_value();
+        const bool hasDelayedStartupActions = stayOpen && startupDelayMs > 0 &&
+            hasStartupActions;
+        auto startupDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(startupDelayMs);
+
+        if (hasStartupActions && !hasDelayedStartupActions)
+        {
+            auto exitCode = executeStartupActions();
+            if (!stayOpen) return exitCode;
+        }
 
         viewer->compile();
 
         while (viewer->advanceToNextFrame() && (_numFrames < 0 || (_numFrames--) > 0))
         {
+            if (hasDelayedStartupActions && (startupScript || _startupCommand || _startupQuery) &&
+                std::chrono::steady_clock::now() >= startupDeadline)
+            {
+                auto exitCode = executeStartupActions();
+                if (!stayOpen) return exitCode;
+            }
             viewer->handleEvents();
             viewer->update();
             viewer->recordAndSubmit();
@@ -178,6 +266,10 @@ const AppState& App::state() const
 int App::executeCommand(const CommandRequest& command)
 {
     auto result = ::executeCommand(*this, command);
+    if (std::holds_alternative<CommandSuccess>(result) && _visualizer->isInitialized())
+    {
+        _visualizer->syncFromState(_state);
+    }
     std::cout << serializeCommandResult(result) << '\n';
     if (const auto* error = std::get_if<CommandError>(&result)) return error->exitCode;
     if (const auto* success = std::get_if<CommandSuccess>(&result))

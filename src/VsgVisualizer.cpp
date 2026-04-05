@@ -1,7 +1,20 @@
 #include "VsgVisualizer.h"
 
+#include <array>
 #include <stdexcept>
 #include <string>
+
+namespace
+{
+vsg::vec4 colorForKind(const std::string& kind)
+{
+    if (kind == "triangle") return {0.95f, 0.30f, 0.25f, 1.0f};
+    if (kind == "rectangle") return {0.20f, 0.70f, 0.95f, 1.0f};
+    if (kind == "tristrip") return {0.20f, 0.85f, 0.45f, 1.0f};
+    if (kind == "cube") return {0.95f, 0.80f, 0.25f, 1.0f};
+    return {0.85f, 0.85f, 0.85f, 1.0f};
+}
+}
 
 vsg::ref_ptr<vsg::BindGraphicsPipeline> VsgVisualizer::createBindGraphicsPipeline() const
 {
@@ -58,22 +71,70 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> VsgVisualizer::createBindGraphicsPipelin
     return vsg::BindGraphicsPipeline::create(graphicsPipeline);
 }
 
-vsg::ref_ptr<vsg::VertexIndexDraw> VsgVisualizer::createDrawCommands() const
+vsg::ref_ptr<vsg::vec4Array> VsgVisualizer::createColors(const SceneObjectState& object, std::size_t count) const
 {
-    auto vertices = vsg::vec3Array::create({
-        {-0.8f, 0.0f, 0.0f},
-        {0.8f, 0.0f, 0.0f},
-        {0.0f, 0.8f, 0.0f},
-    });
+    auto colors = vsg::vec4Array::create(count);
+    const auto color = colorForKind(object.kind);
+    for (std::size_t i = 0; i < count; ++i) (*colors)[i] = color;
+    return colors;
+}
 
-    auto colors = vsg::vec4Array::create({
-        {1.0f, 0.2f, 0.2f, 1.0f},
-        {0.2f, 1.0f, 0.2f, 1.0f},
-        {0.2f, 0.4f, 1.0f, 1.0f},
-    });
+vsg::ref_ptr<vsg::VertexIndexDraw> VsgVisualizer::createDrawCommands(const SceneObjectState& object) const
+{
+    vsg::ref_ptr<vsg::vec3Array> vertices;
+    vsg::ref_ptr<vsg::uintArray> indices;
 
-    auto indices = vsg::uintArray::create({0, 1, 2});
+    if (object.kind == "triangle")
+    {
+        vertices = vsg::vec3Array::create({
+            {-0.8f, 0.0f, 0.0f},
+            {0.8f, 0.0f, 0.0f},
+            {0.0f, 0.8f, 0.0f},
+        });
+        indices = vsg::uintArray::create({0, 1, 2});
+    }
+    else if (object.kind == "rectangle")
+    {
+        vertices = vsg::vec3Array::create({
+            {-0.9f, -0.45f, 0.0f},
+            {0.9f, -0.45f, 0.0f},
+            {0.9f, 0.45f, 0.0f},
+            {-0.9f, 0.45f, 0.0f},
+        });
+        indices = vsg::uintArray::create({0, 1, 2, 0, 2, 3});
+    }
+    else if (object.kind == "tristrip")
+    {
+        vertices = vsg::vec3Array::create({
+            {-1.0f, -0.45f, 0.0f},
+            {-0.45f, 0.45f, 0.0f},
+            {0.0f, -0.35f, 0.0f},
+            {0.45f, 0.45f, 0.0f},
+            {1.0f, -0.25f, 0.0f},
+        });
+        indices = vsg::uintArray::create({0, 1, 2, 1, 3, 2, 2, 3, 4});
+    }
+    else if (object.kind == "cube")
+    {
+        vertices = vsg::vec3Array::create({
+            {-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f},
+            {-0.5f, -0.5f, 0.5f},  {0.5f, -0.5f, 0.5f},  {0.5f, 0.5f, 0.5f},  {-0.5f, 0.5f, 0.5f},
+        });
+        indices = vsg::uintArray::create({
+            0, 1, 2, 0, 2, 3,
+            4, 6, 5, 4, 7, 6,
+            0, 4, 5, 0, 5, 1,
+            1, 5, 6, 1, 6, 2,
+            2, 6, 7, 2, 7, 3,
+            3, 7, 4, 3, 4, 0,
+        });
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported scene object kind: " + object.kind);
+    }
 
+    auto colors = createColors(object, vertices->size());
     vsg::DataList vertexArrays{vertices, colors};
 
     auto drawCommands = vsg::VertexIndexDraw::create();
@@ -84,39 +145,76 @@ vsg::ref_ptr<vsg::VertexIndexDraw> VsgVisualizer::createDrawCommands() const
     return drawCommands;
 }
 
-vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene() const
+vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
 {
     auto scene = vsg::Group::create();
-    auto stateGroup = vsg::StateGroup::create();
-    stateGroup->add(createBindGraphicsPipeline());
-    stateGroup->addChild(createDrawCommands());
-    scene->addChild(stateGroup);
+    auto bindPipeline = createBindGraphicsPipeline();
+    _objectTransforms.clear();
+    _objectTransforms.reserve(state.scene.objects.size());
+
+    for (const auto& object : state.scene.objects)
+    {
+        auto objectTransform = vsg::MatrixTransform::create();
+        auto stateGroup = vsg::StateGroup::create();
+        stateGroup->add(bindPipeline);
+        stateGroup->addChild(createDrawCommands(object));
+        objectTransform->addChild(stateGroup);
+        scene->addChild(objectTransform);
+        _objectTransforms.push_back(objectTransform);
+    }
+
     return scene;
 }
 
 void VsgVisualizer::initialize(const AppState& state, vsg::ref_ptr<vsg::Window> window)
 {
-    _scene = createScene();
+    _scene = createScene(state);
 
     const auto& pose = state.view.cameraPose;
-    auto lookAt = vsg::LookAt::create(pose.eye, pose.center, pose.up);
+    _lookAt = vsg::LookAt::create(pose.eye, pose.center, pose.up);
     auto perspective = vsg::Perspective::create(
         30.0,
         static_cast<double>(window->extent2D().width) / static_cast<double>(window->extent2D().height),
         0.01,
-        10.0);
-    _camera = vsg::Camera::create( perspective, lookAt, vsg::ViewportState::create(window->extent2D()));
+        50.0);
+    _camera = vsg::Camera::create(perspective, _lookAt, vsg::ViewportState::create(window->extent2D()));
 
     _commandGraph = vsg::CommandGraph::create(window);
     _view = vsg::View::create(_camera);
     _renderGraph = vsg::RenderGraph::create(window, _view);
     _commandGraph->addChild(_renderGraph);
     _view->addChild(_scene);
+    syncFromState(state);
 }
 
 void VsgVisualizer::connect(vsg::ref_ptr<vsg::Viewer> viewer)
 {
     viewer->assignRecordAndSubmitTaskAndPresentation({_commandGraph});
+}
+
+void VsgVisualizer::syncFromState(const AppState& state)
+{
+    if (_lookAt)
+    {
+        const auto& pose = state.view.cameraPose;
+        _lookAt->eye = pose.eye;
+        _lookAt->center = pose.center;
+        _lookAt->up = pose.up;
+    }
+
+    const auto count = std::min(_objectTransforms.size(), state.scene.objects.size());
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        const auto& object = state.scene.objects[i];
+        _objectTransforms[i]->matrix =
+            vsg::translate(object.position) *
+            vsg::scale(object.scale.x, object.scale.y, object.scale.z);
+    }
+}
+
+bool VsgVisualizer::isInitialized() const
+{
+    return _camera.valid() && _commandGraph.valid() && _scene.valid();
 }
 
 vsg::ref_ptr<vsg::Camera> VsgVisualizer::camera() const

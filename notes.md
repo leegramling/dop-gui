@@ -214,6 +214,11 @@ Current implementation status:
 - [x] Add `data.scene.object.<id>.translate=<dx>,<dy>,<dz>`.
 - [x] Add `view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>`.
 - [x] Add `tests/mutate_cli.json5` to verify mutation commands followed by queries in one process.
+- [x] Make `VsgVisualizer` synchronize camera and model transform state from `AppState` after successful command execution when the renderer is initialized.
+- [x] Add `ctest` smoke coverage for `view.window.size`, `tests/smoke_cli.json5`, and `tests/mutate_cli.json5`.
+- [x] Add `test_run.sh` as a repo-local helper for `--stay-open` desktop runs with startup scripts or startup commands.
+- [x] Add `scenes/bootstrap_scene.json5` as authored bootstrap scene data with triangle, cube, rectangle, and tristrip records.
+- [x] Load bootstrap `AppState` from that JSON5 scene file instead of inline scene literals.
 - [x] Add `--query window.size`.
 - [x] Add `--query scene.objects`.
 - [x] Add `--query scene.object.<id>`.
@@ -238,6 +243,6 @@ Current implementation status:
 
 Remaining DOP gap:
 
-- [ ] Make live rendering and future UI observe state mutations while the app is running.
+- [ ] Validate the live sync path in a desktop session with XCB access.
 - [ ] Introduce richer model data beyond bootstrap scene metadata and camera pose.
 - [ ] Replace the constrained string-array script format with a more expressive JSON5 command/query object format when richer arguments are needed.

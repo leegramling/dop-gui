@@ -9,6 +9,8 @@
 
 This repository is currently being bootstrapped from documentation first so we can make deliberate architectural choices before code lands.
 
+The bootstrap scene now comes from [bootstrap_scene.json5](/home/lgramling/dev/dop-gui/scenes/bootstrap_scene.json5), which seeds the app with multiple authored shape records for testing and inspection.
+
 ## Development Style
 
 We want a codebase that favors:
@@ -167,24 +169,39 @@ The next milestone is to create a minimal VSG application skeleton that:
 ```bash
 cmake -S . -B build/dop-gui -DCMAKE_BUILD_TYPE=Release
 cmake --build build/dop-gui -j 8
+ctest --test-dir build/dop-gui --output-on-failure
 ```
 
 Binary:
 
 - `build/dop-gui/dop-gui`
+- `./test_run.sh` helper for startup script or startup command desktop runs
 
 Quick probe:
 
 ```bash
 ./build/dop-gui/dop-gui -f 1
+./build/dop-gui/dop-gui scenes/bootstrap_scene.json5
+./build/dop-gui/dop-gui scenes/cubes.json5
+./test_run.sh
+./test_run.sh script tests/desktop_bootstrap.json5
+./test_run.sh script tests/smoke_cli.json5
+./test_run.sh script tests/mutate_cli.json5 --startup-delay-ms 5000
+./test_run.sh command state.reset.bootstrap
+./test_run.sh command data.scene.object.bootstrap_triangle.translate=1.0,0.0,2.0
 ```
 
 Current result in this session:
 
 - build succeeded
+- `ctest` smoke tests succeeded
 - shaders are compiled during the CMake build with `glslangValidator`
 - runtime probe failed in the sandboxed environment because XCB window creation is unavailable
 - reported error: `Failed to create Window, unable to establish xcb connection`
+- `--stay-open` desktop launch paths and `test_run.sh` are wired, but they need a real desktop/XCB session to run successfully
+- `--startup-delay-ms <ms>` can delay startup commands or scripts so the default scene is visible before automation applies
+- the first positional argument can be a scene file, for example `./build/dop-gui/dop-gui scenes/bootstrap_scene.json5`
+- example alternate scene: `./build/dop-gui/dop-gui scenes/cubes.json5`
 
 Why shaders are built ahead of time:
 
@@ -236,4 +253,7 @@ Current behavior:
 - the current script loader supports string arrays for `commands` and `queries`
 - non-window queries can run without XCB access
 - mutation commands can update `AppState` in headless mode and later queries in the same process can observe those changes
+- when the renderer is initialized, successful commands now trigger a `VsgVisualizer` sync from `AppState` so camera and model transforms follow state changes
 - unknown commands, queries, and missing script files return structured JSON error output in machine mode
+- `ctest` currently covers the headless smoke path for direct queries, baseline scripts, and mutation scripts
+- `data.scene.objects` now reflects authored scene data loaded from `scenes/bootstrap_scene.json5`, including multiple shape kinds and positions

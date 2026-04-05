@@ -1,0 +1,30 @@
+{
+  cameraPose: {
+    eye: [0.0, -7.0, 3.5],
+    center: [0.0, 0.0, 0.5],
+    up: [0.0, 0.0, 1.0],
+  },
+  objects: [
+    {
+      id: "cube_left",
+      kind: "cube",
+      vertexCount: 36,
+      position: [-2.0, 0.0, 0.4],
+      scale: [0.7, 0.7, 0.7],
+    },
+    {
+      id: "cube_center",
+      kind: "cube",
+      vertexCount: 36,
+      position: [0.0, 0.0, 0.6],
+      scale: [1.0, 1.0, 1.0],
+    },
+    {
+      id: "cube_right",
+      kind: "cube",
+      vertexCount: 36,
+      position: [2.0, 0.0, 0.4],
+      scale: [0.7, 0.7, 0.7],
+    },
+  ],
+}

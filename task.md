@@ -30,7 +30,10 @@
 - [x] Add object transform and property namespaces beyond the current bootstrap metadata.
 - [x] Introduce plain `AppState` and `SceneState` data so `data.*` queries are backed by stable model data instead of bootstrap visualizer-owned literals.
 - [x] Add the first mutation commands that update `AppState` in headless CLI/script mode.
-- [ ] Drive `VsgVisualizer` updates from mutated state during a live running app.
+- [x] Drive `VsgVisualizer` updates from mutated state during a live running app.
+- [x] Add `ctest` smoke coverage for the headless CLI query and script paths.
+- [x] Add a repo-local desktop runner script for `--stay-open` startup command/script testing.
+- [x] Load bootstrap scene data from JSON5 and include multiple shape records for scene inspection tests.
 - [ ] Add richer command argument and script-object formats beyond simple numeric path commands.
 
 ## Follow-Up Validation
@@ -39,6 +42,7 @@
 - [ ] Confirm the window opens and the generated scene renders outside the sandbox.
 - [x] Confirm CLI queries can run in a useful way for tests.
 - [x] Confirm JSON5-authored scripts can drive at least one command/query batch.
+- [x] Confirm `ctest` can execute headless smoke coverage in the build tree.
 
 ## Constraints
 
