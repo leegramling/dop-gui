@@ -83,6 +83,18 @@ struct UiMenuItemState
 };
 
 /**
+ * @brief Simple layout rectangle loaded from the authored UI spec.
+ */
+struct UiLayoutRectState
+{
+    double x = 0.0;
+    double y = 0.0;
+    double width = 0.0;
+    double height = 0.0;
+    bool enabled = false;
+};
+
+/**
  * @brief Authored widget specification loaded from the UI layout.
  */
 struct UiWidgetSpecState
@@ -96,7 +108,9 @@ struct UiWidgetSpecState
     std::string onChange;
     std::string unit;
     int precision = 3;
+    UiLayoutRectState layout;
     std::vector<std::string> options;
+    std::vector<std::string> columns;
 };
 
 /**
@@ -117,6 +131,7 @@ struct UiPanelState
     bool open = true;
     bool closable = true;
     std::vector<std::string> flags;
+    UiLayoutRectState layout;
     std::vector<UiWidgetSpecState> widgets;
 };
 

@@ -19,13 +19,21 @@ ImGuiWindowFlags decodeFlags(const std::vector<std::string>& flags)
 }
 }
 
-Panel::Panel(UiState& uiState, const char* id, const char* title, bool& isOpen, bool closable, const std::vector<std::string>& flags) :
+Panel::Panel(
+    UiState& uiState,
+    const char* id,
+    const char* title,
+    bool& isOpen,
+    bool closable,
+    const std::vector<std::string>& flags,
+    const UiLayoutRectState& layout) :
     _uiState(uiState),
     _id(id),
     _title(title),
     _isOpen(isOpen),
     _closable(closable),
-    _flags(decodeFlags(flags))
+    _flags(decodeFlags(flags)),
+    _layout(layout)
 {
 }
 
@@ -41,6 +49,15 @@ bool Panel::begin()
     {
         _opened = _isOpen;
         return _opened;
+    }
+
+    if (_layout.enabled)
+    {
+        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(_layout.x), static_cast<float>(_layout.y)), ImGuiCond_Once);
+        if (_layout.width > 0.0 && _layout.height > 0.0)
+        {
+            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_layout.width), static_cast<float>(_layout.height)), ImGuiCond_Once);
+        }
     }
 
     bool* openPtr = _closable ? &_isOpen : nullptr;

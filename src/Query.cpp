@@ -124,6 +124,20 @@ QueryValue makeWidgetValue(const WidgetState& widget)
 
 QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 {
+    auto layoutValue = makeObjectValue({
+        makeField("enabled", makeBoolValue(widget.layout.enabled)),
+        makeField("x", makeDoubleValue(widget.layout.x)),
+        makeField("y", makeDoubleValue(widget.layout.y)),
+        makeField("width", makeDoubleValue(widget.layout.width)),
+        makeField("height", makeDoubleValue(widget.layout.height)),
+    });
+
+    QueryArray columns;
+    for (const auto& column : widget.columns)
+    {
+        columns.elements.push_back(makeValuePtr(makeStringValue(column)));
+    }
+
     QueryArray options;
     for (const auto& option : widget.options)
     {
@@ -140,12 +154,22 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
         makeField("onChange", makeStringValue(widget.onChange)),
         makeField("unit", makeStringValue(widget.unit)),
         makeField("precision", makeIntValue(widget.precision)),
+        makeField("layout", layoutValue),
         makeField("options", QueryValue{std::move(options)}),
+        makeField("columns", QueryValue{std::move(columns)}),
     });
 }
 
 QueryValue makePanelSpecValue(const UiPanelState& panel)
 {
+    auto layoutValue = makeObjectValue({
+        makeField("enabled", makeBoolValue(panel.layout.enabled)),
+        makeField("x", makeDoubleValue(panel.layout.x)),
+        makeField("y", makeDoubleValue(panel.layout.y)),
+        makeField("width", makeDoubleValue(panel.layout.width)),
+        makeField("height", makeDoubleValue(panel.layout.height)),
+    });
+
     QueryArray flags;
     for (const auto& flag : panel.flags)
     {
@@ -164,6 +188,7 @@ QueryValue makePanelSpecValue(const UiPanelState& panel)
         makeField("open", makeBoolValue(panel.open)),
         makeField("closable", makeBoolValue(panel.closable)),
         makeField("flags", QueryValue{std::move(flags)}),
+        makeField("layout", layoutValue),
         makeField("widgets", QueryValue{std::move(widgets)}),
     });
 }

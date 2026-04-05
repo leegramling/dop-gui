@@ -129,7 +129,14 @@ void UiLayer::render(AppState& state)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
         bool panelOpen = panelState.open;
-        Panel panel(state.ui, panelId.c_str(), panelState.label.c_str(), panelOpen, panelState.closable, panelState.flags);
+        Panel panel(
+            state.ui,
+            panelId.c_str(),
+            panelState.label.c_str(),
+            panelOpen,
+            panelState.closable,
+            panelState.flags,
+            panelState.layout);
         if (!panel.begin()) continue;
 
         if (panelId == "panel-scene-info")
@@ -211,49 +218,59 @@ void UiLayer::render(AppState& state)
 
             Text(state.ui, "panel-theme-label", "Theme");
 
-            const bool openSceneSummary = Button(state.ui, "panel-scene-summary-open", "Scene Summary");
-            Popup(state.ui, "popup-scene-summary", "Scene Summary", openSceneSummary, [&]()
+            bool openSceneSummary = false;
+            for (const auto& widgetSpec : panelState.widgets)
             {
-                Text(state.ui, "popup-scene-summary-name", "Scene: " + state.scene.name);
-                Text(state.ui, "popup-scene-summary-object-count", objectCountText(state));
-            });
-
-            Text(state.ui, "panel-scene-table-label", "Scene Objects");
-            Table(state.ui, "panel-scene-table", 4, state.scene.objects.size(), [&]()
-            {
-                if (!state.ui.testMode)
+                if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
                 {
-                    ImGui::TableSetupColumn("Select");
-                    ImGui::TableSetupColumn("Id");
-                    ImGui::TableSetupColumn("Kind");
-                    ImGui::TableSetupColumn("Position");
-                    ImGui::TableHeadersRow();
+                    openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
                 }
-
-                for (const auto& object : state.scene.objects)
+                else if (widgetSpec.type == "popup" && widgetSpec.id == "popup-scene-summary")
                 {
-                    const auto rowPrefix = "table-scene-objects-row-" + object.id;
-
-                    if (!state.ui.testMode)
+                    Popup(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), openSceneSummary, [&]()
                     {
-                        ImGui::TableNextRow();
-                        ImGui::TableSetColumnIndex(0);
-                    }
-                    if (Button(state.ui, (rowPrefix + "-select").c_str(), "Select"))
-                    {
-                        queueUiCommand(state.ui, "scene.select_object", object.id);
-                    }
-
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
-                    Text(state.ui, (rowPrefix + "-id").c_str(), object.id);
-
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(2);
-                    Text(state.ui, (rowPrefix + "-kind").c_str(), object.kind);
-
-                    if (!state.ui.testMode) ImGui::TableSetColumnIndex(3);
-                    Text(state.ui, (rowPrefix + "-position").c_str(), vec3Text(object.position));
+                        Text(state.ui, "popup-scene-summary-name", "Scene: " + state.scene.name);
+                        Text(state.ui, "popup-scene-summary-object-count", objectCountText(state));
+                    });
                 }
-            });
+                else if (widgetSpec.type == "table" && widgetSpec.bind == "scene.objects")
+                {
+                    Text(state.ui, "panel-scene-table-label", widgetSpec.label);
+                    const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
+                    Table(state.ui, widgetSpec.id.c_str(), columnCount, state.scene.objects.size(), [&]()
+                    {
+                        if (!state.ui.testMode)
+                        {
+                            for (const auto& column : widgetSpec.columns) ImGui::TableSetupColumn(column.c_str());
+                            if (!widgetSpec.columns.empty()) ImGui::TableHeadersRow();
+                        }
+
+                        for (const auto& object : state.scene.objects)
+                        {
+                            const auto rowPrefix = "table-scene-objects-row-" + object.id;
+
+                            if (!state.ui.testMode)
+                            {
+                                ImGui::TableNextRow();
+                                ImGui::TableSetColumnIndex(0);
+                            }
+                            if (Button(state.ui, (rowPrefix + "-select").c_str(), "Select"))
+                            {
+                                queueUiCommand(state.ui, "scene.select_object", object.id);
+                            }
+
+                            if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                            Text(state.ui, (rowPrefix + "-id").c_str(), object.id);
+
+                            if (!state.ui.testMode) ImGui::TableSetColumnIndex(2);
+                            Text(state.ui, (rowPrefix + "-kind").c_str(), object.kind);
+
+                            if (!state.ui.testMode) ImGui::TableSetColumnIndex(3);
+                            Text(state.ui, (rowPrefix + "-position").c_str(), vec3Text(object.position));
+                        }
+                    });
+                }
+            }
             if (auto* selectedWidget = findWidget(state.ui, "panel-selected-object"))
             {
                 selectedWidget->textValue = state.scene.selectedObjectId;

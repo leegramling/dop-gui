@@ -100,6 +100,15 @@ std::string extractObjectBlock(const std::string& text, const std::string& key)
     return extractBalanced(text, openPos, '{', '}');
 }
 
+std::optional<std::string> extractOptionalObjectBlock(const std::string& text, const std::string& key)
+{
+    const auto keyPos = text.find(key);
+    if (keyPos == std::string::npos) return std::nullopt;
+    const auto openPos = text.find('{', keyPos);
+    if (openPos == std::string::npos) return std::nullopt;
+    return extractBalanced(text, openPos, '{', '}');
+}
+
 std::string extractArrayBlock(const std::string& text, const std::string& key)
 {
     const auto keyPos = findKey(text, key);
@@ -144,6 +153,14 @@ std::optional<int> parseOptionalIntField(const std::string& block, const std::st
     std::smatch match;
     if (!std::regex_search(block, match, pattern)) return std::nullopt;
     return std::stoi(match[1].str());
+}
+
+std::optional<double> parseOptionalDoubleField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*([-+]?[0-9]*\.?[0-9]+))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return std::stod(match[1].str());
 }
 
 std::optional<bool> parseOptionalBoolField(const std::string& block, const std::string& key)
@@ -284,12 +301,24 @@ UiMenuState parseMenuBlock(const std::string& block)
     return menu;
 }
 
+UiLayoutRectState parseLayoutRectBlock(const std::string& block)
+{
+    UiLayoutRectState rect;
+    rect.x = parseOptionalDoubleField(block, "x").value_or(0.0);
+    rect.y = parseOptionalDoubleField(block, "y").value_or(0.0);
+    rect.width = parseOptionalDoubleField(block, "w").value_or(0.0);
+    rect.height = parseOptionalDoubleField(block, "h").value_or(0.0);
+    rect.enabled = true;
+    return rect;
+}
+
 UiPanelState parsePanelBlock(const std::string& block)
 {
     UiPanelState panel{.label = parseStringField(block, "label")};
     panel.open = parseOptionalBoolField(block, "open").value_or(true);
     panel.closable = parseOptionalBoolField(block, "closable").value_or(true);
     if (block.find("flags") != std::string::npos) panel.flags = parseStringArray(extractArrayBlock(block, "flags"));
+    if (auto layoutBlock = extractOptionalObjectBlock(block, "layout")) panel.layout = parseLayoutRectBlock(*layoutBlock);
 
     if (block.find("widgets") != std::string::npos)
     {
@@ -306,6 +335,8 @@ UiPanelState parsePanelBlock(const std::string& block)
             widget.unit = parseOptionalStringField(widgetBlock, "unit").value_or("");
             widget.precision = parseOptionalIntField(widgetBlock, "precision").value_or(3);
             if (widgetBlock.find("options") != std::string::npos) widget.options = parseStringArray(extractArrayBlock(widgetBlock, "options"));
+            if (widgetBlock.find("columns") != std::string::npos) widget.columns = parseStringArray(extractArrayBlock(widgetBlock, "columns"));
+            if (auto layoutBlock = extractOptionalObjectBlock(widgetBlock, "layout")) widget.layout = parseLayoutRectBlock(*layoutBlock);
             panel.widgets.push_back(std::move(widget));
         }
     }

@@ -18,8 +18,16 @@ public:
      * @param isOpen Panel open state.
      * @param closable Whether the panel should expose a close button.
      * @param flags Authored ImGui window flags.
+     * @param layout Authored panel layout rectangle.
      */
-    Panel(UiState& uiState, const char* id, const char* title, bool& isOpen, bool closable, const std::vector<std::string>& flags);
+    Panel(
+        UiState& uiState,
+        const char* id,
+        const char* title,
+        bool& isOpen,
+        bool closable,
+        const std::vector<std::string>& flags,
+        const UiLayoutRectState& layout);
     /**
      * @brief Destroy the panel wrapper and close any opened ImGui panel.
      */
@@ -38,5 +46,6 @@ private:
     bool& _isOpen;
     bool _closable = true;
     std::uint32_t _flags = 0;
+    UiLayoutRectState _layout;
     bool _opened = false;
 };
