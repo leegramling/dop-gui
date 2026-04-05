@@ -111,16 +111,36 @@ QueryValue makeSceneObjectValue(const SceneObjectState& object, bool includeTran
     return QueryValue{QueryObject{std::move(fields)}};
 }
 
+QueryValue makeWidgetValue(const WidgetState& widget)
+{
+    return makeObjectValue({
+        makeField("label", makeStringValue(widget.label)),
+        makeField("type", makeStringValue(widget.type)),
+        makeField("textValue", makeStringValue(widget.textValue)),
+        makeField("boolValue", makeBoolValue(widget.boolValue)),
+    });
+}
+
 std::string canonicalizeQueryPath(const std::string& name)
 {
     if (name == "window.size") return "view.window.size";
     if (name == "view.window.size") return name;
     if (name == "camera.pose") return "view.camera.pose";
     if (name == "view.camera.pose") return name;
+    if (name == "view.background.color") return name;
     if (name == "scene.objects") return "data.scene.objects";
     if (name == "data.scene.objects") return name;
     if (name == "runtime.capabilities") return name;
+    if (name == "ui.widgets") return name;
     if (name == "help") return "runtime.capabilities";
+
+    constexpr std::string_view uiWidgetPrefix = "ui.widget.";
+    if (name.rfind(uiWidgetPrefix.data(), 0) == 0)
+    {
+        auto label = name.substr(uiWidgetPrefix.size());
+        if (label.empty()) throw std::runtime_error("Unknown query: " + name);
+        return name;
+    }
 
     constexpr std::string_view sceneObjectPrefix = "scene.object.";
     constexpr std::string_view dataSceneObjectPrefix = "data.scene.object.";
@@ -192,6 +212,24 @@ QueryValue readCameraQuery(const App& app, const Segments& segments)
     throw std::runtime_error("Unknown view.camera query path.");
 }
 
+QueryValue readViewQuery(const App& app, const Segments& segments)
+{
+    if (segments.size() == 2 && segments[0] == "background" && segments[1] == "color")
+    {
+        return makeObjectValue({
+            makeField("hex", makeStringValue(app.state().view.backgroundColorHex)),
+            makeField("rgba", makeArrayValue({
+                makeDoubleValue(app.state().view.backgroundColor.r),
+                makeDoubleValue(app.state().view.backgroundColor.g),
+                makeDoubleValue(app.state().view.backgroundColor.b),
+                makeDoubleValue(app.state().view.backgroundColor.a),
+            })),
+        });
+    }
+
+    throw std::runtime_error("Unknown view query path.");
+}
+
 QueryValue readSceneQuery(const App& app, const Segments& segments)
 {
     if (segments.size() == 1 && segments[0] == "objects")
@@ -245,12 +283,38 @@ QueryValue readRuntimeQuery(const App&, const Segments& segments)
     throw std::runtime_error("Unknown runtime query path.");
 }
 
+QueryValue readUiQuery(const App& app, const Segments& segments)
+{
+    if (segments.size() == 1 && segments[0] == "widgets")
+    {
+        QueryArray array;
+        for (const auto& widget : app.state().ui.registry)
+        {
+            array.elements.push_back(makeValuePtr(makeWidgetValue(widget)));
+        }
+        return QueryValue{std::move(array)};
+    }
+
+    if (segments.size() >= 2 && segments[0] == "widget")
+    {
+        std::string label = segments[1];
+        for (std::size_t i = 2; i < segments.size(); ++i) label += "." + segments[i];
+        auto widget = findWidget(app.state().ui, label);
+        if (!widget) throw std::runtime_error("Unknown UI widget: " + label);
+        return makeWidgetValue(*widget);
+    }
+
+    throw std::runtime_error("Unknown ui query path.");
+}
+
 const std::vector<QueryRoute>& queryRoutes()
 {
     static const std::vector<QueryRoute> routes{
         QueryRoute{.prefix = "view.window", .read = readWindowQuery},
         QueryRoute{.prefix = "view.camera", .read = readCameraQuery},
+        QueryRoute{.prefix = "view", .read = readViewQuery},
         QueryRoute{.prefix = "data.scene", .read = readSceneQuery},
+        QueryRoute{.prefix = "ui", .read = readUiQuery},
         QueryRoute{.prefix = "runtime", .read = readRuntimeQuery},
     };
     return routes;
@@ -429,8 +493,11 @@ std::vector<std::string> queryNames()
         "view.window.size",
         "scene.objects",
         "data.scene.objects",
+        "ui.widgets",
+        "ui.widget.<label>",
         "camera.pose",
         "view.camera.pose",
+        "view.background.color",
         "runtime.capabilities",
         "help",
         "scene.object.<id>",

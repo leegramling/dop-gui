@@ -1,0 +1,13 @@
+{
+  commands: [
+    "sleep.ms=1500",
+    "scene.load.cubes",
+    "sleep.ms=1500",
+    "ui.test.set_bool.panel-display-grid=false",
+    "sleep.ms=1500",
+    "ui.test.set_text.panel-bgcolor=#0000FF",
+    "sleep.ms=1500",
+    "app.exit",
+  ],
+  queries: [],
+}

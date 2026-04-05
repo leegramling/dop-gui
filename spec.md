@@ -101,6 +101,7 @@ Responsibilities:
 - own rendering-facing resources and updates
 - translate application state into VSG structures
 - expose a narrow API to update the visualization
+- own optional scene helpers such as a display grid when requested by state
 
 Non-responsibilities:
 
@@ -108,6 +109,61 @@ Non-responsibilities:
 - direct CLI parsing
 - long-lived application flow control
 - ownership of application truth for inspectable scene and view state
+
+### `Theme`
+
+Responsibilities:
+
+- define default ImGui look-and-feel choices for the application
+- provide a stable styling boundary for wrapped UI widgets
+- allow later extension or overload without coupling callers to raw ImGui styling setup
+
+Non-responsibilities:
+
+- application state ownership
+- menu or panel content decisions
+
+### `Panel`
+
+Responsibilities:
+
+- represent a testable wrapped ImGui panel boundary
+- own unique labeling and panel-level layout concerns
+- provide a narrow wrapper over raw ImGui panel/window calls
+
+Non-responsibilities:
+
+- low-level renderer ownership
+- application-global theme policy
+
+### `UI Widget Wrappers`
+
+Responsibilities:
+
+- provide wrapped `Text`, `Input`, `Button`, and `Checkbox` functions over raw ImGui widgets
+- default to basic styling while allowing overloads or richer options later
+- use unique labels so widgets can be registered, queried, and tested consistently
+- support headless or test-mode evaluation against explicit state where practical
+- accept explicit test input so headless tests and GUI-driven simulation can control widget behavior deliberately
+- return enough widget result/state so tests can verify button presses, checkbox changes, input edits, and displayed text
+
+Non-responsibilities:
+
+- direct scene rendering
+- owning long-lived application truth outside explicit state
+
+### `UI Test Command`
+
+Responsibilities:
+
+- provide a stable way to simulate clicking, toggling, and editing UI elements by unique label
+- work in both headless mode and live GUI mode
+- drive the same wrapped widget paths rather than bypassing UI behavior with ad hoc mutations
+
+Non-responsibilities:
+
+- replacing ordinary application commands for non-UI workflows
+- owning unrelated application data
 
 ### `Command`
 
@@ -166,6 +222,50 @@ Current baseline:
 Constraint:
 
 - avoid depending on runtime GLSL compilation because the local VSG build does not provide GLSLang support
+
+## UI Direction
+
+Initial ImGui surface should include:
+
+- menubar
+- menu items
+- panels
+- wrapped text widgets
+- wrapped input widgets
+- wrapped button widgets
+- wrapped checkbox widgets
+
+Required direction:
+
+- all UI elements should use unique labels
+- widget labels should use stable path-like test IDs, favoring flat names such as `panel-fps`, `panel-bgcolor`, or `menuitem-scene-cubes`
+- labels should be registrable so tests and queries can target UI elements consistently
+- a headless test flag or equivalent mode should allow wrapped widgets to evaluate against explicit test state
+- wrapped widgets should return or expose enough value for tests to verify text, input, checkbox, and button state without a live desktop session
+- wrapped widgets should be able to consume explicit test input such as "clicked", "checked", or "input text"
+- in live GUI mode, tests should still be able to simulate those UI interactions against the same wrapped widgets
+- UI layout and properties should be authorable in JSON5 rather than hard-coded everywhere
+
+State ownership guidance:
+
+- do not treat `UiState` as a dumping ground for unrelated application data
+- values such as FPS, object count, or scene selection should come from application/model state and be presented by UI wrappers, not owned redundantly by the UI layer unless there is genuine UI-local interaction state
+- `UiState` should focus on UI-local concerns such as test mode, widget registry, pending simulated interactions, and panel/widget interaction state
+- application-bound inputs such as background color should read from and write back to application/view/model state rather than living only inside UI-local storage
+
+Initial UI target:
+
+- a menubar with `File -> Exit`
+- a menubar with `Scene -> cubes`
+- a menubar with `Scene -> Shapes`
+- a panel showing FPS
+- a panel showing object count
+- a panel input for background color expressed as a hex string such as `#0000FF`
+- a panel checkbox for `display grid`
+
+Related rendering requirement:
+
+- `VsgVisualizer` should support a grid helper object that can be enabled or disabled from UI state
 
 ## Input And Testing Direction
 
@@ -228,9 +328,35 @@ Preferred architecture:
 - future playback should target semantic commands and queries where practical
 - prefer tagged request/result data over inheritance-heavy command/query hierarchies
 - prefer path-based query resolution plus functional readers over `QueryFooBarBaz` type proliferation
+- UI wrappers should use the same explicit-state and queryable-label discipline as the command/query runtime
+- UI test simulation should use a dedicated `test_command` or equivalent structured UI action path by unique label
 
 Preferred query naming direction:
 
 - `view.*` for view-facing state such as window and camera information
 - `data.*` for inspectable application or scene data
+- `ui.*` for inspectable panel, menu, widget, and theme-facing state as those layers are introduced
 - compatibility aliases may exist temporarily, but long-term growth should prefer namespaced queries
+
+## UI Testing Direction
+
+Headless mode:
+
+- wrapped widgets should not need raw `ImGui::` calls in order to evaluate test behavior
+- tests should be able to provide explicit widget test input and receive the resulting widget state or return value
+- button wrappers should be able to simulate pressed/not-pressed
+- checkbox wrappers should be able to simulate checked state changes
+- input wrappers should be able to simulate text edits and propagate the edited value into application data
+- text wrappers should expose the text they would display for inspection
+
+GUI mode with simulation:
+
+- the real GUI should still render in the application
+- tests should be able to simulate clicking or changing labeled widgets while the GUI is visible
+- simulated UI interactions should use the same wrapped widget path as ordinary GUI rendering
+
+Desired testing surface:
+
+- add a `test_command` or equivalent structured UI action path
+- target UI elements by unique label
+- allow actions such as `click`, `set_checked`, and `set_input`

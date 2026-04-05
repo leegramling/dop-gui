@@ -1,0 +1,9 @@
+{
+  commands: [
+    "ui.test.set_text.panel-bgcolor=#0000FF",
+  ],
+  queries: [
+    "ui.widget.panel-bgcolor",
+    "view.background.color",
+  ],
+}

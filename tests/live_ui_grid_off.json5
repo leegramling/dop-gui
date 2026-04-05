@@ -1,0 +1,6 @@
+{
+  commands: [
+    "ui.test.set_bool.panel-display-grid=false",
+  ],
+  queries: [],
+}

@@ -1,0 +1,15 @@
+{
+  commands: [
+    "scene.load.cubes",
+    "ui.test.set_bool.panel-display-grid=false",
+    "ui.test.set_text.panel-bgcolor=#0000FF",
+    "sleep.ms=1",
+    "app.exit",
+  ],
+  queries: [
+    "data.scene.objects",
+    "ui.widget.panel-display-grid",
+    "ui.widget.panel-bgcolor",
+    "view.background.color",
+  ],
+}

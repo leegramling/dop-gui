@@ -2,6 +2,7 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/imgui-ui-layout-testable`.
 - [x] Create feature branch `feature/app-input-visualizer-command`.
 - [x] Create feature branch `feature/vsgimgui-docking-external`.
 - [x] Vendor `vsgImGui` under `/home/lgramling/dev/dop-gui/external/vsgImGui`.
@@ -246,3 +247,80 @@ Remaining DOP gap:
 - [ ] Validate the live sync path in a desktop session with XCB access.
 - [ ] Introduce richer model data beyond bootstrap scene metadata and camera pose.
 - [ ] Replace the constrained string-array script format with a more expressive JSON5 command/query object format when richer arguments are needed.
+
+## UI Specification Direction
+
+Requested initial ImGui elements:
+
+- [x] menubar
+- [x] menu item
+- [x] panel
+- [x] text
+- [x] input
+- [x] button
+- [x] checkbox
+
+Requested wrapper boundaries:
+
+- [x] `Theme` class for default styling and future overload points
+- [x] `Panel` class for labeled panel ownership
+- [x] wrapped `Text`, `Input`, `Button`, and `Checkbox` functions over raw ImGui widgets
+
+Requested testing direction:
+
+- [x] add a test/headless flag for wrapped UI evaluation
+- [x] make wrapped UI return enough state/value for tests to inspect text, input, checkbox, and button behavior
+- [x] require unique labels for all UI elements
+- [x] register labels so later queries can target specific widgets
+
+Requested authored UI direction:
+
+- [x] add a JSON5 UI description format similar in spirit to HTML/XML/QML/Kivy
+- [x] start with a simple menubar and panel rather than a full UI schema
+
+Requested first UI slice:
+
+- [x] menubar with `File -> Exit`
+- [x] menubar with `Scene -> cubes`
+- [x] menubar with `Scene -> Shapes`
+- [x] panel with FPS
+- [x] panel with object count
+- [x] panel checkbox for `display grid`
+- [x] add a grid object/helper in `VsgVisualizer`
+
+Open design notes:
+
+- [x] Use explicit pending UI test actions plus widget registry state so wrapped widgets can both update `AppState` and expose queryable results.
+- [ ] Decide whether the unique-label registry lives under a dedicated UI subsystem or inside broader application state.
+- [ ] Decide how JSON5 UI layout maps to wrapped widget functions without overbuilding a general-purpose declarative engine.
+- [ ] Decide whether `Scene -> cubes` and `Scene -> Shapes` map to scene-file loads, commands, or a higher-level action registry.
+
+Implementation status:
+
+- [x] Add `ui/layout.json5` as the first authored menu/panel layout.
+- [x] Add `Theme`, `Panel`, and wrapped widget functions in a dedicated UI subsystem.
+- [x] Add `UiLayer` to host the live `vsgImGui` overlay.
+- [x] Add `--ui-test-mode` so UI wrappers can populate the registry without opening a window.
+- [x] Add `ui.widgets` and `ui.widget.<label>` queries for headless UI inspection.
+- [x] Register unique labels for menus, menu items, panels, text, and checkbox widgets.
+- [x] Flatten widget labels into stable test IDs such as `panel-fps`, `panel-display-grid`, `panel-bgcolor`, and `menuitem-scene-cubes`.
+- [x] Add `panel-bgcolor` as the first application-bound input widget.
+- [x] Move FPS ownership out of `UiState` into application view state.
+- [x] Add `ui.test.set_text.<label>`, `ui.test.set_bool.<label>`, and `ui.test.click.<label>` command paths.
+- [x] Add `view.background.color` query output for the render background state.
+- [x] Add direct `app.exit`, `scene.load.cubes`, `scene.load.shapes`, and `sleep.ms` commands with structured JSON results.
+- [x] Add `tests/regression_cli.json5` as the first combined command/UI regression script.
+- [x] Add `tests/live_regression.json5` plus scheduled live script playback for staged desktop validation in one session.
+- [x] Add ordered object-based script actions via `actions: [{ command: ... }, { query: ... }, { sleepMs: ... }]`.
+- [x] Route `Scene -> cubes` and `Scene -> Shapes` through scene-file requests in application state.
+- [x] Route `File -> Exit` through application state so the live loop can honor it.
+- [x] Add `scenes/shapes.json5` as the first dedicated shapes scene for the UI menu.
+
+Verification notes:
+
+- [x] `ctest --test-dir build/dop-gui --output-on-failure` passes with the new `dop_gui_ui_background_input` coverage.
+- [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_background_cli.json5` updates both `ui.widget.panel-bgcolor` and `view.background.color` to `#0000FF`.
+- [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_grid_cli.json5` updates `ui.widget.panel-display-grid` to `false`.
+- [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5` switches the loaded scene to the cube scene.
+- [x] Add live desktop helper scripts `tests/live_ui_bg_blue.json5`, `tests/live_ui_grid_off.json5`, and `tests/live_ui_scene_cubes.json5` plus matching `test_run.sh` modes.
+- [x] Desktop validation confirmed `live-bg`, `live-grid-off`, `live-scene-cubes`, and `live-regression` behave as expected in the real app session.

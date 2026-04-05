@@ -11,6 +11,7 @@ struct CommandByPath
 {
     std::string commandName;
     std::string canonicalPath;
+    std::string rawArg;
     std::vector<double> numericArgs;
 };
 
