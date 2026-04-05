@@ -160,6 +160,12 @@ struct UiState
     std::vector<WidgetState> registry;
     std::vector<UiTestAction> pendingActions;
     std::optional<UiLayoutRectState> nextWidgetLayout;
+    bool dockingEnabled = false;
+    bool viewportsEnabled = false;
+    bool platformCreateWindowCallback = false;
+    bool platformDestroyWindowCallback = false;
+    bool rendererCreateWindowCallback = false;
+    bool rendererDestroyWindowCallback = false;
 };
 
 /**

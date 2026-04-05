@@ -10,6 +10,29 @@
 
 namespace
 {
+void syncDockingStatus(UiState& uiState)
+{
+    if (!ImGui::GetCurrentContext())
+    {
+        uiState.dockingEnabled = false;
+        uiState.viewportsEnabled = false;
+        uiState.platformCreateWindowCallback = false;
+        uiState.platformDestroyWindowCallback = false;
+        uiState.rendererCreateWindowCallback = false;
+        uiState.rendererDestroyWindowCallback = false;
+        return;
+    }
+
+    const auto& io = ImGui::GetIO();
+    const auto& platformIo = ImGui::GetPlatformIO();
+    uiState.dockingEnabled = (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0;
+    uiState.viewportsEnabled = (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
+    uiState.platformCreateWindowCallback = platformIo.Platform_CreateWindow != nullptr;
+    uiState.platformDestroyWindowCallback = platformIo.Platform_DestroyWindow != nullptr;
+    uiState.rendererCreateWindowCallback = platformIo.Renderer_CreateWindow != nullptr;
+    uiState.rendererDestroyWindowCallback = platformIo.Renderer_DestroyWindow != nullptr;
+}
+
 std::string vec3Text(const vsg::dvec3& value)
 {
     std::ostringstream out;
@@ -75,12 +98,17 @@ void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::Ren
 
     renderGraph->addChild(_renderImGui);
     _sendEventsToImGui = vsgImGui::SendEventsToImGui::create();
+
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    syncDockingStatus(state.ui);
 }
 
 void UiLayer::evaluate(AppState& state)
 {
     const bool previousTestMode = state.ui.testMode;
     state.ui.testMode = true;
+    syncDockingStatus(state.ui);
     render(state);
     state.ui.testMode = previousTestMode;
 }
@@ -88,7 +116,13 @@ void UiLayer::evaluate(AppState& state)
 void UiLayer::render(AppState& state)
 {
     if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
+    syncDockingStatus(state.ui);
     state.ui.registry.clear();
+
+    if (!state.ui.testMode && state.ui.dockingEnabled)
+    {
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_None);
+    }
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())
     {

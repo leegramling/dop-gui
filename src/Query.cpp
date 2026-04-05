@@ -216,6 +216,7 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name == "runtime.capabilities") return name;
     if (name == "ui.widgets") return name;
     if (name == "ui.layout") return name;
+    if (name == "ui.docking.status") return name;
     if (name == "help") return "runtime.capabilities";
 
     constexpr std::string_view uiWidgetPrefix = "ui.widget.";
@@ -412,6 +413,18 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
         return makeObjectValue({
             makeField("menus", QueryValue{std::move(menus)}),
             makeField("panels", QueryValue{std::move(panels)}),
+        });
+    }
+
+    if (segments.size() == 2 && segments[0] == "docking" && segments[1] == "status")
+    {
+        return makeObjectValue({
+            makeField("dockingEnabled", makeBoolValue(app.state().ui.dockingEnabled)),
+            makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
+            makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
+            makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
+            makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
+            makeField("rendererDestroyWindowCallback", makeBoolValue(app.state().ui.rendererDestroyWindowCallback)),
         });
     }
 
@@ -661,6 +674,7 @@ std::vector<std::string> queryNames()
         "data.scene.objects",
         "data.scene.selection",
         "ui.layout",
+        "ui.docking.status",
         "ui.panel.<id>",
         "ui.panel.<id>.widgets",
         "ui.widgets",
