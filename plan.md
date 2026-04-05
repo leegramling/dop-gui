@@ -95,17 +95,16 @@
 
 ## Current Focus
 
-Current focus is `Phase 3A1`.
+Current focus is `Phase 3B`.
 
 Success criteria:
 
-- define the first wrapped ImGui UI boundaries
-- keep UI labels unique and queryable
-- preserve headless testability for wrapped widgets
-- establish the first menubar/panel slice without overbuilding the full UI schema
+- expand the authored JSON5 UI format beyond the current first menu/panel slice
+- add richer `ui.*`, `model.*`, `view.*`, and `data.*` inspection paths where needed
+- keep the tested command/query and live playback seams stable while the authored UI grows
 
 Next focus after current slice:
 
-- validate live GUI simulation against the same labeled widget paths used in headless mode
-- expand the first panel with more application-bound inputs rather than UI-local placeholders
-- move menu actions onto the same explicit simulation and command path used by wrapped widgets
+- add more authored widget properties and panel structure to `ui/layout.json5`
+- introduce more application-bound inputs and outputs through the wrapper layer
+- decide whether widget registry metadata should become a dedicated UI subsystem record rather than staying under `UiState`

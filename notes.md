@@ -323,3 +323,4 @@ Verification notes:
 - [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_grid_cli.json5` updates `ui.widget.panel-display-grid` to `false`.
 - [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5` switches the loaded scene to the cube scene.
 - [x] Add live desktop helper scripts `tests/live_ui_bg_blue.json5`, `tests/live_ui_grid_off.json5`, and `tests/live_ui_scene_cubes.json5` plus matching `test_run.sh` modes.
+- [x] Desktop validation confirmed `live-bg`, `live-grid-off`, `live-scene-cubes`, and `live-regression` behave as expected in the real app session.

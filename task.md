@@ -2,7 +2,7 @@
 
 ## Active Slice
 
-- [ ] Refine the UI test model so widget simulation works cleanly in both headless and GUI modes.
+- [x] Refine the UI test model so widget simulation works cleanly in both headless and GUI modes.
 
 ## Next Tasks
 
@@ -10,10 +10,10 @@
 - [x] Define explicit widget test input/result data for `Text`, `Input`, `Button`, and `Checkbox`.
 - [x] Add a `test_command` path for UI interaction by unique label.
 - [x] Support headless simulation of button clicks, checkbox changes, and input edits through wrapped widgets.
-- [ ] Support live GUI simulation of the same labeled UI interactions without bypassing the wrapper layer.
+- [x] Support live GUI simulation of the same labeled UI interactions without bypassing the wrapper layer.
 - [x] Support timed live script playback for the same labeled UI interactions in one desktop session.
 - [x] Make input widgets propagate edited values into application data rather than only UI-local storage.
-- [ ] Add a panel input for background color and validate that it updates live render clear color in a desktop session.
+- [x] Add a panel input for background color and validate that it updates live render clear color in a desktop session.
 
 ## Next Slice Candidates
 
@@ -30,11 +30,11 @@
 
 ## Follow-Up Validation
 
-- [ ] Confirm the menubar renders and menu actions behave in a desktop session.
+- [x] Confirm the menubar renders and menu actions behave in a desktop session.
 - [x] Confirm the panel shows FPS, object count, `display grid`, and background color input.
 - [x] Confirm the headless/test flag can evaluate wrapped widgets without opening a window.
-- [ ] Confirm the grid toggle changes live visualization state.
-- [ ] Confirm a simulated UI click or input edit works in both headless and live GUI mode.
+- [x] Confirm the grid toggle changes live visualization state.
+- [x] Confirm a simulated UI click or input edit works in both headless and live GUI mode.
 - [x] Confirm a simulated UI input edit updates application state in headless mode.
 - [x] Confirm a simulated UI menu click can switch scenes in headless mode.
 - [x] Confirm a simulated UI checkbox change updates wrapped widget state in headless mode.
@@ -56,6 +56,6 @@
 - [x] Wrapped widgets are uniquely labeled and queryable.
 - [x] Wrapped widgets accept explicit test input and return stable result/state objects.
 - [x] A `test_command` path exists for simulated UI interaction by label.
-- [ ] Headless and GUI modes both support simulated widget interaction through the same wrapper logic.
+- [x] Headless and GUI modes both support simulated widget interaction through the same wrapper logic.
 - [x] The first panel can show FPS, object count, `display grid`, and background color input.
 - [x] The project still builds locally.
