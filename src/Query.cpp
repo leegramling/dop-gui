@@ -119,6 +119,15 @@ QueryValue makeWidgetValue(const WidgetState& widget)
         makeField("type", makeStringValue(widget.type)),
         makeField("textValue", makeStringValue(widget.textValue)),
         makeField("boolValue", makeBoolValue(widget.boolValue)),
+        makeField(
+            "layout",
+            makeObjectValue({
+                makeField("enabled", makeBoolValue(widget.layout.enabled)),
+                makeField("x", makeDoubleValue(widget.layout.x)),
+                makeField("y", makeDoubleValue(widget.layout.y)),
+                makeField("width", makeDoubleValue(widget.layout.width)),
+                makeField("height", makeDoubleValue(widget.layout.height)),
+            })),
     });
 }
 

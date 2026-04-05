@@ -20,6 +20,7 @@
 - [x] Verify a non-window CLI command path works with `--command help`.
 - [x] Add Doxygen scaffolding with repo-local `.dox` pages and a working `Doxyfile`.
 - [x] Add popup and table wrappers through the existing testable UI seam.
+- [x] Add authored popup/table metadata and runtime-inspectable widget layout rects.
 
 ## Architecture Notes
 

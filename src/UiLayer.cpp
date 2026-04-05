@@ -147,16 +147,19 @@ void UiLayer::render(AppState& state)
                 {
                     if (widgetSpec.bind == "view.fps.text")
                     {
+                        setNextWidgetLayout(state.ui, widgetSpec.layout);
                         Text(state.ui, widgetSpec.id.c_str(), fpsText(state.view.fps));
                     }
                     else if (widgetSpec.bind == "scene.objectCount.text")
                     {
+                        setNextWidgetLayout(state.ui, widgetSpec.layout);
                         Text(state.ui, widgetSpec.id.c_str(), objectCountText(state));
                     }
                 }
                 else if (widgetSpec.type == "checkbox" && widgetSpec.bind == "ui.displayGrid")
                 {
                     bool value = state.ui.displayGrid;
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     const bool changed = Checkbox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), value);
                     state.ui.displayGrid = value;
                     if (changed && !widgetSpec.onChange.empty())
@@ -167,12 +170,14 @@ void UiLayer::render(AppState& state)
                 else if (widgetSpec.type == "input" && widgetSpec.bind == "view.backgroundColorHex")
                 {
                     const auto previousValue = state.view.backgroundColorHex;
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
                     state.view.backgroundColorHex = value;
                     if (value != previousValue && !widgetSpec.onChange.empty()) queueUiCommand(state.ui, widgetSpec.onChange, value);
                 }
                 else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
                 {
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     const auto value = ComboBox(
                         state.ui,
                         widgetSpec.id.c_str(),
@@ -187,6 +192,7 @@ void UiLayer::render(AppState& state)
                 else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
                 {
                     const bool selected = state.ui.themeMode == widgetSpec.arg;
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) &&
                         !widgetSpec.onClick.empty())
                     {
@@ -223,10 +229,12 @@ void UiLayer::render(AppState& state)
             {
                 if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
                 {
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
                 }
                 else if (widgetSpec.type == "popup" && widgetSpec.id == "popup-scene-summary")
                 {
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     Popup(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), openSceneSummary, [&]()
                     {
                         Text(state.ui, "popup-scene-summary-name", "Scene: " + state.scene.name);
@@ -237,6 +245,7 @@ void UiLayer::render(AppState& state)
                 {
                     Text(state.ui, "panel-scene-table-label", widgetSpec.label);
                     const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     Table(state.ui, widgetSpec.id.c_str(), columnCount, state.scene.objects.size(), [&]()
                     {
                         if (!state.ui.testMode)
@@ -306,7 +315,10 @@ void UiLayer::render(AppState& state)
                     Text(state.ui, (rowPrefix + "-value").c_str(), value);
                 };
 
-                auto emitEditablePropertyRow = [&](const std::string& key, const std::string& inputId, double& value, int precision)
+                auto emitEditablePropertyRow = [&](const std::string& key,
+                                                  const UiWidgetSpecState& widgetSpec,
+                                                  double& value,
+                                                  int precision)
                 {
                     const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
                     if (!state.ui.testMode)
@@ -316,16 +328,17 @@ void UiLayer::render(AppState& state)
                     }
                     Text(state.ui, (rowPrefix + "-name").c_str(), key);
                     if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     value = InputDouble(
                         state.ui,
-                        inputId.c_str(),
+                        widgetSpec.id.c_str(),
                         "",
                         value,
                         precision);
                 };
 
                 auto emitUnitEditablePropertyRow =
-                    [&](const std::string& key, const std::string& inputId, double& value, int precision, const char* unit)
+                    [&](const std::string& key, const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
                 {
                     const auto rowPrefix = "table-properties-row-" + sanitizeLabel(key);
                     if (!state.ui.testMode)
@@ -335,9 +348,10 @@ void UiLayer::render(AppState& state)
                     }
                     Text(state.ui, (rowPrefix + "-name").c_str(), key);
                     if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     value = InputDouble(
                         state.ui,
-                        inputId.c_str(),
+                        widgetSpec.id.c_str(),
                         "",
                         value,
                         precision,
@@ -354,6 +368,7 @@ void UiLayer::render(AppState& state)
                     }
                     Text(state.ui, ("table-properties-row-" + sanitizeLabel(key) + "-name").c_str(), key);
                     if (!state.ui.testMode) ImGui::TableSetColumnIndex(1);
+                    setNextWidgetLayout(state.ui, widgetSpec.layout);
                     const auto selectedValue = ComboBox(
                         state.ui,
                         widgetSpec.id.c_str(),
@@ -388,7 +403,7 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->position.x,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
@@ -397,7 +412,7 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->position.y,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
@@ -406,7 +421,7 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->position.z,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
@@ -415,7 +430,7 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->rotation.x,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
@@ -424,7 +439,7 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->rotation.y,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
@@ -433,22 +448,22 @@ void UiLayer::render(AppState& state)
                         {
                             emitUnitEditablePropertyRow(
                                 widgetSpec.label,
-                                widgetSpec.id,
+                                widgetSpec,
                                 selectedObject->rotation.z,
                                 widgetSpec.precision,
                                 widgetSpec.unit.c_str());
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.x")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.x, widgetSpec.precision);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.x, widgetSpec.precision);
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.y")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.y, widgetSpec.precision);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.y, widgetSpec.precision);
                         }
                         else if (widgetSpec.bind == "scene.selected.scale.z")
                         {
-                            emitEditablePropertyRow(widgetSpec.label, widgetSpec.id, selectedObject->scale.z, widgetSpec.precision);
+                            emitEditablePropertyRow(widgetSpec.label, widgetSpec, selectedObject->scale.z, widgetSpec.precision);
                         }
                     }
                 }

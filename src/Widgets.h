@@ -13,6 +13,12 @@
  */
 void registerWidget(UiState& uiState, std::string_view label, std::string_view type);
 /**
+ * @brief Queue an authored layout rectangle for the next wrapped widget evaluation.
+ * @param uiState UI-local state containing pending layout placement.
+ * @param layout Panel-local layout rectangle to apply to the next widget.
+ */
+void setNextWidgetLayout(UiState& uiState, const UiLayoutRectState& layout);
+/**
  * @brief Render or evaluate a text widget.
  * @param uiState UI-local state containing the widget registry.
  * @param label Stable widget label.

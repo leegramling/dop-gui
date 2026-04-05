@@ -24,14 +24,14 @@
       widgets: [
         { id: "panel-fps", type: "text", label: "FPS", bind: "view.fps.text" },
         { id: "panel-object-count", type: "text", label: "Objects", bind: "scene.objectCount.text" },
-        { id: "panel-display-grid", type: "checkbox", label: "Display Grid", bind: "ui.displayGrid", onChange: "ui.grid.set_visible" },
-        { id: "panel-bgcolor", type: "input", label: "Background Color", bind: "view.backgroundColorHex", onChange: "view.background.set_hex" },
-        { id: "panel-scene-select", type: "combo", label: "Scene", bind: "scene.name", onChange: "scene.load", options: ["bootstrap", "cubes", "shapes"] },
+        { id: "panel-display-grid", type: "checkbox", label: "Display Grid", bind: "ui.displayGrid", onChange: "ui.grid.set_visible", layout: { x: 16, y: 64, w: 160, h: 24 } },
+        { id: "panel-bgcolor", type: "input", label: "Background Color", bind: "view.backgroundColorHex", onChange: "view.background.set_hex", layout: { x: 16, y: 96, w: 220, h: 24 } },
+        { id: "panel-scene-select", type: "combo", label: "Scene", bind: "scene.name", onChange: "scene.load", options: ["bootstrap", "cubes", "shapes"], layout: { x: 16, y: 128, w: 220, h: 24 } },
         { id: "panel-theme-dark", type: "radio", label: "Dark", bind: "ui.themeMode", arg: "dark", onClick: "ui.theme.set" },
         { id: "panel-theme-light", type: "radio", label: "Light", bind: "ui.themeMode", arg: "light", onClick: "ui.theme.set" },
-        { id: "panel-scene-summary-open", type: "button", label: "Scene Summary" },
+        { id: "panel-scene-summary-open", type: "button", label: "Scene Summary", layout: { x: 16, y: 184, w: 144, h: 24 } },
         { id: "popup-scene-summary", type: "popup", label: "Scene Summary" },
-        { id: "panel-scene-table", type: "table", label: "Scene Objects", bind: "scene.objects", columns: ["Select", "Id", "Kind", "Position"] },
+        { id: "panel-scene-table", type: "table", label: "Scene Objects", bind: "scene.objects", columns: ["Select", "Id", "Kind", "Position"], layout: { x: 16, y: 232, w: 328, h: 180 } },
       ],
     },
     {
@@ -41,7 +41,7 @@
       flags: ["NoCollapse"],
       layout: { x: 408, y: 48, w: 360, h: 560 },
       widgets: [
-        { id: "panel-selected-object", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object" },
+        { id: "panel-selected-object", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object", layout: { x: 132, y: 40, w: 200, h: 24 } },
         { id: "input-properties-position-x", type: "input_double", label: "Location X", bind: "scene.selected.position.x", unit: "m", precision: 2 },
         { id: "input-properties-position-y", type: "input_double", label: "Location Y", bind: "scene.selected.position.y", unit: "m", precision: 2 },
         { id: "input-properties-position-z", type: "input_double", label: "Location Z", bind: "scene.selected.position.z", unit: "m", precision: 2 },

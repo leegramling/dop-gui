@@ -3,7 +3,11 @@
     "ui.layout",
     "ui.panel.panel-scene-info",
     "ui.panel.panel-scene-info.widgets",
+    "ui.widget.panel-bgcolor",
+    "ui.widget.panel-scene-summary-open",
+    "ui.widget.panel-scene-table",
     "ui.panel.panel-properties",
     "ui.panel.panel-properties.widgets",
+    "ui.widget.panel-selected-object",
   ],
 }

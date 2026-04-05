@@ -52,6 +52,18 @@ struct ViewState
 };
 
 /**
+ * @brief Simple layout rectangle loaded from the authored UI spec.
+ */
+struct UiLayoutRectState
+{
+    double x = 0.0;
+    double y = 0.0;
+    double width = 0.0;
+    double height = 0.0;
+    bool enabled = false;
+};
+
+/**
  * @brief Registered state for a wrapped widget.
  */
 struct WidgetState
@@ -60,6 +72,7 @@ struct WidgetState
     std::string type;
     std::string textValue;
     bool boolValue = false;
+    UiLayoutRectState layout;
 };
 
 /**
@@ -80,18 +93,6 @@ struct UiMenuItemState
 {
     std::string label;
     std::string command;
-};
-
-/**
- * @brief Simple layout rectangle loaded from the authored UI spec.
- */
-struct UiLayoutRectState
-{
-    double x = 0.0;
-    double y = 0.0;
-    double width = 0.0;
-    double height = 0.0;
-    bool enabled = false;
 };
 
 /**
@@ -158,6 +159,7 @@ struct UiState
     UiLayoutState layout;
     std::vector<WidgetState> registry;
     std::vector<UiTestAction> pendingActions;
+    std::optional<UiLayoutRectState> nextWidgetLayout;
 };
 
 /**
