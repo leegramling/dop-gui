@@ -119,6 +119,64 @@ YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
 
     return builder.build();
 }
+
+YogaLayout::Spec buildSceneInfoLowerLayout()
+{
+    using Axis = YogaLayout::Axis;
+    using Builder = YogaLayout::Builder;
+    using Length = YogaLayout::Length;
+    using Style = YogaLayout::Style;
+
+    Style root;
+    root.direction = Axis::Column;
+    root.gap = 8.0f;
+    root.width = Length::percent(100.0f);
+    root.height = Length::autoV();
+
+    Style labelRow;
+    labelRow.width = Length::percent(100.0f);
+    labelRow.height = Length::px(20.0f);
+
+    Style row;
+    row.direction = Axis::Row;
+    row.gap = 8.0f;
+    row.width = Length::percent(100.0f);
+    row.height = Length::px(24.0f);
+
+    Style label;
+    label.width = Length::px(116.0f);
+    label.height = Length::px(24.0f);
+
+    Style input;
+    input.width = Length::flex(1.0f);
+    input.height = Length::px(24.0f);
+
+    Style radio;
+    radio.width = Length::px(120.0f);
+    radio.height = Length::px(24.0f);
+
+    Style button;
+    button.width = Length::px(144.0f);
+    button.height = Length::px(24.0f);
+
+    Style table;
+    table.width = Length::percent(100.0f);
+    table.height = Length::px(180.0f);
+
+    return Builder{}
+        .root("scene-info-lower-root", root)
+            .item("panel-theme-label", labelRow)
+            .item("panel-theme-dark", radio)
+            .item("panel-theme-light", radio)
+            .item("panel-scene-summary-open", button)
+            .begin("panel-scene-selected-object-row", row)
+                .item("panel-scene-selected-object-label", label)
+                .item("panel-scene-selected-object", input)
+            .end()
+            .item("panel-scene-table-label", labelRow)
+            .item("panel-scene-table", table)
+        .build();
+}
 }
 
 void UiLayer::initialize(
@@ -216,6 +274,21 @@ void UiLayer::render(AppState& state)
 
         if (panelId == "panel-scene-info")
         {
+            static const auto sceneInfoLowerSpec = buildSceneInfoLowerLayout();
+            YogaLayout sceneInfoLowerLayout;
+            sceneInfoLowerLayout.setLayout(sceneInfoLowerSpec);
+            ImVec2 lowerOrigin{16.0f, 156.0f};
+            ImVec2 lowerAvail{
+                panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) - 32.0f : 328.0f,
+                320.0f};
+            if (!state.ui.testMode)
+            {
+                lowerAvail = ImVec2(
+                    std::max(0.0f, ImGui::GetContentRegionAvail().x - 16.0f),
+                    std::max(0.0f, ImGui::GetContentRegionAvail().y));
+            }
+            sceneInfoLowerLayout.resize(lowerOrigin.x, lowerOrigin.y, lowerAvail.x, lowerAvail.y);
+
             for (const auto& widgetSpec : panelState.widgets)
             {
                 if (widgetSpec.type == "text")
@@ -267,7 +340,10 @@ void UiLayer::render(AppState& state)
                 else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
                 {
                     const bool selected = state.ui.themeMode == widgetSpec.arg;
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                    }
                     if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) &&
                         !widgetSpec.onClick.empty())
                     {
@@ -283,12 +359,22 @@ void UiLayer::render(AppState& state)
             std::vector<std::string> objectIds;
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
+            if (sceneInfoLowerLayout.has("panel-scene-selected-object-label"))
+            {
+                setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-selected-object-label"));
+            }
+            Text(state.ui, "panel-scene-selected-object-label", "Selected Object");
+
             if (!objectIds.empty())
             {
+                if (sceneInfoLowerLayout.has("panel-scene-selected-object"))
+                {
+                    setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-selected-object"));
+                }
                 const auto selectedObject = ComboBox(
                     state.ui,
-                    "panel-selected-object",
-                    "Selected Object",
+                    "panel-scene-selected-object",
+                    "",
                     state.scene.selectedObjectId,
                     objectIds);
                 if (!selectedObject.empty() && selectedObject != state.scene.selectedObjectId)
@@ -297,6 +383,10 @@ void UiLayer::render(AppState& state)
                 }
             }
 
+            if (sceneInfoLowerLayout.has("panel-theme-label"))
+            {
+                setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-theme-label"));
+            }
             Text(state.ui, "panel-theme-label", "Theme");
 
             bool openSceneSummary = false;
@@ -304,7 +394,10 @@ void UiLayer::render(AppState& state)
             {
                 if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
                 {
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                    }
                     openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
                 }
                 else if (widgetSpec.type == "popup" && widgetSpec.id == "popup-scene-summary")
@@ -318,9 +411,16 @@ void UiLayer::render(AppState& state)
                 }
                 else if (widgetSpec.type == "table" && widgetSpec.bind == "scene.objects")
                 {
+                    if (sceneInfoLowerLayout.has("panel-scene-table-label"))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-table-label"));
+                    }
                     Text(state.ui, "panel-scene-table-label", widgetSpec.label);
                     const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                    }
                     Table(state.ui, widgetSpec.id.c_str(), columnCount, state.scene.objects.size(), [&]()
                     {
                         if (!state.ui.testMode)
@@ -355,7 +455,7 @@ void UiLayer::render(AppState& state)
                     });
                 }
             }
-            if (auto* selectedWidget = findWidget(state.ui, "panel-selected-object"))
+            if (auto* selectedWidget = findWidget(state.ui, "panel-scene-selected-object"))
             {
                 selectedWidget->textValue = state.scene.selectedObjectId;
             }
