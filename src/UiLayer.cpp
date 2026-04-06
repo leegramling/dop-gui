@@ -120,6 +120,12 @@ struct YogaPanelDefinition
     PanelMinSize minSize;
 };
 
+struct WidgetSlotBinding
+{
+    std::string valueSlotId;
+    std::string labelSlotId;
+};
+
 std::string propertiesLabelSlotId(std::string_view widgetId)
 {
     return std::string(widgetId) + "-label";
@@ -170,6 +176,30 @@ std::vector<std::string> propertiesSlotIds(const UiPanelState& panelState)
     }
 
     return slotIds;
+}
+
+WidgetSlotBinding sceneInfoBinding(std::string_view widgetId)
+{
+    return WidgetSlotBinding{
+        .valueSlotId = std::string(widgetId),
+        .labelSlotId = sceneInfoLabelSlotId(widgetId),
+    };
+}
+
+WidgetSlotBinding propertiesBinding(std::string_view widgetId)
+{
+    return WidgetSlotBinding{
+        .valueSlotId = std::string(widgetId),
+        .labelSlotId = propertiesLabelSlotId(widgetId),
+    };
+}
+
+void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, std::string_view slotId)
+{
+    if (layout.has(slotId))
+    {
+        setNextWidgetLayout(uiState, layout.rect(slotId));
+    }
 }
 
 YogaPanelDefinition buildPropertiesPanelLayout(const UiPanelState& panelState)
@@ -438,30 +468,23 @@ void UiLayer::render(AppState& state)
             {
                 if (widgetSpec.type == "text")
                 {
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
                     if (widgetSpec.bind == "view.fps.text")
                     {
-                        if (sceneInfoLayout.has(widgetSpec.id))
-                        {
-                            setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                        }
+                        setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                         Text(state.ui, widgetSpec.id.c_str(), fpsText(state.view.fps));
                     }
                     else if (widgetSpec.bind == "scene.objectCount.text")
                     {
-                        if (sceneInfoLayout.has(widgetSpec.id))
-                        {
-                            setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                        }
+                        setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                         Text(state.ui, widgetSpec.id.c_str(), objectCountText(state));
                     }
                 }
                 else if (widgetSpec.type == "checkbox" && widgetSpec.bind == "ui.displayGrid")
                 {
                     bool value = state.ui.displayGrid;
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     const bool changed = Checkbox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), value);
                     state.ui.displayGrid = value;
                     if (changed && !widgetSpec.onChange.empty())
@@ -472,26 +495,18 @@ void UiLayer::render(AppState& state)
                 else if (widgetSpec.type == "input" && widgetSpec.bind == "view.backgroundColorHex")
                 {
                     const auto previousValue = state.view.backgroundColorHex;
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
                     state.view.backgroundColorHex = value;
                     if (value != previousValue && !widgetSpec.onChange.empty()) queueUiCommand(state.ui, widgetSpec.onChange, value);
-                    const auto labelSlot = sceneInfoLabelSlotId(widgetSpec.id);
-                    if (sceneInfoLayout.has(labelSlot))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(labelSlot));
-                    }
-                    Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.labelSlotId);
+                    Text(state.ui, binding.labelSlotId.c_str(), widgetSpec.label);
                 }
                 else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
                 {
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     const auto value = ComboBox(
                         state.ui,
                         widgetSpec.id.c_str(),
@@ -502,20 +517,14 @@ void UiLayer::render(AppState& state)
                     {
                         queueUiCommand(state.ui, widgetSpec.onChange, value);
                     }
-                    const auto labelSlot = sceneInfoLabelSlotId(widgetSpec.id);
-                    if (sceneInfoLayout.has(labelSlot))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(labelSlot));
-                    }
-                    Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.labelSlotId);
+                    Text(state.ui, binding.labelSlotId.c_str(), widgetSpec.label);
                 }
                 else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
                 {
                     const bool selected = state.ui.themeMode == widgetSpec.arg;
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) &&
                         !widgetSpec.onClick.empty())
                     {
@@ -531,19 +540,13 @@ void UiLayer::render(AppState& state)
             std::vector<std::string> objectIds;
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-            const auto selectedObjectLabelSlot = sceneInfoLabelSlotId("panel-scene-selected-object");
-            if (sceneInfoLayout.has(selectedObjectLabelSlot))
-            {
-                setNextWidgetLayout(state.ui, sceneInfoLayout.rect(selectedObjectLabelSlot));
-            }
-            Text(state.ui, selectedObjectLabelSlot.c_str(), "Selected Object");
+            const auto selectedObjectBinding = sceneInfoBinding("panel-scene-selected-object");
+            setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, selectedObjectBinding.labelSlotId);
+            Text(state.ui, selectedObjectBinding.labelSlotId.c_str(), "Selected Object");
 
             if (!objectIds.empty())
             {
-                if (sceneInfoLayout.has("panel-scene-selected-object"))
-                {
-                    setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-selected-object"));
-                }
+                setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, selectedObjectBinding.valueSlotId);
                 const auto selectedObject = ComboBox(
                     state.ui,
                     "panel-scene-selected-object",
@@ -556,10 +559,7 @@ void UiLayer::render(AppState& state)
                 }
             }
 
-            if (sceneInfoLayout.has("panel-theme-label"))
-            {
-                setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-theme-label"));
-            }
+            setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, "panel-theme-label");
             Text(state.ui, "panel-theme-label", "Theme");
 
             bool openSceneSummary = false;
@@ -567,10 +567,8 @@ void UiLayer::render(AppState& state)
             {
                 if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
                 {
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
                 }
                 else if (widgetSpec.type == "popup" && widgetSpec.id == "popup-scene-summary")
@@ -584,16 +582,11 @@ void UiLayer::render(AppState& state)
                 }
                 else if (widgetSpec.type == "table" && widgetSpec.bind == "scene.objects")
                 {
-                    if (sceneInfoLayout.has("panel-scene-table-label"))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-table-label"));
-                    }
+                    const auto binding = sceneInfoBinding(widgetSpec.id);
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.labelSlotId);
                     Text(state.ui, "panel-scene-table-label", widgetSpec.label);
                     const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
-                    if (sceneInfoLayout.has(widgetSpec.id))
-                    {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
-                    }
+                    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, binding.valueSlotId);
                     Table(state.ui, widgetSpec.id.c_str(), columnCount, state.scene.objects.size(), [&]()
                     {
                         if (!state.ui.testMode)
@@ -656,20 +649,15 @@ void UiLayer::render(AppState& state)
                 propertiesLayout,
                 slotIds);
 
-            if (propertiesLayout.has("panel-properties-selected-object-label"))
-            {
-                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-properties-selected-object-label"));
-            }
+            const auto selectedObjectBinding = propertiesBinding("panel-selected-object");
+            setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, "panel-properties-selected-object-label");
             Text(state.ui, "panel-properties-selected-object-label", "Selected Object");
 
             std::vector<std::string> objectIds;
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
 
-            if (propertiesLayout.has("panel-selected-object"))
-            {
-                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-selected-object"));
-            }
+            setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, selectedObjectBinding.valueSlotId);
             const auto selectedValue = ComboBox(
                 state.ui,
                 "panel-selected-object",
@@ -681,10 +669,7 @@ void UiLayer::render(AppState& state)
                 queueUiCommand(state.ui, "scene.select_object", selectedValue);
             }
 
-            if (propertiesLayout.has("panel-properties-selected-object"))
-            {
-                setNextWidgetLayout(state.ui, propertiesLayout.rect("panel-properties-selected-object"));
-            }
+            setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, "panel-properties-selected-object");
             Text(
                 state.ui,
                 "panel-properties-selected-object",
@@ -700,17 +685,11 @@ void UiLayer::render(AppState& state)
 
             auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision)
             {
-                const auto labelSlot = propertiesLabelSlotId(widgetSpec.id);
-                if (propertiesLayout.has(labelSlot))
-                {
-                    setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
-                }
-                Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+                const auto binding = propertiesBinding(widgetSpec.id);
+                setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, binding.labelSlotId);
+                Text(state.ui, binding.labelSlotId.c_str(), widgetSpec.label);
 
-                if (propertiesLayout.has(widgetSpec.id))
-                {
-                    setNextWidgetLayout(state.ui, propertiesLayout.rect(widgetSpec.id));
-                }
+                setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, binding.valueSlotId);
                 value = InputDouble(
                     state.ui,
                     widgetSpec.id.c_str(),
@@ -722,17 +701,11 @@ void UiLayer::render(AppState& state)
             auto emitUnitEditablePropertyRow =
                 [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
             {
-                const auto labelSlot = propertiesLabelSlotId(widgetSpec.id);
-                if (propertiesLayout.has(labelSlot))
-                {
-                    setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
-                }
-                Text(state.ui, labelSlot.c_str(), widgetSpec.label);
+                const auto binding = propertiesBinding(widgetSpec.id);
+                setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, binding.labelSlotId);
+                Text(state.ui, binding.labelSlotId.c_str(), widgetSpec.label);
 
-                if (propertiesLayout.has(widgetSpec.id))
-                {
-                    setNextWidgetLayout(state.ui, propertiesLayout.rect(widgetSpec.id));
-                }
+                setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, binding.valueSlotId);
                 value = InputDouble(
                     state.ui,
                     widgetSpec.id.c_str(),
