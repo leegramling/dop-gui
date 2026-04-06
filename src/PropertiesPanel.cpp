@@ -11,6 +11,24 @@ const UiPanelWidgetNode* findWidget(const UiPanelTree& root, std::string_view wi
 {
     return root.findWidget(widgetId);
 }
+
+double* resolveSelectedObjectDouble(AppState& state, std::string_view bind)
+{
+    auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
+    if (!selectedObject) return nullptr;
+
+    if (bind == "scene.selected.position.x") return &selectedObject->position.x;
+    if (bind == "scene.selected.position.y") return &selectedObject->position.y;
+    if (bind == "scene.selected.position.z") return &selectedObject->position.z;
+    if (bind == "scene.selected.rotation.x") return &selectedObject->rotation.x;
+    if (bind == "scene.selected.rotation.y") return &selectedObject->rotation.y;
+    if (bind == "scene.selected.rotation.z") return &selectedObject->rotation.z;
+    if (bind == "scene.selected.scale.x") return &selectedObject->scale.x;
+    if (bind == "scene.selected.scale.y") return &selectedObject->scale.y;
+    if (bind == "scene.selected.scale.z") return &selectedObject->scale.z;
+
+    return nullptr;
+}
 }
 
 std::string_view PropertiesPanel::id() const
@@ -27,12 +45,64 @@ PanelMinSize PropertiesPanel::minSize(const UiPanelState& panelState) const
 void PropertiesPanel::init(const UiPanelState& panelState)
 {
     _root = UiPanelTree::build(panelState);
+
+    _root.setWidgetRenderer("selected-object", [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+    {
+        auto& state = context.panelContext.state;
+        const auto objectIds = collectSceneObjectIds(state.scene);
+        const auto selectedValue = renderSelectedObjectControl(
+            state.ui,
+            context.layout,
+            node.slots,
+            node.spec.id.c_str(),
+            "panel-properties-selected-object-label",
+            "Selected Object",
+            state.scene.selectedObjectId,
+            objectIds);
+        if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
+        {
+            queueUiCommand(state.ui, "scene.select_object", selectedValue);
+        }
+    });
+
+    _root.setWidgetRenderer("selected-object-summary", [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+    {
+        auto& state = context.panelContext.state;
+        setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
+        Text(
+            state.ui,
+            node.spec.slotId.c_str(),
+            state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
+    });
+
+    for (const auto& widget : _root.widgets())
+    {
+        if (widget.spec.type != "input_double") continue;
+
+        _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+        {
+            auto& state = context.panelContext.state;
+            auto* value = resolveSelectedObjectDouble(state, node.spec.bind);
+            if (!value) return;
+
+            setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.labelSlotId);
+            Text(state.ui, node.slots.labelSlotId.c_str(), node.spec.label);
+
+            setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
+            *value = InputDouble(
+                state.ui,
+                node.spec.id.c_str(),
+                "",
+                *value,
+                node.spec.precision,
+                node.spec.unit.empty() ? nullptr : node.spec.unit.c_str());
+        });
+    }
 }
 
 void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelState)
 {
     auto& state = context.state;
-    auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
     YogaLayout propertiesLayout;
     propertiesLayout.setLayout(_root.layoutSpec());
     ImVec2 origin{0.0f, 0.0f};
@@ -46,95 +116,10 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
     }
     propertiesLayout.resize(origin.x, origin.y, avail.x, avail.y);
     registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, _root.slotIds());
-
-    const auto* selectedObjectWidget = findWidget(_root, "selected-object");
-    const auto selectedObjectSlots = selectedObjectWidget ? selectedObjectWidget->slots : makeWidgetSlotBinding("selected-object", [](std::string_view id) { return std::string(id) + "-label"; });
-    const auto objectIds = collectSceneObjectIds(state.scene);
-    const auto selectedValue = renderSelectedObjectControl(
-        state.ui,
-        propertiesLayout,
-        selectedObjectSlots,
-        selectedObjectWidget ? selectedObjectWidget->spec.id.c_str() : "selected-object",
-        "panel-properties-selected-object-label",
-        "Selected Object",
-        state.scene.selectedObjectId,
-        objectIds);
-    if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
-    {
-        queueUiCommand(state.ui, "scene.select_object", selectedValue);
-    }
-
-    setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, "panel-properties-selected-object");
-    Text(state.ui, "panel-properties-selected-object",
-        state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
-
-    auto emitPropertyRow = [&](const std::string& key, const std::string& value)
-    {
-        Text(state.ui, ("row-" + key + "-label").c_str(), key);
-        Text(state.ui, ("row-" + key + "-value").c_str(), value);
+    UiPanelRenderContext renderContext{
+        .panelContext = context,
+        .panelState = panelState,
+        .layout = propertiesLayout,
     };
-
-    auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
-    {
-        const auto* node = findWidget(_root, widgetSpec.id);
-        const auto slots = node ? node->slots : makeWidgetSlotBinding(widgetSpec.id, [](std::string_view id) { return std::string(id) + "-label"; });
-        setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, slots.labelSlotId);
-        Text(state.ui, slots.labelSlotId.c_str(), widgetSpec.label);
-
-        setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, slots.valueSlotId);
-        value = InputDouble(state.ui, widgetSpec.id.c_str(), "", value, precision, unit);
-    };
-
-    if (!selectedObject)
-    {
-        emitPropertyRow("Selected Object", "none");
-        return;
-    }
-
-    for (const auto& node : _root.widgets())
-    {
-        const auto& widgetSpec = node.spec;
-        if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
-        {
-            continue;
-        }
-        if (widgetSpec.type != "input_double") continue;
-
-        if (widgetSpec.bind == "scene.selected.position.x")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->position.x, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.position.y")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->position.y, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.position.z")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->position.z, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.rotation.x")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->rotation.x, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.rotation.y")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->rotation.y, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.rotation.z")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->rotation.z, widgetSpec.precision, widgetSpec.unit.c_str());
-        }
-        else if (widgetSpec.bind == "scene.selected.scale.x")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->scale.x, widgetSpec.precision, nullptr);
-        }
-        else if (widgetSpec.bind == "scene.selected.scale.y")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->scale.y, widgetSpec.precision, nullptr);
-        }
-        else if (widgetSpec.bind == "scene.selected.scale.z")
-        {
-            emitEditablePropertyRow(widgetSpec, selectedObject->scale.z, widgetSpec.precision, nullptr);
-        }
-    }
+    _root.render(renderContext);
 }

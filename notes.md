@@ -43,6 +43,7 @@
 - [x] Add panel-scoped UI test commands such as `ui.test.panel.panel-properties.set_text.position-x=...` so local widget ids can be addressed without relying on a single global flat action namespace.
 - [x] Record that declarative JSON5 UI is still the target architecture, but a fallback hand-coded panel path with custom `initialize`/builder layout and `render` methods remains acceptable for special panels until the JSON5 schema is expressive enough.
 - [x] Introduce a reusable built JSON5 panel-tree path and move `Properties` onto it so the panel no longer owns a dedicated `buildLayout()` function.
+- [x] Move `Properties` widget rendering onto panel-tree renderer callbacks so the panel render path now delegates most authored widget dispatch to `root.render(...)`.
 
 ## Architecture Notes
 

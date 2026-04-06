@@ -154,6 +154,7 @@ Success criteria:
 - preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
 - shift UI test command usage toward panel-scoped widget ids so shorter local names no longer depend on one global flat action namespace
 - move panel-local layout ownership out of specific panel classes and into a reusable built JSON5 panel-tree path
+- move panel-local widget rendering dispatch into the reusable built panel-tree path so panel classes stop hand-walking widget specs
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
 
@@ -163,4 +164,5 @@ Next focus after current slice:
 - finish shortening authored widget ids panel by panel once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
 - shift more command/query and test usage toward scoped widget paths as shorter local ids become normal
 - extend the reusable JSON5 panel-tree path beyond `Properties` so panel classes stop owning custom layout builders by default
+- extend the reusable JSON5 panel-tree render path beyond `Properties` so panel classes stop owning custom widget dispatch by default
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

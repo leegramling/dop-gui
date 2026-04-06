@@ -51,6 +51,7 @@ Documentation requirement:
 - keep `data.*` queries backed by plain application state rather than renderer-owned metadata
 - make declarative JSON5 UI the primary authored path while preserving a fallback hand-coded panel path when the JSON5 schema is not yet sufficient
 - build runtime UI/layout trees from authored JSON5 specs so panel classes do not normally own their own layout-construction code
+- let built runtime UI trees own the default widget render dispatch path so panel classes trend toward high-level orchestration rather than per-widget rendering code
 
 ## Top-Level Components
 

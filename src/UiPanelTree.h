@@ -4,8 +4,11 @@
 #include "UiLayoutUtils.h"
 #include "YogaLayout.h"
 
+#include <functional>
 #include <string_view>
 #include <vector>
+
+struct PanelContext;
 
 /**
  * @brief Built widget node resolved from an authored panel spec.
@@ -17,11 +20,23 @@ struct UiPanelWidgetNode
 };
 
 /**
+ * @brief Shared render context passed to built panel-tree widget renderers.
+ */
+struct UiPanelRenderContext
+{
+    PanelContext& panelContext;
+    const UiPanelState& panelState;
+    const YogaLayout& layout;
+};
+
+/**
  * @brief Built runtime tree metadata for a declarative authored panel.
  */
 class UiPanelTree
 {
 public:
+    using WidgetRenderer = std::function<void(UiPanelRenderContext&, const UiPanelWidgetNode&)>;
+
     /**
      * @brief Build a runtime panel tree from an authored panel specification.
      * @param panelState Authored panel specification.
@@ -45,7 +60,7 @@ public:
      * @brief Return the built widget nodes for the panel.
      * @return Built widget nodes.
      */
-    const std::vector<UiPanelWidgetNode>& widgets() const;
+    std::vector<UiPanelWidgetNode> widgets() const;
 
     /**
      * @brief Find a built widget node by widget id.
@@ -54,8 +69,27 @@ public:
      */
     const UiPanelWidgetNode* findWidget(std::string_view widgetId) const;
 
+    /**
+     * @brief Assign a renderer callback for a built widget node.
+     * @param widgetId Stable widget identifier.
+     * @param renderer Widget renderer callback.
+     */
+    void setWidgetRenderer(std::string_view widgetId, WidgetRenderer renderer);
+
+    /**
+     * @brief Render the widget nodes that currently have registered renderers.
+     * @param context Shared panel render context.
+     */
+    void render(UiPanelRenderContext& context) const;
+
 private:
+    struct BuiltWidget
+    {
+        UiPanelWidgetNode node;
+        WidgetRenderer renderer;
+    };
+
     YogaLayout::Spec _layoutSpec;
     std::vector<std::string> _slotIds;
-    std::vector<UiPanelWidgetNode> _widgets;
+    std::vector<BuiltWidget> _widgets;
 };

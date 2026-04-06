@@ -92,7 +92,7 @@
               { widget: "selected-object", flex: 1, height: 24 },
             ],
           },
-          { slot: "panel-properties-selected-object", width: 360, height: 20 },
+          { widget: "selected-object-summary", width: 360, height: 20 },
           {
             type: "row",
             gap: 8,
@@ -169,6 +169,7 @@
       },
       widgets: [
         { id: "selected-object", slotId: "panel-selected-object", labelSlot: "panel-properties-selected-object-label", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object", layout: { x: 132, y: 40, w: 200, h: 24 } },
+        { id: "selected-object-summary", slotId: "panel-properties-selected-object", type: "text", label: "Selected Summary", bind: "scene.selectedObjectSummary" },
         { id: "position-x", slotId: "input-properties-position-x", type: "input_double", label: "Location X", bind: "scene.selected.position.x", unit: "m", precision: 2 },
         { id: "position-y", slotId: "input-properties-position-y", type: "input_double", label: "Location Y", bind: "scene.selected.position.y", unit: "m", precision: 2 },
         { id: "position-z", slotId: "input-properties-position-z", type: "input_double", label: "Location Z", bind: "scene.selected.position.z", unit: "m", precision: 2 },
