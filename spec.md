@@ -116,6 +116,9 @@ Responsibilities:
 - observe and eventually own ImGui platform/renderer window callbacks
 - provide a stable boundary where ImGui tear-out requests can be translated into VSG window creation and destruction
 - keep window creation policy separate from `UiLayer` and from scene/render synchronization
+- own the first secondary-window `vsg::WindowTraits` policy for tear-out windows
+- detect whether the current docking path actually produces panel tear-out events before full secondary-window orchestration is attempted
+- prepare the handoff where UI presentation command graphs can move into a tear-out window and later reattach to the primary dockspace
 
 Non-responsibilities:
 
@@ -133,6 +136,8 @@ Responsibilities:
 - expose a narrow API to update the visualization
 - own optional scene helpers such as a display grid when requested by state
 - prepare to own per-window render resources, command graphs, and scene/UI presentation for future managed windows
+- support creating and destroying additional per-window render resources once `WindowManager` requests a tear-out window
+- support moving panel/UI command graphs between the primary window and future tear-out windows without making `WindowManager` own render-graph details
 
 Non-responsibilities:
 
@@ -163,6 +168,7 @@ Responsibilities:
 - own panel-local widget binding and layout interpretation
 - expose panel callbacks, docking policy, and future tear-out behavior through explicit state and options
 - support a fallback hand-coded panel path for early prototypes or exceptional panels that still need an `initialize` builder phase and a custom `render` method
+- expose stable identity that can survive detach/reattach when a panel eventually moves between the main dockspace and a tear-out window
 
 Non-responsibilities:
 
@@ -361,6 +367,10 @@ Next UI expansion target:
 - panel callbacks that trigger explicit commands or state updates
 - docking and tear-out capable panels where supported by the local ImGui integration
 - Yoga-backed layout definitions in panel init code, using the local `../vsgLayt` examples as the first reference point
+- incremental tear-out work:
+  - first confirm callback/event viability for drag-out and reattach
+  - then add secondary-window traits and managed VSG windows
+  - then move UI command graphs between windows
 
 ## Scene Growth Direction
 

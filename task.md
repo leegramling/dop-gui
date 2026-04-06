@@ -2,17 +2,13 @@
 
 ## Active Slice
 
-- [x] Add a hand-coded `New Shape` panel as the documented fallback-panel development example.
-- [x] Define the `New Shape` panel Yoga layout in `init()` and widget callbacks in `render()`.
-- [x] Add shape type selection for `Sphere`, `Torus`, and `Pyramid`.
-- [x] Add transform inputs for location `x/y/z`, rotation `x/y/z`, and scale `x/y/z`.
-- [x] Add a color hex input for the created shape.
-- [x] Make the panel testable through the shared `ui.test.*` flow used by both headless and live UI execution.
-- [x] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
-- [x] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
-- [x] Add `Scene -> Create` to open the dialog panel from the main menu.
-- [x] Add `Cancel` to the hand-coded dialog and close the panel on both `Create` and `Cancel`.
-- [x] Recompile live-created shape scene resources before VSG records them, so runtime creation no longer crashes.
+- [ ] Confirm whether the current docking path exposes panel tear-out or viewport callbacks that `WindowManager` can observe.
+- [ ] Route the first tear-out callback/status reporting through `WindowManager`.
+- [ ] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
+- [ ] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
+- [ ] Prepare `VsgVisualizer` to create per-window render resources and UI command graphs for a managed secondary window.
+- [ ] Move detached panel UI command-graph ownership into the new window when tear-out is detected.
+- [ ] Support reattaching a torn-out panel back into the primary dockspace and main UI command graph.
 
 ## Next Tasks
 
@@ -54,6 +50,7 @@
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
 - [x] Add test commands and queries for hand-coded panel-driven scene creation.
+- [ ] Add queries and diagnostics for managed windows, tear-out callback status, and detached panel placement.
 
 ## Follow-Up Validation
 
@@ -63,6 +60,7 @@
 - [x] Confirm the first JSON5-authored flex layout produces the same runtime slot/widget query surface as the current builder-based layout.
 - [x] Confirm `Scene Info` and `Properties` both preserve the existing runtime slot/widget query surface after the JSON5 layout transition.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
+- [ ] Confirm a detached panel can move into a secondary managed VSG window and then reattach.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 - [x] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless `ui.test.*` flows.
 
@@ -81,3 +79,4 @@
 - [x] Current public interfaces are documented in Doxygen style.
 - [x] A `HowToAddTestCommands` guide exists in the repo.
 - [x] The current hand-coded panel dev-example scope is clearly implemented in thin slices.
+- [ ] The first tear-out/reattach window-management scope is clearly implemented in thin slices.

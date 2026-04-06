@@ -114,6 +114,24 @@
 - prepare `VsgVisualizer` ownership boundaries for per-window render resources and command graphs
 - defer actual tear-out window creation until the callback path and VSG window policy are explicit
 
+## Phase 3F1: Tear-Out Event Detection
+
+- confirm whether the current `vsgImGui` / ImGui docking path exposes enough drag-out or viewport callbacks to detect panel tear-out intent
+- record callback/status information through `WindowManager`
+- keep this slice observational first: do not add new VSG windows until callback viability is proven
+
+## Phase 3F2: Secondary Window Creation
+
+- define the first `vsg::WindowTraits` policy for tear-out windows
+- let `WindowManager` create and destroy a managed secondary VSG window when tear-out is requested
+- prepare `VsgVisualizer` to create per-window render resources and command graphs for that window
+
+## Phase 3F3: Panel Command-Graph Migration
+
+- move detached panel UI presentation into the tear-out window scene graph
+- support reattaching a torn-out panel back into the main dockspace and primary UI command graph
+- keep window and render ownership boundaries explicit between `WindowManager` and `VsgVisualizer`
+
 ## Phase 3C: First Tool UI
 
 - add a menubar with `File -> Exit`
@@ -153,7 +171,7 @@
 
 ## Current Focus
 
-Current focus is a deliberate hand-coded panel example after the authored-layout milestone: add a `New Shape` panel that demonstrates the fallback `Panel` path with explicit `init()` layout and `render()` callbacks while staying fully testable and extending scene/render support for new primitive kinds.
+Current focus is tear-out preparation after the `New Shape` panel slice: verify whether the current docking path can tell us when panels are dragged out, then add the first managed secondary-window policy only after that callback/event path is real.
 
 Success criteria:
 
@@ -171,13 +189,15 @@ Success criteria:
 - finish the current feature by moving selected-object controls onto the same generic panel-tree binder path, leaving popup and table behavior as the last intentional custom renderers to defer
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
-- prove the fallback path with one real hand-coded panel that is still queryable and scriptable through the same UI test infrastructure
-- add `sphere`, `torus`, and `pyramid` as new renderable scene kinds created through that panel
-- keep new-shape creation state flowing through plain application data before render sync
-- keep the hand-coded example narrow and complete so the next branch can return to broader scene-asset or declarative-UI work without carrying partial panel scaffolding
+- confirm whether the current docking path exposes enough tear-out events or callbacks to support managed windows at all
+- keep the first tear-out slice observational before adding any secondary VSG window implementation
+- add the first `WindowTraits` policy only after callback viability is demonstrated
+- prepare `VsgVisualizer` for future per-window command-graph ownership without collapsing window lifecycle into render code
+- move detached panel UI command graphs into a secondary window only after both callback detection and secondary-window creation exist
+- support reattaching detached panels back into the main dockspace after the detach path is working
 
 Next focus after current slice:
 
-- move `.gltf` / `.glb` scene growth into the next feature once the hand-coded panel example is complete
-- keep reducing legacy flat widget-id reliance once the new panel also works with panel-scoped commands and queries
+- add real secondary-window creation and destruction if tear-out callback observation is viable
+- move `.gltf` / `.glb` scene growth into the next feature after the tear-out direction is clarified
 - revisit popup/table generalization in a later feature if we still want zero custom renderers in the declarative path

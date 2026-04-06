@@ -58,6 +58,8 @@
 - [x] Add `Scene -> Create` so the hand-coded dialog opens from the menubar instead of staying open by default.
 - [x] Close the `New Shape` dialog on both `Create` and `Cancel`, and cover the open/create/close/reopen/cancel flow in headless UI scripts.
 - [x] Recompile newly created scene objects through the viewer compile manager so live shape creation no longer crashes during VSG record traversal.
+- [x] Create feature branch `feature/window-tearout-window-manager`.
+- [x] Record the next feature as tear-out and reattach work centered on `WindowManager`, secondary-window traits, and UI command-graph movement between windows.
 
 ## Architecture Notes
 
@@ -65,6 +67,8 @@
 - [x] Keep domain state out of VSG node types.
 - [x] Aim for a pipeline where scene data is transformed into render data, rather than making VSG the primary model.
 - [x] Keep the first app self-contained by generating its scene in code.
+- [x] Keep tear-out work incremental: observe/detect drag-out first, then create a managed secondary window, then move panel UI command graphs.
+- [x] Keep `WindowManager` responsible for callback observation and window lifecycle policy, while `VsgVisualizer` stays responsible for per-window render resources and command graphs.
 
 ## Local Dependency Inventory
 
