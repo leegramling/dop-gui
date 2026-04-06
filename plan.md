@@ -158,6 +158,7 @@ Success criteria:
 - replace remaining per-panel bind `if` chains with table-driven or generic bind resolution as panel-tree rendering takes over
 - extend the built panel-tree render path from `Properties` to `Scene Info` so authored panels share one default render architecture
 - move common widget binding/render patterns into reusable panel-tree helpers so panel classes keep only exceptional UI behavior
+- migrate both current panels onto those generic panel-tree helpers so the remaining custom code is isolated to genuinely exceptional widgets
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
 
