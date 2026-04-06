@@ -32,6 +32,8 @@
 - [x] Add minimum size constraints for the Yoga-backed panels so resizing cannot collapse controls into overlap.
 - [x] Add the first declarative JSON5 flex-layout tree for `Properties` and feed it into Yoga instead of relying only on a hand-built panel layout function.
 - [x] Keep `ui.layout`, `ui.layout.slot.*`, and `ui.widget.*` inspection stable while `Properties` moves from builder-only layout to JSON5-authored flex layout.
+- [x] Move `Scene Info` onto the same JSON5-authored flex-layout path so both main panels now use authored Yoga trees rather than builder-only layout definitions.
+- [x] Extract the flex-tree-to-Yoga conversion into shared UI layout helpers so declarative layout parsing is no longer panel-specific.
 
 ## Architecture Notes
 

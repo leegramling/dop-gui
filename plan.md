@@ -143,17 +143,17 @@
 
 ## Current Focus
 
-Current focus is the transition from the first `Phase 3E1` slice to broader authored-layout adoption: keep the current Yoga/query path stable while extending the declarative JSON5 flex-layout approach beyond `Properties`.
+Current focus is broader authored-layout adoption after the first `Phase 3E1` conversions: keep the current Yoga/query path stable while reducing the remaining builder-only layout assumptions.
 
 Success criteria:
 
 - keep the tested command/query and live playback seams stable while layout becomes more declarative
-- prove one real panel can load its flex-layout structure from JSON5 and still drive Yoga layout rects
+- prove the main panels can load their flex-layout structures from JSON5 and still drive Yoga layout rects
 - preserve `ui.layout.slot.*` inspection while changing the authored layout source
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 
 Next focus after current slice:
 
 - expand authored layout support only after the first minimal vocabulary is stable
-- decide when `Scene Info` should move from builder-defined layout to the same JSON5-defined flex layout path
+- reduce remaining duplication between authored widget definitions and authored layout slot ids
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

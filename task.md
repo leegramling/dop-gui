@@ -3,6 +3,7 @@
 ## Active Slice
 
 - [x] Define the first declarative JSON5 flex-layout slice for `Properties`.
+- [x] Extend the declarative JSON5 flex-layout path to `Scene Info`.
 
 ## Next Tasks
 
@@ -18,6 +19,7 @@
 - [x] Define a minimal JSON5 flex-layout vocabulary for authored panels.
 - [x] Convert the `Properties` panel layout from builder code to authored JSON5 layout.
 - [x] Preserve `ui.layout.slot.*` and `ui.widget.*` query behavior during the layout-source transition.
+- [x] Move `Scene Info` from builder code to authored JSON5 flex layout.
 
 ## Next Slice Candidates
 
@@ -37,6 +39,7 @@
 - [x] Confirm the widget expansion still preserves headless/live simulation symmetry.
 - [x] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
 - [x] Confirm the first JSON5-authored flex layout produces the same runtime slot/widget query surface as the current builder-based layout.
+- [x] Confirm `Scene Info` and `Properties` both preserve the existing runtime slot/widget query surface after the JSON5 layout transition.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 

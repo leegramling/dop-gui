@@ -2,6 +2,47 @@
 
 #include "Widgets.h"
 
+namespace
+{
+YogaLayout::Length flexLength(const std::optional<double>& pxValue, const std::optional<double>& flexValue)
+{
+    if (flexValue && *flexValue > 0.0) return YogaLayout::Length::flex(static_cast<float>(*flexValue));
+    if (pxValue) return YogaLayout::Length::px(static_cast<float>(*pxValue));
+    return YogaLayout::Length::autoV();
+}
+
+YogaLayout::Style styleFromFlexNode(const UiFlexNodeState& node)
+{
+    YogaLayout::Style style;
+    style.direction = node.type == "row" ? YogaLayout::Axis::Row : YogaLayout::Axis::Column;
+    style.gap = static_cast<float>(node.gap);
+    style.width = flexLength(node.width, node.flex);
+    style.height = node.height ? YogaLayout::Length::px(static_cast<float>(*node.height)) : YogaLayout::Length::autoV();
+    return style;
+}
+
+std::size_t appendFlexNode(
+    YogaLayout::Spec& spec,
+    const UiFlexNodeState& node,
+    std::optional<std::size_t> parentIndex,
+    std::size_t& generatedIndex)
+{
+    const auto name = !node.slot.empty() ? node.slot : ("flex-node-" + std::to_string(generatedIndex++));
+    spec.nodes.push_back(YogaLayout::Node{
+        .name = name,
+        .style = styleFromFlexNode(node),
+        .children = {},
+    });
+    const auto index = spec.nodes.size() - 1;
+    if (parentIndex) spec.nodes[*parentIndex].children.push_back(index);
+    for (const auto& child : node.children)
+    {
+        appendFlexNode(spec, child, index, generatedIndex);
+    }
+    return index;
+}
+}
+
 void queueUiCommand(UiState& uiState, const std::string& commandName, const std::string& value)
 {
     if (commandName.empty()) return;
@@ -96,4 +137,12 @@ std::string renderSelectedObjectControl(
         widget->textValue = selectedValue;
     }
     return selectedValue;
+}
+
+YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode)
+{
+    YogaLayout::Spec spec;
+    std::size_t generatedIndex = 0;
+    spec.root = appendFlexNode(spec, rootNode, std::nullopt, generatedIndex);
+    return spec;
 }

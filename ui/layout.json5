@@ -21,6 +21,45 @@
       closable: false,
       flags: ["NoCollapse"],
       layout: { x: 24, y: 48, w: 360, h: 520 },
+      flexLayout: {
+        type: "column",
+        gap: 8,
+        children: [
+          { slot: "panel-fps", width: 360, height: 20 },
+          { slot: "panel-object-count", width: 360, height: 20 },
+          { slot: "panel-display-grid", width: 144, height: 24 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "panel-bgcolor", flex: 1, height: 24 },
+              { slot: "panel-bgcolor-label", width: 116, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "panel-scene-select", flex: 1, height: 24 },
+              { slot: "panel-scene-select-label", width: 116, height: 24 },
+            ],
+          },
+          { slot: "panel-theme-label", width: 360, height: 20 },
+          { slot: "panel-theme-dark", width: 120, height: 24 },
+          { slot: "panel-theme-light", width: 120, height: 24 },
+          { slot: "panel-scene-summary-open", width: 144, height: 24 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "panel-scene-selected-object-label", width: 116, height: 24 },
+              { slot: "panel-scene-selected-object", flex: 1, height: 24 },
+            ],
+          },
+          { slot: "panel-scene-table-label", width: 360, height: 20 },
+          { slot: "panel-scene-table", width: 360, height: 180 },
+        ],
+      },
       widgets: [
         { id: "panel-fps", type: "text", label: "FPS", bind: "view.fps.text" },
         { id: "panel-object-count", type: "text", label: "Objects", bind: "scene.objectCount.text" },

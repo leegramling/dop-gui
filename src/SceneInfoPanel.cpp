@@ -68,6 +68,78 @@ std::vector<std::string_view> slotIds()
 
 YogaLayout::Spec buildLayout()
 {
+    using Builder = YogaLayout::Builder;
+    using Length = YogaLayout::Length;
+    using Style = YogaLayout::Style;
+
+    Style root;
+    root.direction = YogaLayout::Axis::Column;
+    root.gap = 8.0f;
+    root.width = Length::percent(100.0f);
+    root.height = Length::autoV();
+
+    Style labelRow;
+    labelRow.width = Length::percent(100.0f);
+    labelRow.height = Length::px(20.0f);
+
+    Style metricRow = labelRow;
+
+    Style row;
+    row.direction = YogaLayout::Axis::Row;
+    row.gap = 8.0f;
+    row.width = Length::percent(100.0f);
+    row.height = Length::px(24.0f);
+
+    Style label;
+    label.width = Length::px(116.0f);
+    label.height = Length::px(24.0f);
+
+    Style input;
+    input.width = Length::flex(1.0f);
+    input.height = Length::px(24.0f);
+
+    Style radio;
+    radio.width = Length::px(120.0f);
+    radio.height = Length::px(24.0f);
+
+    Style button;
+    button.width = Length::px(144.0f);
+    button.height = Length::px(24.0f);
+
+    Style table;
+    table.width = Length::percent(100.0f);
+    table.height = Length::px(180.0f);
+
+    return Builder{}
+        .root("scene-info-root", root)
+            .item("panel-fps", metricRow)
+            .item("panel-object-count", metricRow)
+            .item("panel-display-grid", button)
+            .begin("panel-bgcolor-row", row)
+                .item("panel-bgcolor", input)
+                .item("panel-bgcolor-label", label)
+            .end()
+            .begin("panel-scene-select-row", row)
+                .item("panel-scene-select", input)
+                .item("panel-scene-select-label", label)
+            .end()
+            .item("panel-theme-label", labelRow)
+            .item("panel-theme-dark", radio)
+            .item("panel-theme-light", radio)
+            .item("panel-scene-summary-open", button)
+            .begin("panel-scene-selected-object-row", row)
+                .item("panel-scene-selected-object-label", label)
+                .item("panel-scene-selected-object", input)
+            .end()
+            .item("panel-scene-table-label", labelRow)
+            .item("panel-scene-table", table)
+        .build();
+}
+
+YogaLayout::Spec buildLayout(const UiPanelState& panelState)
+{
+    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout);
+
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
     using Length = YogaLayout::Length;
@@ -152,9 +224,8 @@ PanelMinSize SceneInfoPanel::minSize(const UiPanelState& panelState) const
 void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelState)
 {
     auto& state = context.state;
-    static const auto layoutSpec = buildLayout();
     YogaLayout sceneInfoLayout;
-    sceneInfoLayout.setLayout(layoutSpec);
+    sceneInfoLayout.setLayout(buildLayout(panelState));
     ImVec2 origin{16.0f, 16.0f};
     ImVec2 avail{
         panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) - 32.0f : 328.0f,

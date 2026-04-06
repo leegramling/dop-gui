@@ -89,3 +89,9 @@ std::string renderSelectedObjectControl(
     const char* labelText,
     const std::string& selectedObjectId,
     const std::vector<std::string>& objectIds);
+/**
+ * @brief Build a Yoga layout spec from an authored declarative flex-layout tree.
+ * @param rootNode Root flex-layout node loaded from JSON5.
+ * @return Yoga layout spec equivalent to the authored flex tree.
+ */
+YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode);
