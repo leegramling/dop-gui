@@ -411,8 +411,7 @@ UiFlexNodeState parseFlexNodeBlock(const std::string& block)
     node.slot = parseOptionalStringFieldTopLevel(block, "slot").value_or("");
     node.widget = parseOptionalStringFieldTopLevel(block, "widget").value_or("");
     node.labelFor = parseOptionalStringFieldTopLevel(block, "labelFor").value_or("");
-    if (node.slot.empty() && !node.widget.empty()) node.slot = node.widget;
-    if (node.type.empty() && !node.slot.empty()) node.type = "slot";
+    if (node.type.empty() && (!node.slot.empty() || !node.widget.empty() || !node.labelFor.empty())) node.type = "slot";
     node.gap = parseOptionalDoubleFieldTopLevel(block, "gap").value_or(0.0);
     node.width = parseOptionalDoubleFieldTopLevel(block, "width");
     node.height = parseOptionalDoubleFieldTopLevel(block, "height");
@@ -444,6 +443,7 @@ UiPanelState parsePanelBlock(const std::string& block)
         {
             UiWidgetSpecState widget;
             widget.id = parseStringField(widgetBlock, "id");
+            widget.slotId = parseOptionalStringField(widgetBlock, "slotId").value_or("");
             widget.labelSlot = parseOptionalStringField(widgetBlock, "labelSlot").value_or("");
             widget.type = parseStringField(widgetBlock, "type");
             widget.label = parseStringField(widgetBlock, "label");

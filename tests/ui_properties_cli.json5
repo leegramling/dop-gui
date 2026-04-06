@@ -1,17 +1,17 @@
 {
   commands: [
     "ui.test.click.table-scene-objects-row-bootstrap_cube-select",
-    "ui.test.set_text.input-properties-position-x=1.25 m",
-    "ui.test.set_text.input-properties-rotation-z=45 deg",
-    "ui.test.set_text.input-properties-scale-z=0.900000",
+    "ui.test.set_text.position-x=1.25 m",
+    "ui.test.set_text.rotation-z=45 deg",
+    "ui.test.set_text.scale-z=0.900000",
   ],
   queries: [
     "ui.widget.table-scene-objects-row-bootstrap_cube-select",
-    "ui.widget.panel-selected-object",
+    "ui.panel.panel-properties.widget.selected-object",
     "data.scene.selection",
     "ui.widget.panel-properties-selected-object-label",
-    "ui.widget.input-properties-position-x",
-    "ui.widget.input-properties-rotation-z",
+    "ui.panel.panel-properties.widget.position-x",
+    "ui.panel.panel-properties.widget.rotation-z",
     "ui.widget.input-properties-scale-z",
     "data.scene.object.bootstrap_cube.transform",
   ],

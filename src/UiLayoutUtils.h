@@ -60,6 +60,12 @@ void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, st
  */
 std::string labelSlotForWidget(const UiWidgetSpecState& widget);
 /**
+ * @brief Resolve the runtime value slot for a widget spec.
+ * @param widget Widget spec to inspect.
+ * @return Explicit value slot id, or the default widget id.
+ */
+std::string valueSlotForWidget(const UiWidgetSpecState& widget);
+/**
  * @brief Build a widget-to-slot binding using a panel-specific label-slot resolver.
  * @param widgetId Stable widget identifier.
  * @param labelResolver Function that maps widget ids to label slot ids.

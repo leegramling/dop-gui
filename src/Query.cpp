@@ -162,6 +162,7 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 
     return makeObjectValue({
         makeField("id", makeStringValue(widget.id)),
+        makeField("slotId", makeStringValue(widget.slotId)),
         makeField("labelSlot", makeStringValue(widget.labelSlot)),
         makeField("type", makeStringValue(widget.type)),
         makeField("label", makeStringValue(widget.label)),
@@ -299,6 +300,21 @@ std::string canonicalizeQueryPath(const std::string& name)
     }
 
     throw std::runtime_error("Unknown query: " + name);
+}
+
+std::optional<std::pair<std::string, std::string>> legacyPanelWidgetAlias(std::string_view label)
+{
+    if (label == "panel-selected-object") return std::make_pair(std::string("panel-properties"), std::string("selected-object"));
+    if (label == "input-properties-position-x") return std::make_pair(std::string("panel-properties"), std::string("position-x"));
+    if (label == "input-properties-position-y") return std::make_pair(std::string("panel-properties"), std::string("position-y"));
+    if (label == "input-properties-position-z") return std::make_pair(std::string("panel-properties"), std::string("position-z"));
+    if (label == "input-properties-rotation-x") return std::make_pair(std::string("panel-properties"), std::string("rotation-x"));
+    if (label == "input-properties-rotation-y") return std::make_pair(std::string("panel-properties"), std::string("rotation-y"));
+    if (label == "input-properties-rotation-z") return std::make_pair(std::string("panel-properties"), std::string("rotation-z"));
+    if (label == "input-properties-scale-x") return std::make_pair(std::string("panel-properties"), std::string("scale-x"));
+    if (label == "input-properties-scale-y") return std::make_pair(std::string("panel-properties"), std::string("scale-y"));
+    if (label == "input-properties-scale-z") return std::make_pair(std::string("panel-properties"), std::string("scale-z"));
+    return std::nullopt;
 }
 
 QueryValue readWindowQuery(const App& app, const Segments& segments)
@@ -482,6 +498,13 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
         std::string label = segments[1];
         for (std::size_t i = 2; i < segments.size(); ++i) label += "." + segments[i];
         auto widget = findWidget(app.state().ui, label);
+        if (!widget)
+        {
+            if (auto alias = legacyPanelWidgetAlias(label))
+            {
+                widget = findWidget(app.state().ui, alias->first, alias->second);
+            }
+        }
         if (!widget) throw std::runtime_error("Unknown UI widget: " + label);
         return makeWidgetValue(*widget);
     }

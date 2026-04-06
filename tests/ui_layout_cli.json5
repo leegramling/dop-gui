@@ -8,7 +8,7 @@
     "ui.widget.panel-scene-table",
     "ui.panel.panel-properties",
     "ui.panel.panel-properties.widgets",
-    "ui.panel.panel-properties.widget.panel-selected-object",
+    "ui.panel.panel-properties.widget.selected-object",
     "ui.widget.panel-selected-object",
   ],
 }

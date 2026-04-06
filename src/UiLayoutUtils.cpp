@@ -33,7 +33,14 @@ YogaLayout::Style styleFromFlexNode(const UiFlexNodeState& node)
 std::string resolvedNodeSlotId(const UiFlexNodeState& node, const std::vector<UiWidgetSpecState>& widgets, std::size_t& generatedIndex)
 {
     if (!node.slot.empty()) return node.slot;
-    if (!node.widget.empty()) return node.widget;
+    if (!node.widget.empty())
+    {
+        if (const auto* widget = findWidgetSpec(widgets, node.widget))
+        {
+            return valueSlotForWidget(*widget);
+        }
+        return node.widget;
+    }
     if (!node.labelFor.empty())
     {
         if (const auto* widget = findWidgetSpec(widgets, node.labelFor))
@@ -126,6 +133,12 @@ std::string labelSlotForWidget(const UiWidgetSpecState& widget)
 {
     if (!widget.labelSlot.empty()) return widget.labelSlot;
     return widget.id + "-label";
+}
+
+std::string valueSlotForWidget(const UiWidgetSpecState& widget)
+{
+    if (!widget.slotId.empty()) return widget.slotId;
+    return widget.id;
 }
 
 WidgetSlotBinding makeWidgetSlotBinding(

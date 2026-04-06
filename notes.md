@@ -38,6 +38,7 @@
 - [x] Add `labelSlot` to widget specs so exceptional label-slot names like `panel-properties-selected-object-label` can still stay stable while layout becomes less repetitive.
 - [x] Add panel-aware widget registry metadata so runtime queries can resolve widgets by both flat id and panel-scoped id.
 - [x] Add `ui.panel.<panel>.widget.<id>` as the first panel-scoped widget query path, preparing for shorter panel-local widget ids later.
+- [x] Convert the `Properties` panel to shorter panel-local widget ids while preserving stable Yoga slot ids and compatibility aliases for the older flat widget query names.
 
 ## Architecture Notes
 

@@ -113,6 +113,7 @@ struct UiMenuItemState
 struct UiWidgetSpecState
 {
     std::string id;
+    std::string slotId;
     std::string labelSlot;
     std::string type;
     std::string label;

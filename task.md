@@ -6,6 +6,7 @@
 - [x] Extend the declarative JSON5 flex-layout path to `Scene Info`.
 - [x] Reduce duplicated slot naming in authored flex layout with `widget:` and `labelFor:` references.
 - [x] Add panel-scoped runtime widget lookup with `ui.panel.<panel>.widget.<id>` while keeping `ui.widget.<id>` working.
+- [x] Convert `Properties` widget ids to shorter panel-local ids while keeping stable layout slot ids and legacy flat widget-query aliases.
 
 ## Next Tasks
 
@@ -23,6 +24,7 @@
 - [x] Preserve `ui.layout.slot.*` and `ui.widget.*` query behavior during the layout-source transition.
 - [x] Move `Scene Info` from builder code to authored JSON5 flex layout.
 - [x] Add widget-aware slot references so authored flex layout no longer has to repeat most value and label slot ids verbatim.
+- [ ] Convert `Scene Info` widget ids to shorter panel-local ids while preserving panel-scoped queries and legacy flat widget-query aliases during the transition.
 
 ## Next Slice Candidates
 

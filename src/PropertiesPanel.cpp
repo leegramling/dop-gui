@@ -28,6 +28,13 @@ std::string labelSlotId(const UiPanelState& panelState, std::string_view widgetI
 
 WidgetSlotBinding binding(const UiPanelState& panelState, std::string_view widgetId)
 {
+    if (const auto* widget = findWidgetSpec(panelState, widgetId))
+    {
+        return WidgetSlotBinding{
+            .valueSlotId = valueSlotForWidget(*widget),
+            .labelSlotId = labelSlotForWidget(*widget),
+        };
+    }
     return makeWidgetSlotBinding(widgetId, [&](std::string_view id) { return labelSlotId(panelState, id); });
 }
 
@@ -43,7 +50,7 @@ std::vector<std::string> slotIds(const UiPanelState& panelState)
     {
         if (widgetSpec.type != "input_double") continue;
         ids.push_back(labelSlotId(panelState, widgetSpec.id));
-        ids.push_back(widgetSpec.id);
+        ids.push_back(valueSlotForWidget(widgetSpec));
     }
 
     return ids;
@@ -95,7 +102,7 @@ YogaLayout::Spec buildLayout(const UiPanelState& panelState)
         if (widgetSpec.type != "input_double") continue;
         builder.begin("row-" + widgetSpec.id, row)
             .item(labelSlotId(panelState, widgetSpec.id), label)
-            .item(widgetSpec.id, input)
+            .item(valueSlotForWidget(widgetSpec), input)
         .end();
     }
 
@@ -132,13 +139,14 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
     propertiesLayout.resize(origin.x, origin.y, avail.x, avail.y);
     registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, slotIds(panelState));
 
-    const auto selectedObjectSlots = binding(panelState, "panel-selected-object");
+    const auto* selectedObjectWidget = findWidgetSpec(panelState, "selected-object");
+    const auto selectedObjectSlots = selectedObjectWidget ? binding(panelState, selectedObjectWidget->id) : binding(panelState, "selected-object");
     const auto objectIds = collectSceneObjectIds(state.scene);
     const auto selectedValue = renderSelectedObjectControl(
         state.ui,
         propertiesLayout,
         selectedObjectSlots,
-        "panel-selected-object",
+        selectedObjectWidget ? selectedObjectWidget->id.c_str() : "selected-object",
         "panel-properties-selected-object-label",
         "Selected Object",
         state.scene.selectedObjectId,

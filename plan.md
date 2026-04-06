@@ -143,17 +143,18 @@
 
 ## Current Focus
 
-Current focus is broader authored-layout adoption after the first `Phase 3E1` conversions: keep the current Yoga/query path stable while reducing the remaining builder-only layout assumptions.
+Current focus is broader authored-layout adoption after the first `Phase 3E1` conversions: keep the current Yoga/query path stable while reducing the remaining builder-only layout assumptions and moving from long flat widget ids toward panel-local declarative ids.
 
 Success criteria:
 
 - keep the tested command/query and live playback seams stable while layout becomes more declarative
 - prove the main panels can load their flex-layout structures from JSON5 and still drive Yoga layout rects
 - preserve `ui.layout.slot.*` inspection while changing the authored layout source
+- preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 
 Next focus after current slice:
 
 - expand authored layout support only after the first minimal vocabulary is stable
-- start shortening authored widget ids once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
+- finish shortening authored widget ids panel by panel once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams
