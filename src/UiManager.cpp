@@ -88,7 +88,11 @@ void UiManager::initialize(
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
+    if (_windowManager)
+    {
+        _windowManager->installImGuiPlatformCallbacks();
+        _windowManager->syncImGuiStatus(state.ui);
+    }
 }
 
 void UiManager::evaluate(AppState& state)

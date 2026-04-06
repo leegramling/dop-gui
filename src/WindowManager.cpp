@@ -1,10 +1,56 @@
 #include "WindowManager.h"
 
-#include <vsgImGui/imgui.h>
+#include <algorithm>
+
+namespace
+{
+WindowManager* g_callbackOwner = nullptr;
+}
+
+WindowManager* WindowManager::callbackOwner()
+{
+    return g_callbackOwner;
+}
+
+void WindowManager::setCallbackOwner(WindowManager* owner)
+{
+    g_callbackOwner = owner;
+}
 
 void WindowManager::registerPrimaryWindow(vsg::ref_ptr<vsg::Window> window)
 {
     _primaryWindow = window;
+}
+
+void WindowManager::installImGuiPlatformCallbacks()
+{
+    if (!ImGui::GetCurrentContext()) return;
+
+    setCallbackOwner(this);
+
+    auto& platformIo = ImGui::GetPlatformIO();
+    platformIo.Platform_CreateWindow = &WindowManager::platformCreateWindow;
+    platformIo.Platform_DestroyWindow = &WindowManager::platformDestroyWindow;
+    platformIo.Platform_ShowWindow = &WindowManager::platformShowWindow;
+    platformIo.Platform_SetWindowPos = &WindowManager::platformSetWindowPos;
+    platformIo.Platform_GetWindowPos = &WindowManager::platformGetWindowPos;
+    platformIo.Platform_SetWindowSize = &WindowManager::platformSetWindowSize;
+    platformIo.Platform_GetWindowSize = &WindowManager::platformGetWindowSize;
+    platformIo.Platform_SetWindowFocus = &WindowManager::platformSetWindowFocus;
+    platformIo.Platform_GetWindowFocus = &WindowManager::platformGetWindowFocus;
+    platformIo.Platform_GetWindowMinimized = &WindowManager::platformGetWindowMinimized;
+    platformIo.Platform_SetWindowTitle = &WindowManager::platformSetWindowTitle;
+    platformIo.Renderer_CreateWindow = &WindowManager::rendererCreateWindow;
+    platformIo.Renderer_DestroyWindow = &WindowManager::rendererDestroyWindow;
+    platformIo.Renderer_SetWindowSize = &WindowManager::rendererSetWindowSize;
+
+    _callbackState.platformCallbacksInstalled = true;
+    _callbackState.rendererCallbacksInstalled = true;
+    _callbackState.lastEvent = "callbacks_installed";
+    _callbackState.lastViewportId = 0;
+
+    installPlatformMonitorSnapshot();
+    installMainViewportHandles();
 }
 
 void WindowManager::syncImGuiStatus(UiState& uiState) const
@@ -17,6 +63,8 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
         uiState.viewportsEnabled = false;
         uiState.backendPlatformHasViewports = false;
         uiState.backendRendererHasViewports = false;
+        uiState.platformCallbacksInstalled = false;
+        uiState.rendererCallbacksInstalled = false;
         uiState.platformCreateWindowCallback = false;
         uiState.platformDestroyWindowCallback = false;
         uiState.rendererCreateWindowCallback = false;
@@ -25,6 +73,12 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
         uiState.hasMainViewport = false;
         uiState.viewportCount = 0;
         uiState.monitorCount = 0;
+        uiState.platformCreateRequestCount = 0;
+        uiState.platformDestroyRequestCount = 0;
+        uiState.rendererCreateRequestCount = 0;
+        uiState.rendererDestroyRequestCount = 0;
+        uiState.lastTearOutEvent.clear();
+        uiState.lastTearOutViewportId = 0;
         return;
     }
 
@@ -34,6 +88,8 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
     uiState.viewportsEnabled = (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0;
     uiState.backendPlatformHasViewports = (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) != 0;
     uiState.backendRendererHasViewports = (io.BackendFlags & ImGuiBackendFlags_RendererHasViewports) != 0;
+    uiState.platformCallbacksInstalled = _callbackState.platformCallbacksInstalled;
+    uiState.rendererCallbacksInstalled = _callbackState.rendererCallbacksInstalled;
     uiState.platformCreateWindowCallback = platformIo.Platform_CreateWindow != nullptr;
     uiState.platformDestroyWindowCallback = platformIo.Platform_DestroyWindow != nullptr;
     uiState.rendererCreateWindowCallback = platformIo.Renderer_CreateWindow != nullptr;
@@ -42,6 +98,12 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
     uiState.hasMainViewport = ImGui::GetMainViewport() != nullptr;
     uiState.viewportCount = platformIo.Viewports.Size;
     uiState.monitorCount = platformIo.Monitors.Size;
+    uiState.platformCreateRequestCount = _callbackState.platformCreateRequestCount;
+    uiState.platformDestroyRequestCount = _callbackState.platformDestroyRequestCount;
+    uiState.rendererCreateRequestCount = _callbackState.rendererCreateRequestCount;
+    uiState.rendererDestroyRequestCount = _callbackState.rendererDestroyRequestCount;
+    uiState.lastTearOutEvent = _callbackState.lastEvent;
+    uiState.lastTearOutViewportId = static_cast<std::uint64_t>(_callbackState.lastViewportId);
 }
 
 vsg::ref_ptr<vsg::Window> WindowManager::primaryWindow() const
@@ -52,8 +114,12 @@ vsg::ref_ptr<vsg::Window> WindowManager::primaryWindow() const
 bool WindowManager::canSupportTearOutCallbacks() const
 {
     if (!ImGui::GetCurrentContext()) return false;
+
+    const auto& io = ImGui::GetIO();
     const auto& platformIo = ImGui::GetPlatformIO();
-    return platformIo.Platform_CreateWindow != nullptr &&
+    return (io.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) != 0 &&
+           (io.BackendFlags & ImGuiBackendFlags_RendererHasViewports) != 0 &&
+           platformIo.Platform_CreateWindow != nullptr &&
            platformIo.Platform_DestroyWindow != nullptr &&
            platformIo.Renderer_CreateWindow != nullptr &&
            platformIo.Renderer_DestroyWindow != nullptr;
@@ -62,4 +128,128 @@ bool WindowManager::canSupportTearOutCallbacks() const
 bool WindowManager::hasPrimaryWindow() const
 {
     return _primaryWindow.valid();
+}
+
+void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
+{
+    ++_callbackState.platformCreateRequestCount;
+    _callbackState.lastEvent = "platform_create_window";
+    _callbackState.lastViewportId = viewport ? viewport->ID : 0;
+}
+
+void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
+{
+    ++_callbackState.platformDestroyRequestCount;
+    _callbackState.lastEvent = "platform_destroy_window";
+    _callbackState.lastViewportId = viewport ? viewport->ID : 0;
+}
+
+void WindowManager::recordRendererCreateWindow(ImGuiViewport* viewport)
+{
+    ++_callbackState.rendererCreateRequestCount;
+    _callbackState.lastEvent = "renderer_create_window";
+    _callbackState.lastViewportId = viewport ? viewport->ID : 0;
+}
+
+void WindowManager::recordRendererDestroyWindow(ImGuiViewport* viewport)
+{
+    ++_callbackState.rendererDestroyRequestCount;
+    _callbackState.lastEvent = "renderer_destroy_window";
+    _callbackState.lastViewportId = viewport ? viewport->ID : 0;
+}
+
+void WindowManager::installPlatformMonitorSnapshot()
+{
+    if (!ImGui::GetCurrentContext()) return;
+
+    auto& io = ImGui::GetIO();
+    auto& platformIo = ImGui::GetPlatformIO();
+    platformIo.Monitors.clear();
+
+    ImGuiPlatformMonitor monitor;
+    monitor.MainPos = ImVec2(0.0f, 0.0f);
+    monitor.MainSize = io.DisplaySize;
+    monitor.WorkPos = monitor.MainPos;
+    monitor.WorkSize = io.DisplaySize;
+    monitor.DpiScale = 1.0f;
+    platformIo.Monitors.push_back(monitor);
+}
+
+void WindowManager::installMainViewportHandles()
+{
+    if (!ImGui::GetCurrentContext()) return;
+    auto* mainViewport = ImGui::GetMainViewport();
+    if (!mainViewport) return;
+
+    mainViewport->PlatformUserData = this;
+    mainViewport->PlatformHandle = _primaryWindow.get();
+    mainViewport->PlatformHandleRaw = _primaryWindow.get();
+}
+
+void WindowManager::platformCreateWindow(ImGuiViewport* viewport)
+{
+    if (auto* owner = callbackOwner()) owner->recordPlatformCreateWindow(viewport);
+}
+
+void WindowManager::platformDestroyWindow(ImGuiViewport* viewport)
+{
+    if (auto* owner = callbackOwner()) owner->recordPlatformDestroyWindow(viewport);
+}
+
+void WindowManager::platformShowWindow(ImGuiViewport*)
+{
+}
+
+void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
+{
+    if (viewport) viewport->Pos = pos;
+}
+
+ImVec2 WindowManager::platformGetWindowPos(ImGuiViewport* viewport)
+{
+    return viewport ? viewport->Pos : ImVec2(0.0f, 0.0f);
+}
+
+void WindowManager::platformSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+{
+    if (viewport) viewport->Size = size;
+}
+
+ImVec2 WindowManager::platformGetWindowSize(ImGuiViewport* viewport)
+{
+    return viewport ? viewport->Size : ImVec2(0.0f, 0.0f);
+}
+
+void WindowManager::platformSetWindowFocus(ImGuiViewport* viewport)
+{
+    if (viewport) viewport->Flags |= ImGuiViewportFlags_IsFocused;
+}
+
+bool WindowManager::platformGetWindowFocus(ImGuiViewport* viewport)
+{
+    return viewport ? ((viewport->Flags & ImGuiViewportFlags_IsFocused) != 0) : true;
+}
+
+bool WindowManager::platformGetWindowMinimized(ImGuiViewport* viewport)
+{
+    return viewport ? ((viewport->Flags & ImGuiViewportFlags_IsMinimized) != 0) : false;
+}
+
+void WindowManager::platformSetWindowTitle(ImGuiViewport*, const char*)
+{
+}
+
+void WindowManager::rendererCreateWindow(ImGuiViewport* viewport)
+{
+    if (auto* owner = callbackOwner()) owner->recordRendererCreateWindow(viewport);
+}
+
+void WindowManager::rendererDestroyWindow(ImGuiViewport* viewport)
+{
+    if (auto* owner = callbackOwner()) owner->recordRendererDestroyWindow(viewport);
+}
+
+void WindowManager::rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+{
+    if (viewport) viewport->Size = size;
 }

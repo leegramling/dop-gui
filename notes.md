@@ -63,6 +63,7 @@
 - [x] Add `ui.tearout.status` so `WindowManager` exposes current docking/viewport callback viability, viewport counts, and primary-window registration through the query surface.
 - [x] Confirm the current `vsgImGui` path still reports no ImGui platform/renderer tear-out callbacks, so secondary-window work remains gated behind future callback viability.
 - [x] Enable `ImGuiConfigFlags_ViewportsEnable` in the app integration and confirm that the flag alone still does not install platform/renderer viewport support or create/destroy callbacks in the current `vsgImGui` path.
+- [x] Install `WindowManager`-owned ImGui platform/renderer callback trampolines and status counters without yet advertising full backend viewport support, so live GUI runs can report callback traffic without tripping the full multi-viewport contract.
 
 ## Architecture Notes
 

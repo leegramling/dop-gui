@@ -481,6 +481,8 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
             makeField("backendPlatformHasViewports", makeBoolValue(app.state().ui.backendPlatformHasViewports)),
             makeField("backendRendererHasViewports", makeBoolValue(app.state().ui.backendRendererHasViewports)),
+            makeField("platformCallbacksInstalled", makeBoolValue(app.state().ui.platformCallbacksInstalled)),
+            makeField("rendererCallbacksInstalled", makeBoolValue(app.state().ui.rendererCallbacksInstalled)),
             makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
             makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
             makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
@@ -496,6 +498,8 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
             makeField("backendPlatformHasViewports", makeBoolValue(app.state().ui.backendPlatformHasViewports)),
             makeField("backendRendererHasViewports", makeBoolValue(app.state().ui.backendRendererHasViewports)),
+            makeField("platformCallbacksInstalled", makeBoolValue(app.state().ui.platformCallbacksInstalled)),
+            makeField("rendererCallbacksInstalled", makeBoolValue(app.state().ui.rendererCallbacksInstalled)),
             makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
             makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
             makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
@@ -504,6 +508,12 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("hasMainViewport", makeBoolValue(app.state().ui.hasMainViewport)),
             makeField("viewportCount", makeIntValue(app.state().ui.viewportCount)),
             makeField("monitorCount", makeIntValue(app.state().ui.monitorCount)),
+            makeField("platformCreateRequestCount", makeIntValue(app.state().ui.platformCreateRequestCount)),
+            makeField("platformDestroyRequestCount", makeIntValue(app.state().ui.platformDestroyRequestCount)),
+            makeField("rendererCreateRequestCount", makeIntValue(app.state().ui.rendererCreateRequestCount)),
+            makeField("rendererDestroyRequestCount", makeIntValue(app.state().ui.rendererDestroyRequestCount)),
+            makeField("lastTearOutEvent", makeStringValue(app.state().ui.lastTearOutEvent)),
+            makeField("lastTearOutViewportId", makeUIntValue(app.state().ui.lastTearOutViewportId)),
         });
     }
 

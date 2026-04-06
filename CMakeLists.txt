@@ -128,7 +128,7 @@ if(BUILD_TESTING)
         COMMAND dop-gui --ui-test-mode --query ui.tearout.status
     )
     set_tests_properties(dop_gui_ui_tearout_status PROPERTIES
-        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"query\":\"ui.tearout.status\".*\"primaryWindowRegistered\":false.*\"dockingEnabled\":false.*\"viewportsEnabled\":false.*\"backendPlatformHasViewports\":false.*\"backendRendererHasViewports\":false.*\"tearOutCallbacksSupported\":false.*\"viewportCount\":0.*\"monitorCount\":0"
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"query\":\"ui.tearout.status\".*\"primaryWindowRegistered\":false.*\"dockingEnabled\":false.*\"viewportsEnabled\":false.*\"backendPlatformHasViewports\":false.*\"backendRendererHasViewports\":false.*\"platformCallbacksInstalled\":false.*\"rendererCallbacksInstalled\":false.*\"tearOutCallbacksSupported\":false.*\"viewportCount\":0.*\"monitorCount\":0.*\"platformCreateRequestCount\":0.*\"rendererCreateRequestCount\":0"
     )
 
     add_test(

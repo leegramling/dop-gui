@@ -203,6 +203,8 @@ struct UiState
     bool viewportsEnabled = false;
     bool backendPlatformHasViewports = false;
     bool backendRendererHasViewports = false;
+    bool platformCallbacksInstalled = false;
+    bool rendererCallbacksInstalled = false;
     bool platformCreateWindowCallback = false;
     bool platformDestroyWindowCallback = false;
     bool rendererCreateWindowCallback = false;
@@ -212,6 +214,12 @@ struct UiState
     bool hasMainViewport = false;
     int viewportCount = 0;
     int monitorCount = 0;
+    int platformCreateRequestCount = 0;
+    int platformDestroyRequestCount = 0;
+    int rendererCreateRequestCount = 0;
+    int rendererDestroyRequestCount = 0;
+    std::string lastTearOutEvent;
+    std::uint64_t lastTearOutViewportId = 0;
 };
 
 /**
