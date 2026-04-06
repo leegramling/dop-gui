@@ -92,11 +92,85 @@ void registerLayoutSlots(UiState& uiState, const std::string& panelId, const Yog
     }
 }
 
+void registerLayoutSlots(UiState& uiState, const std::string& panelId, const YogaLayout& layout, const std::vector<std::string_view>& slotIds)
+{
+    for (const auto slotId : slotIds)
+    {
+        if (layout.has(slotId))
+        {
+            registerLayoutSlot(uiState, panelId, std::string(slotId), layout.rect(slotId));
+        }
+    }
+}
+
+void registerLayoutSlots(UiState& uiState, const std::string& panelId, const YogaLayout& layout, const std::vector<std::string>& slotIds)
+{
+    for (const auto& slotId : slotIds)
+    {
+        if (layout.has(slotId))
+        {
+            registerLayoutSlot(uiState, panelId, slotId, layout.rect(slotId));
+        }
+    }
+}
+
 struct YogaPanelDefinition
 {
     YogaLayout::Spec spec;
     PanelMinSize minSize;
 };
+
+std::string propertiesLabelSlotId(std::string_view widgetId)
+{
+    return std::string(widgetId) + "-label";
+}
+
+std::string sceneInfoLabelSlotId(std::string_view widgetId)
+{
+    if (widgetId == "panel-bgcolor") return "panel-bgcolor-label";
+    if (widgetId == "panel-scene-select") return "panel-scene-select-label";
+    if (widgetId == "panel-scene-selected-object") return "panel-scene-selected-object-label";
+    return std::string(widgetId) + "-label";
+}
+
+std::vector<std::string_view> sceneInfoSlotIds()
+{
+    return {
+        "panel-fps",
+        "panel-object-count",
+        "panel-display-grid",
+        "panel-bgcolor",
+        "panel-bgcolor-label",
+        "panel-scene-select",
+        "panel-scene-select-label",
+        "panel-theme-label",
+        "panel-theme-dark",
+        "panel-theme-light",
+        "panel-scene-summary-open",
+        "panel-scene-selected-object-label",
+        "panel-scene-selected-object",
+        "panel-scene-table-label",
+        "panel-scene-table",
+    };
+}
+
+std::vector<std::string> propertiesSlotIds(const UiPanelState& panelState)
+{
+    std::vector<std::string> slotIds{
+        "panel-properties-selected-object-label",
+        "panel-selected-object",
+        "panel-properties-selected-object",
+    };
+
+    for (const auto& widgetSpec : panelState.widgets)
+    {
+        if (widgetSpec.type != "input_double") continue;
+        slotIds.push_back(propertiesLabelSlotId(widgetSpec.id));
+        slotIds.push_back(widgetSpec.id);
+    }
+
+    return slotIds;
+}
 
 YogaPanelDefinition buildPropertiesPanelLayout(const UiPanelState& panelState)
 {
@@ -145,7 +219,7 @@ YogaPanelDefinition buildPropertiesPanelLayout(const UiPanelState& panelState)
         if (!(widgetSpec.type == "input_double")) continue;
 
         const auto rowId = "row-" + widgetSpec.id;
-        const auto labelId = widgetSpec.id + "-label";
+        const auto labelId = propertiesLabelSlotId(widgetSpec.id);
         builder.begin(rowId, row)
             .item(labelId, label)
             .item(widgetSpec.id, input)
@@ -353,27 +427,12 @@ void UiLayer::render(AppState& state)
                     std::max(0.0f, ImGui::GetContentRegionAvail().y));
             }
             sceneInfoLayout.resize(lowerOrigin.x, lowerOrigin.y, lowerAvail.x, lowerAvail.y);
+            const auto slotIds = sceneInfoSlotIds();
             registerLayoutSlots(
                 state.ui,
                 panelId,
                 sceneInfoLayout,
-                {
-                    "panel-fps",
-                    "panel-object-count",
-                    "panel-display-grid",
-                    "panel-bgcolor",
-                    "panel-bgcolor-label",
-                    "panel-scene-select",
-                    "panel-scene-select-label",
-                    "panel-theme-label",
-                    "panel-theme-dark",
-                    "panel-theme-light",
-                    "panel-scene-summary-open",
-                    "panel-scene-selected-object-label",
-                    "panel-scene-selected-object",
-                    "panel-scene-table-label",
-                    "panel-scene-table",
-                });
+                slotIds);
 
             for (const auto& widgetSpec : panelState.widgets)
             {
@@ -420,11 +479,12 @@ void UiLayer::render(AppState& state)
                     const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
                     state.view.backgroundColorHex = value;
                     if (value != previousValue && !widgetSpec.onChange.empty()) queueUiCommand(state.ui, widgetSpec.onChange, value);
-                    if (sceneInfoLayout.has("panel-bgcolor-label"))
+                    const auto labelSlot = sceneInfoLabelSlotId(widgetSpec.id);
+                    if (sceneInfoLayout.has(labelSlot))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-bgcolor-label"));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(labelSlot));
                     }
-                    Text(state.ui, "panel-bgcolor-label", widgetSpec.label);
+                    Text(state.ui, labelSlot.c_str(), widgetSpec.label);
                 }
                 else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
                 {
@@ -442,11 +502,12 @@ void UiLayer::render(AppState& state)
                     {
                         queueUiCommand(state.ui, widgetSpec.onChange, value);
                     }
-                    if (sceneInfoLayout.has("panel-scene-select-label"))
+                    const auto labelSlot = sceneInfoLabelSlotId(widgetSpec.id);
+                    if (sceneInfoLayout.has(labelSlot))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-select-label"));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(labelSlot));
                     }
-                    Text(state.ui, "panel-scene-select-label", widgetSpec.label);
+                    Text(state.ui, labelSlot.c_str(), widgetSpec.label);
                 }
                 else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
                 {
@@ -470,11 +531,12 @@ void UiLayer::render(AppState& state)
             std::vector<std::string> objectIds;
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-            if (sceneInfoLayout.has("panel-scene-selected-object-label"))
+            const auto selectedObjectLabelSlot = sceneInfoLabelSlotId("panel-scene-selected-object");
+            if (sceneInfoLayout.has(selectedObjectLabelSlot))
             {
-                setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-selected-object-label"));
+                setNextWidgetLayout(state.ui, sceneInfoLayout.rect(selectedObjectLabelSlot));
             }
-            Text(state.ui, "panel-scene-selected-object-label", "Selected Object");
+            Text(state.ui, selectedObjectLabelSlot.c_str(), "Selected Object");
 
             if (!objectIds.empty())
             {
@@ -587,33 +649,12 @@ void UiLayer::render(AppState& state)
                 propertiesAvail = ImGui::GetContentRegionAvail();
             }
             propertiesLayout.resize(propertiesOrigin.x, propertiesOrigin.y, propertiesAvail.x, propertiesAvail.y);
+            const auto slotIds = propertiesSlotIds(panelState);
             registerLayoutSlots(
                 state.ui,
                 panelId,
                 propertiesLayout,
-                {
-                    "panel-properties-selected-object-label",
-                    "panel-selected-object",
-                    "panel-properties-selected-object",
-                    "input-properties-position-x-label",
-                    "input-properties-position-x",
-                    "input-properties-position-y-label",
-                    "input-properties-position-y",
-                    "input-properties-position-z-label",
-                    "input-properties-position-z",
-                    "input-properties-rotation-x-label",
-                    "input-properties-rotation-x",
-                    "input-properties-rotation-y-label",
-                    "input-properties-rotation-y",
-                    "input-properties-rotation-z-label",
-                    "input-properties-rotation-z",
-                    "input-properties-scale-x-label",
-                    "input-properties-scale-x",
-                    "input-properties-scale-y-label",
-                    "input-properties-scale-y",
-                    "input-properties-scale-z-label",
-                    "input-properties-scale-z",
-                });
+                slotIds);
 
             if (propertiesLayout.has("panel-properties-selected-object-label"))
             {
@@ -659,7 +700,7 @@ void UiLayer::render(AppState& state)
 
             auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision)
             {
-                const auto labelSlot = widgetSpec.id + "-label";
+                const auto labelSlot = propertiesLabelSlotId(widgetSpec.id);
                 if (propertiesLayout.has(labelSlot))
                 {
                     setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
@@ -681,7 +722,7 @@ void UiLayer::render(AppState& state)
             auto emitUnitEditablePropertyRow =
                 [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
             {
-                const auto labelSlot = widgetSpec.id + "-label";
+                const auto labelSlot = propertiesLabelSlotId(widgetSpec.id);
                 if (propertiesLayout.has(labelSlot))
                 {
                     setNextWidgetLayout(state.ui, propertiesLayout.rect(labelSlot));
