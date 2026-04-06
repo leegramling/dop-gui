@@ -169,7 +169,10 @@ if(BUILD_TESTING)
     )
     set_tests_properties(dop_gui_ui_layout_slots PROPERTIES
         PASS_REGULAR_EXPRESSION
-        "\"query\":\"ui.layout.slot.panel-scene-info.panel-scene-summary-open\".*\"panelId\":\"panel-scene-info\".*\"slotId\":\"panel-scene-summary-open\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":239.*\"width\":144;\
+        "\"query\":\"ui.layout.slot.panel-scene-info.panel-display-grid\".*\"slotId\":\"panel-display-grid\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":64.*\"width\":144;\
+\"query\":\"ui.layout.slot.panel-scene-info.panel-bgcolor\".*\"slotId\":\"panel-bgcolor\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":96.*\"width\":204;\
+\"query\":\"ui.layout.slot.panel-scene-info.panel-scene-select\".*\"slotId\":\"panel-scene-select\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":128.*\"width\":204;\
+\"query\":\"ui.layout.slot.panel-scene-info.panel-scene-summary-open\".*\"panelId\":\"panel-scene-info\".*\"slotId\":\"panel-scene-summary-open\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":239.*\"width\":144;\
 \"query\":\"ui.layout.slot.panel-scene-info.panel-theme-light\".*\"slotId\":\"panel-theme-light\".*\"layout\":\\{\"enabled\":true.*\"x\":16.*\"y\":210.*\"width\":120;\
 \"query\":\"ui.layout.slot.panel-properties.panel-selected-object\".*\"panelId\":\"panel-properties\".*\"slotId\":\"panel-selected-object\".*\"layout\":\\{\"enabled\":true.*\"x\":124.*\"y\":0.*\"width\":236;\
 \"query\":\"ui.layout.slot.panel-properties.input-properties-rotation-z\".*\"slotId\":\"input-properties-rotation-z\".*\"layout\":\\{\"enabled\":true.*\"x\":124.*\"y\":220.*\"width\":236"

@@ -149,7 +149,7 @@ YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
     return builder.build();
 }
 
-YogaLayout::Spec buildSceneInfoLowerLayout()
+YogaLayout::Spec buildSceneInfoPanelLayout()
 {
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
@@ -165,6 +165,8 @@ YogaLayout::Spec buildSceneInfoLowerLayout()
     Style labelRow;
     labelRow.width = Length::percent(100.0f);
     labelRow.height = Length::px(20.0f);
+
+    Style metricRow = labelRow;
 
     Style row;
     row.direction = Axis::Row;
@@ -194,6 +196,17 @@ YogaLayout::Spec buildSceneInfoLowerLayout()
 
     return Builder{}
         .root("scene-info-lower-root", root)
+            .item("panel-fps", metricRow)
+            .item("panel-object-count", metricRow)
+            .item("panel-display-grid", button)
+            .begin("panel-bgcolor-row", row)
+                .item("panel-bgcolor", input)
+                .item("panel-bgcolor-label", label)
+            .end()
+            .begin("panel-scene-select-row", row)
+                .item("panel-scene-select", input)
+                .item("panel-scene-select-label", label)
+            .end()
             .item("panel-theme-label", labelRow)
             .item("panel-theme-dark", radio)
             .item("panel-theme-light", radio)
@@ -304,25 +317,32 @@ void UiLayer::render(AppState& state)
 
         if (panelId == "panel-scene-info")
         {
-            static const auto sceneInfoLowerSpec = buildSceneInfoLowerLayout();
-            YogaLayout sceneInfoLowerLayout;
-            sceneInfoLowerLayout.setLayout(sceneInfoLowerSpec);
-            ImVec2 lowerOrigin{16.0f, 156.0f};
+            static const auto sceneInfoPanelSpec = buildSceneInfoPanelLayout();
+            YogaLayout sceneInfoLayout;
+            sceneInfoLayout.setLayout(sceneInfoPanelSpec);
+            ImVec2 lowerOrigin{16.0f, 16.0f};
             ImVec2 lowerAvail{
                 panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) - 32.0f : 328.0f,
-                320.0f};
+                panelState.layout.height > 0.0 ? static_cast<float>(panelState.layout.height) - 32.0f : 488.0f};
             if (!state.ui.testMode)
             {
                 lowerAvail = ImVec2(
                     std::max(0.0f, ImGui::GetContentRegionAvail().x - 16.0f),
                     std::max(0.0f, ImGui::GetContentRegionAvail().y));
             }
-            sceneInfoLowerLayout.resize(lowerOrigin.x, lowerOrigin.y, lowerAvail.x, lowerAvail.y);
+            sceneInfoLayout.resize(lowerOrigin.x, lowerOrigin.y, lowerAvail.x, lowerAvail.y);
             registerLayoutSlots(
                 state.ui,
                 panelId,
-                sceneInfoLowerLayout,
+                sceneInfoLayout,
                 {
+                    "panel-fps",
+                    "panel-object-count",
+                    "panel-display-grid",
+                    "panel-bgcolor",
+                    "panel-bgcolor-label",
+                    "panel-scene-select",
+                    "panel-scene-select-label",
                     "panel-theme-label",
                     "panel-theme-dark",
                     "panel-theme-light",
@@ -339,19 +359,28 @@ void UiLayer::render(AppState& state)
                 {
                     if (widgetSpec.bind == "view.fps.text")
                     {
-                        setNextWidgetLayout(state.ui, widgetSpec.layout);
+                        if (sceneInfoLayout.has(widgetSpec.id))
+                        {
+                            setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
+                        }
                         Text(state.ui, widgetSpec.id.c_str(), fpsText(state.view.fps));
                     }
                     else if (widgetSpec.bind == "scene.objectCount.text")
                     {
-                        setNextWidgetLayout(state.ui, widgetSpec.layout);
+                        if (sceneInfoLayout.has(widgetSpec.id))
+                        {
+                            setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
+                        }
                         Text(state.ui, widgetSpec.id.c_str(), objectCountText(state));
                     }
                 }
                 else if (widgetSpec.type == "checkbox" && widgetSpec.bind == "ui.displayGrid")
                 {
                     bool value = state.ui.displayGrid;
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
+                    }
                     const bool changed = Checkbox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), value);
                     state.ui.displayGrid = value;
                     if (changed && !widgetSpec.onChange.empty())
@@ -362,14 +391,25 @@ void UiLayer::render(AppState& state)
                 else if (widgetSpec.type == "input" && widgetSpec.bind == "view.backgroundColorHex")
                 {
                     const auto previousValue = state.view.backgroundColorHex;
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
+                    }
                     const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
                     state.view.backgroundColorHex = value;
                     if (value != previousValue && !widgetSpec.onChange.empty()) queueUiCommand(state.ui, widgetSpec.onChange, value);
+                    if (sceneInfoLayout.has("panel-bgcolor-label"))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-bgcolor-label"));
+                    }
+                    Text(state.ui, "panel-bgcolor-label", widgetSpec.label);
                 }
                 else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
                 {
-                    setNextWidgetLayout(state.ui, widgetSpec.layout);
+                    if (sceneInfoLayout.has(widgetSpec.id))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
+                    }
                     const auto value = ComboBox(
                         state.ui,
                         widgetSpec.id.c_str(),
@@ -380,13 +420,18 @@ void UiLayer::render(AppState& state)
                     {
                         queueUiCommand(state.ui, widgetSpec.onChange, value);
                     }
+                    if (sceneInfoLayout.has("panel-scene-select-label"))
+                    {
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-select-label"));
+                    }
+                    Text(state.ui, "panel-scene-select-label", widgetSpec.label);
                 }
                 else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
                 {
                     const bool selected = state.ui.themeMode == widgetSpec.arg;
-                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    if (sceneInfoLayout.has(widgetSpec.id))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
                     }
                     if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) &&
                         !widgetSpec.onClick.empty())
@@ -403,17 +448,17 @@ void UiLayer::render(AppState& state)
             std::vector<std::string> objectIds;
             objectIds.reserve(state.scene.objects.size());
             for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-            if (sceneInfoLowerLayout.has("panel-scene-selected-object-label"))
+            if (sceneInfoLayout.has("panel-scene-selected-object-label"))
             {
-                setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-selected-object-label"));
+                setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-selected-object-label"));
             }
             Text(state.ui, "panel-scene-selected-object-label", "Selected Object");
 
             if (!objectIds.empty())
             {
-                if (sceneInfoLowerLayout.has("panel-scene-selected-object"))
+                if (sceneInfoLayout.has("panel-scene-selected-object"))
                 {
-                    setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-selected-object"));
+                    setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-selected-object"));
                 }
                 const auto selectedObject = ComboBox(
                     state.ui,
@@ -427,9 +472,9 @@ void UiLayer::render(AppState& state)
                 }
             }
 
-            if (sceneInfoLowerLayout.has("panel-theme-label"))
+            if (sceneInfoLayout.has("panel-theme-label"))
             {
-                setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-theme-label"));
+                setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-theme-label"));
             }
             Text(state.ui, "panel-theme-label", "Theme");
 
@@ -438,9 +483,9 @@ void UiLayer::render(AppState& state)
             {
                 if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
                 {
-                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    if (sceneInfoLayout.has(widgetSpec.id))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
                     }
                     openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
                 }
@@ -455,15 +500,15 @@ void UiLayer::render(AppState& state)
                 }
                 else if (widgetSpec.type == "table" && widgetSpec.bind == "scene.objects")
                 {
-                    if (sceneInfoLowerLayout.has("panel-scene-table-label"))
+                    if (sceneInfoLayout.has("panel-scene-table-label"))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect("panel-scene-table-label"));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect("panel-scene-table-label"));
                     }
                     Text(state.ui, "panel-scene-table-label", widgetSpec.label);
                     const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
-                    if (sceneInfoLowerLayout.has(widgetSpec.id))
+                    if (sceneInfoLayout.has(widgetSpec.id))
                     {
-                        setNextWidgetLayout(state.ui, sceneInfoLowerLayout.rect(widgetSpec.id));
+                        setNextWidgetLayout(state.ui, sceneInfoLayout.rect(widgetSpec.id));
                     }
                     Table(state.ui, widgetSpec.id.c_str(), columnCount, state.scene.objects.size(), [&]()
                     {
