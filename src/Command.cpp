@@ -126,6 +126,8 @@ std::string canonicalizeCommandPath(const std::string& name)
     if (path == "scene.load.cubes") return path;
     if (path == "scene.load.shapes") return path;
     if (path == "scene.select_object") return path;
+    if (path == "ui.panel.open") return path;
+    if (path == "ui.panel.close") return path;
     if (path == "ui.grid.set_visible") return path;
     if (path == "view.background.set_hex") return path;
     if (path == "sleep.ms") return path;
@@ -289,6 +291,25 @@ std::string executeSelectObject(App& app, const CommandByPath& command)
     if (!object) throw std::runtime_error("Unknown scene object: " + command.rawArg);
     app.state().scene.selectedObjectId = object->id;
     return "{\"selectedObjectId\":\"" + escapeJson(object->id) + "\"}";
+}
+
+std::string executeSetPanelOpen(App& app, const CommandByPath& command, bool open)
+{
+    if (command.rawArg.empty()) throw std::runtime_error(std::string(open ? "ui.panel.open" : "ui.panel.close") + " requires a panel id argument.");
+    auto* panel = findPanel(app.state().ui, command.rawArg);
+    if (!panel) throw std::runtime_error("Unknown UI panel: " + command.rawArg);
+    panel->open = open;
+    return std::string("{\"panelId\":\"") + escapeJson(command.rawArg) + "\",\"open\":" + (open ? "true" : "false") + "}";
+}
+
+std::string executeOpenPanel(App& app, const CommandByPath& command)
+{
+    return executeSetPanelOpen(app, command, true);
+}
+
+std::string executeClosePanel(App& app, const CommandByPath& command)
+{
+    return executeSetPanelOpen(app, command, false);
 }
 
 std::string executeSetGridVisible(App& app, const CommandByPath& command)
@@ -479,6 +500,8 @@ const std::vector<CommandRoute>& commandRoutes()
         CommandRoute{.prefix = "scene.load.shapes", .execute = executeLoadShapes},
         CommandRoute{.prefix = "scene.load", .execute = executeLoadScene},
         CommandRoute{.prefix = "scene.select_object", .execute = executeSelectObject},
+        CommandRoute{.prefix = "ui.panel.open", .execute = executeOpenPanel},
+        CommandRoute{.prefix = "ui.panel.close", .execute = executeClosePanel},
         CommandRoute{.prefix = "ui.grid.set_visible", .execute = executeSetGridVisible},
         CommandRoute{.prefix = "view.background.set_hex", .execute = executeSetBackgroundHex},
         CommandRoute{.prefix = "data.scene.object.", .execute = executeSceneTranslate},
@@ -586,6 +609,8 @@ std::vector<std::string> commandNames()
         "scene.load.cubes",
         "scene.load.shapes",
         "scene.select_object=<id>",
+        "ui.panel.open=<panelId>",
+        "ui.panel.close=<panelId>",
         "ui.grid.set_visible=<true|false>",
         "view.background.set_hex=<hex>",
         "data.scene.object.<id>.translate=<dx>,<dy>,<dz>",

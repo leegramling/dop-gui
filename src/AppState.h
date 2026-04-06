@@ -235,6 +235,20 @@ AppState loadAppStateFromSceneFile(const std::string& filename);
  */
 UiLayoutState loadUiLayoutFromFile(const std::string& filename);
 /**
+ * @brief Find a mutable authored UI panel by its stable panel id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @return Mutable panel pointer, or null when not found.
+ */
+UiPanelState* findPanel(UiState& ui, const std::string& panelId);
+/**
+ * @brief Find an immutable authored UI panel by its stable panel id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @return Immutable panel pointer, or null when not found.
+ */
+const UiPanelState* findPanel(const UiState& ui, const std::string& panelId);
+/**
  * @brief Find a mutable scene object by id.
  * @param scene Scene to search.
  * @param id Scene object identifier.

@@ -38,6 +38,11 @@ protected:
     void init(const UiPanelState& panelState) override;
 
 private:
+    /**
+     * @brief Restore the form fields to their default creation values.
+     */
+    void resetForm();
+
     YogaLayout::Spec _layoutSpec;
     std::vector<std::string> _slotIds;
     std::string _shapeKind = "Sphere";

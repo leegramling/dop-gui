@@ -10,6 +10,9 @@
 - [x] Make the panel testable through the shared `ui.test.*` flow used by both headless and live UI execution.
 - [x] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
 - [x] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
+- [x] Add `Scene -> Create` to open the dialog panel from the main menu.
+- [x] Add `Cancel` to the hand-coded dialog and close the panel on both `Create` and `Cancel`.
+- [x] Recompile live-created shape scene resources before VSG records them, so runtime creation no longer crashes.
 
 ## Next Tasks
 
@@ -50,7 +53,7 @@
 - [x] Add test commands and queries for the first richer widgets such as radio groups and combos.
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
-- [ ] Add test commands and queries for hand-coded panel-driven scene creation.
+- [x] Add test commands and queries for hand-coded panel-driven scene creation.
 
 ## Follow-Up Validation
 
@@ -77,4 +80,4 @@
 
 - [x] Current public interfaces are documented in Doxygen style.
 - [x] A `HowToAddTestCommands` guide exists in the repo.
-- [ ] The current hand-coded panel dev-example scope is clearly implemented in thin slices.
+- [x] The current hand-coded panel dev-example scope is clearly implemented in thin slices.

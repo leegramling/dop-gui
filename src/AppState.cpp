@@ -527,6 +527,38 @@ UiLayoutState loadUiLayoutFromFile(const std::string& filename)
     return layout;
 }
 
+UiPanelState* findPanel(UiState& ui, const std::string& panelId)
+{
+    for (auto& panel : ui.layout.panels)
+    {
+        std::string candidateId = panel.label;
+        for (auto& ch : candidateId)
+        {
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+            else if (ch == ' ' || ch == '.') ch = '-';
+        }
+        candidateId = "panel-" + candidateId;
+        if (candidateId == panelId) return &panel;
+    }
+    return nullptr;
+}
+
+const UiPanelState* findPanel(const UiState& ui, const std::string& panelId)
+{
+    for (const auto& panel : ui.layout.panels)
+    {
+        std::string candidateId = panel.label;
+        for (auto& ch : candidateId)
+        {
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+            else if (ch == ' ' || ch == '.') ch = '-';
+        }
+        candidateId = "panel-" + candidateId;
+        if (candidateId == panelId) return &panel;
+    }
+    return nullptr;
+}
+
 AppState createBootstrapAppState()
 {
     auto state = loadSceneStateFromFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/bootstrap_scene.json5");

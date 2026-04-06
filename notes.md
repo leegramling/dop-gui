@@ -55,6 +55,9 @@
 - [x] Implement `New Shape` as a hand-coded `Panel`-derived dev example, with Yoga layout built in `init()` and explicit wrapped-widget callbacks in `render()`.
 - [x] Add headless panel-driven shape creation coverage for `Sphere`, proving that the panel can create new scene objects through the existing `ui.test.panel.*` command path.
 - [x] Extend scene object state and renderer support to carry color and render `sphere`, `torus`, and `pyramid` primitives.
+- [x] Add `Scene -> Create` so the hand-coded dialog opens from the menubar instead of staying open by default.
+- [x] Close the `New Shape` dialog on both `Create` and `Cancel`, and cover the open/create/close/reopen/cancel flow in headless UI scripts.
+- [x] Recompile newly created scene objects through the viewer compile manager so live shape creation no longer crashes during VSG record traversal.
 
 ## Architecture Notes
 

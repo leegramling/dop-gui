@@ -315,6 +315,17 @@ vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
 void VsgVisualizer::rebuildScene(const AppState& state)
 {
     populateScene(state);
+    compileSceneIfNeeded();
+}
+
+void VsgVisualizer::compileSceneIfNeeded()
+{
+    if (!_viewer || !_viewer->compileManager || !_scene) return;
+    auto compileResult = _viewer->compileManager->compile(_scene);
+    if (compileResult.requiresViewerUpdate())
+    {
+        vsg::updateViewer(*_viewer, compileResult);
+    }
 }
 
 void VsgVisualizer::initialize(const AppState& state, vsg::ref_ptr<vsg::Window> window)
@@ -341,6 +352,7 @@ void VsgVisualizer::initialize(const AppState& state, vsg::ref_ptr<vsg::Window> 
 
 void VsgVisualizer::connect(vsg::ref_ptr<vsg::Viewer> viewer)
 {
+    _viewer = viewer;
     viewer->assignRecordAndSubmitTaskAndPresentation({_commandGraph});
 }
 

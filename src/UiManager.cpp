@@ -151,24 +151,27 @@ void UiManager::render(AppState& state)
         .windowManager = _windowManager,
     };
 
-    for (const auto& panelState : state.ui.layout.panels)
+    for (auto& panelState : state.ui.layout.panels)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
         auto* panelController = findPanel(panelId);
         if (!panelController) continue;
 
         panelController->ensureInitialized(panelState);
-        bool panelOpen = panelState.open;
         PanelWindow panelWindow(
             state.ui,
             panelId.c_str(),
             panelState.label.c_str(),
-            panelOpen,
+            panelState.open,
             panelState.closable,
             panelState.flags,
             panelState.layout,
             panelController->minSize(panelState));
-        if (!panelWindow.begin()) continue;
+        if (!panelWindow.begin())
+        {
+            state.ui.currentPanelId.clear();
+            continue;
+        }
         state.ui.currentPanelId = panelId;
         panelController->render(context, panelState);
         state.ui.currentPanelId.clear();

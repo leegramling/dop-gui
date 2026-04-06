@@ -42,6 +42,22 @@ std::string_view NewShapePanel::id() const
     return "panel-new-shape";
 }
 
+void NewShapePanel::resetForm()
+{
+    _shapeKind = "Sphere";
+    _positionX = 0.0;
+    _positionY = 0.0;
+    _positionZ = 0.0;
+    _rotationX = 0.0;
+    _rotationY = 0.0;
+    _rotationZ = 0.0;
+    _scaleX = 1.0;
+    _scaleY = 1.0;
+    _scaleZ = 1.0;
+    _colorHex = "#00FF00";
+    _status = "Ready";
+}
+
 PanelMinSize NewShapePanel::minSize(const UiPanelState& panelState) const
 {
     (void)panelState;
@@ -80,7 +96,10 @@ void NewShapePanel::init(const UiPanelState& panelState)
     addLabeledRow("scale-y");
     addLabeledRow("scale-z");
     addLabeledRow("color");
-    builder.item("create-shape", Style{.direction = YogaLayout::Axis::Column, .width = Length::px(168.0f), .height = Length::px(24.0f)});
+    builder.begin("action-row", rowStyle)
+        .item("create-shape", Style{.direction = YogaLayout::Axis::Column, .width = Length::px(168.0f), .height = Length::px(24.0f)})
+        .item("cancel", Style{.direction = YogaLayout::Axis::Column, .width = Length::px(168.0f), .height = Length::px(24.0f)})
+        .end();
     builder.item("status", Style{.direction = YogaLayout::Axis::Column, .width = Length::px(360.0f), .height = Length::px(20.0f)});
 
     _layoutSpec = builder.build();
@@ -97,6 +116,7 @@ void NewShapePanel::init(const UiPanelState& panelState)
         "scale-z-label", "scale-z",
         "color-label", "color",
         "create-shape",
+        "cancel",
         "status",
     };
 }
@@ -174,7 +194,16 @@ void NewShapePanel::render(PanelContext& context, const UiPanelState& panelState
             state.scene.objects.push_back(object);
             state.scene.selectedObjectId = object.id;
             _status = "Created " + object.id;
+            state.ui.requestedCommands.push_back("ui.panel.close=panel-new-shape");
+            resetForm();
         }
+    }
+
+    setNextWidgetLayoutIfPresent(state.ui, layout, "cancel");
+    if (Button(state.ui, "cancel", "Cancel"))
+    {
+        state.ui.requestedCommands.push_back("ui.panel.close=panel-new-shape");
+        resetForm();
     }
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "status");

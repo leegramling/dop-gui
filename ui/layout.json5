@@ -9,6 +9,7 @@
     {
       label: "Scene",
       items: [
+        { label: "Create", command: "ui.panel.open=panel-new-shape" },
         { label: "cubes", command: "scene.load.cubes" },
         { label: "Shapes", command: "scene.load.shapes" },
       ],
@@ -183,7 +184,7 @@
     },
     {
       label: "New Shape",
-      open: true,
+      open: false,
       closable: true,
       flags: ["NoCollapse"],
       layout: { x: 792, y: 48, w: 360, h: 520 },
