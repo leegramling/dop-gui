@@ -103,23 +103,9 @@ void PropertiesPanel::init(const UiPanelState& panelState)
     {
         if (widget.spec.type != "input_double") continue;
 
-        _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+        _root.bindDoubleInput(widget.spec.id, [bind = widget.spec.bind](AppState& state)
         {
-            auto& state = context.panelContext.state;
-            auto* value = resolveSelectedObjectDouble(state, node.spec.bind);
-            if (!value) return;
-
-            setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.labelSlotId);
-            Text(state.ui, node.slots.labelSlotId.c_str(), node.spec.label);
-
-            setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-            *value = InputDouble(
-                state.ui,
-                node.spec.id.c_str(),
-                "",
-                *value,
-                node.spec.precision,
-                node.spec.unit.empty() ? nullptr : node.spec.unit.c_str());
+            return resolveSelectedObjectDouble(state, bind);
         });
     }
 }

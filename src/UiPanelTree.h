@@ -5,6 +5,7 @@
 #include "YogaLayout.h"
 
 #include <functional>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -36,6 +37,10 @@ class UiPanelTree
 {
 public:
     using WidgetRenderer = std::function<void(UiPanelRenderContext&, const UiPanelWidgetNode&)>;
+    using TextBindingReader = std::function<std::optional<std::string>(AppState&)>;
+    using StringBindingAccessor = std::function<std::string*(AppState&)>;
+    using BoolBindingAccessor = std::function<bool*(AppState&)>;
+    using DoubleBindingAccessor = std::function<double*(AppState&)>;
 
     /**
      * @brief Build a runtime panel tree from an authored panel specification.
@@ -77,6 +82,43 @@ public:
     void setWidgetRenderer(std::string_view widgetId, WidgetRenderer renderer);
 
     /**
+     * @brief Bind a text widget to a computed string value.
+     * @param widgetId Stable widget identifier.
+     * @param reader Function that computes the current text value from application state.
+     */
+    void bindText(std::string_view widgetId, TextBindingReader reader);
+    /**
+     * @brief Bind a checkbox widget to a mutable boolean state value.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound boolean state pointer.
+     */
+    void bindCheckbox(std::string_view widgetId, BoolBindingAccessor accessor);
+    /**
+     * @brief Bind a text input widget to a mutable string state value.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound string state pointer.
+     */
+    void bindStringInput(std::string_view widgetId, StringBindingAccessor accessor);
+    /**
+     * @brief Bind a combo widget to a mutable string state value.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound string state pointer.
+     */
+    void bindStringCombo(std::string_view widgetId, StringBindingAccessor accessor);
+    /**
+     * @brief Bind a radio widget to a mutable string state value that matches the widget arg.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound string state pointer.
+     */
+    void bindRadioChoice(std::string_view widgetId, StringBindingAccessor accessor);
+    /**
+     * @brief Bind a floating-point input widget to a mutable numeric state value.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound numeric state pointer.
+     */
+    void bindDoubleInput(std::string_view widgetId, DoubleBindingAccessor accessor);
+
+    /**
      * @brief Render the widget nodes that currently have registered renderers.
      * @param context Shared panel render context.
      */
@@ -88,6 +130,8 @@ private:
         UiPanelWidgetNode node;
         WidgetRenderer renderer;
     };
+
+    BuiltWidget* findBuiltWidget(std::string_view widgetId);
 
     YogaLayout::Spec _layoutSpec;
     std::vector<std::string> _slotIds;

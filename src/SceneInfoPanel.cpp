@@ -122,84 +122,28 @@ void SceneInfoPanel::init(const UiPanelState& panelState)
     {
         if (widget.spec.type == "text")
         {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+            _root.bindText(widget.spec.id, [bind = widget.spec.bind](AppState& state) -> std::optional<std::string>
             {
-                auto& state = context.panelContext.state;
-                const auto value = readTextBinding(state, node.spec.bind);
-                if (value.empty()) return;
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-                Text(state.ui, node.spec.id.c_str(), value);
+                const auto value = readTextBinding(state, bind);
+                if (value.empty()) return std::nullopt;
+                return value;
             });
         }
         else if (widget.spec.type == "checkbox")
         {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-            {
-                auto& state = context.panelContext.state;
-                auto* value = resolveBoolBinding(state, node.spec.bind);
-                if (!value) return;
-
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-                const bool changed = Checkbox(state.ui, node.spec.id.c_str(), node.spec.label.c_str(), *value);
-                if (changed && !node.spec.onChange.empty())
-                {
-                    queueUiCommand(state.ui, node.spec.onChange, *value ? "true" : "false");
-                }
-            });
+            _root.bindCheckbox(widget.spec.id, [bind = widget.spec.bind](AppState& state) { return resolveBoolBinding(state, bind); });
         }
         else if (widget.spec.type == "input")
         {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-            {
-                auto& state = context.panelContext.state;
-                auto* value = resolveStringBinding(state, node.spec.bind);
-                if (!value) return;
-
-                const auto previousValue = *value;
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-                *value = Input(state.ui, node.spec.id.c_str(), node.spec.label.c_str(), *value);
-                if (*value != previousValue && !node.spec.onChange.empty())
-                {
-                    queueUiCommand(state.ui, node.spec.onChange, *value);
-                }
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.labelSlotId);
-                Text(state.ui, node.slots.labelSlotId.c_str(), node.spec.label);
-            });
+            _root.bindStringInput(widget.spec.id, [bind = widget.spec.bind](AppState& state) { return resolveStringBinding(state, bind); });
         }
         else if (widget.spec.type == "combo" && widget.spec.bind == "scene.name")
         {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-            {
-                auto& state = context.panelContext.state;
-                auto* value = resolveStringBinding(state, node.spec.bind);
-                if (!value) return;
-
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-                const auto selected = ComboBox(state.ui, node.spec.id.c_str(), node.spec.label.c_str(), *value, node.spec.options);
-                if (selected != *value && !node.spec.onChange.empty())
-                {
-                    queueUiCommand(state.ui, node.spec.onChange, selected);
-                }
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.labelSlotId);
-                Text(state.ui, node.slots.labelSlotId.c_str(), node.spec.label);
-            });
+            _root.bindStringCombo(widget.spec.id, [bind = widget.spec.bind](AppState& state) { return resolveStringBinding(state, bind); });
         }
         else if (isThemeRadio(widget))
         {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-            {
-                auto& state = context.panelContext.state;
-                const bool selected = state.ui.themeMode == node.spec.arg;
-                setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-                if (RadioButton(state.ui, node.spec.id.c_str(), node.spec.label.c_str(), selected) && !node.spec.onClick.empty())
-                {
-                    queueUiCommand(state.ui, node.spec.onClick, node.spec.arg);
-                }
-                if (auto* widgetState = findWidget(state.ui, std::string("panel-scene-info"), node.spec.id))
-                {
-                    widgetState->boolValue = selected;
-                }
-            });
+            _root.bindRadioChoice(widget.spec.id, [](AppState& state) { return &state.ui.themeMode; });
         }
         else if (widget.spec.id == "selected-object")
         {
