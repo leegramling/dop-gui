@@ -131,15 +131,20 @@ QueryValue makeWidgetValue(const WidgetState& widget)
     });
 }
 
+QueryValue makeLayoutRectValue(const UiLayoutRectState& layout)
+{
+    return makeObjectValue({
+        makeField("enabled", makeBoolValue(layout.enabled)),
+        makeField("x", makeDoubleValue(layout.x)),
+        makeField("y", makeDoubleValue(layout.y)),
+        makeField("width", makeDoubleValue(layout.width)),
+        makeField("height", makeDoubleValue(layout.height)),
+    });
+}
+
 QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 {
-    auto layoutValue = makeObjectValue({
-        makeField("enabled", makeBoolValue(widget.layout.enabled)),
-        makeField("x", makeDoubleValue(widget.layout.x)),
-        makeField("y", makeDoubleValue(widget.layout.y)),
-        makeField("width", makeDoubleValue(widget.layout.width)),
-        makeField("height", makeDoubleValue(widget.layout.height)),
-    });
+    auto layoutValue = makeLayoutRectValue(widget.layout);
 
     QueryArray columns;
     for (const auto& column : widget.columns)
@@ -171,13 +176,7 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 
 QueryValue makePanelSpecValue(const UiPanelState& panel)
 {
-    auto layoutValue = makeObjectValue({
-        makeField("enabled", makeBoolValue(panel.layout.enabled)),
-        makeField("x", makeDoubleValue(panel.layout.x)),
-        makeField("y", makeDoubleValue(panel.layout.y)),
-        makeField("width", makeDoubleValue(panel.layout.width)),
-        makeField("height", makeDoubleValue(panel.layout.height)),
-    });
+    auto layoutValue = makeLayoutRectValue(panel.layout);
 
     QueryArray flags;
     for (const auto& flag : panel.flags)
@@ -216,6 +215,7 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name == "runtime.capabilities") return name;
     if (name == "ui.widgets") return name;
     if (name == "ui.layout") return name;
+    if (name.rfind("ui.layout.slot.", 0) == 0) return name;
     if (name == "ui.docking.status") return name;
     if (name == "help") return "runtime.capabilities";
 
@@ -413,6 +413,20 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
         return makeObjectValue({
             makeField("menus", QueryValue{std::move(menus)}),
             makeField("panels", QueryValue{std::move(panels)}),
+        });
+    }
+
+    if (segments.size() >= 4 && segments[0] == "layout" && segments[1] == "slot")
+    {
+        std::string panelId = segments[2];
+        std::string slotId = segments[3];
+        for (std::size_t i = 4; i < segments.size(); ++i) slotId += "." + segments[i];
+        const auto* slot = findLayoutSlot(app.state().ui, panelId, slotId);
+        if (!slot) throw std::runtime_error("Unknown UI layout slot: " + panelId + "." + slotId);
+        return makeObjectValue({
+            makeField("panelId", makeStringValue(slot->panelId)),
+            makeField("slotId", makeStringValue(slot->slotId)),
+            makeField("layout", makeLayoutRectValue(slot->layout)),
         });
     }
 
@@ -674,6 +688,7 @@ std::vector<std::string> queryNames()
         "data.scene.objects",
         "data.scene.selection",
         "ui.layout",
+        "ui.layout.slot.<panel>.<slot>",
         "ui.docking.status",
         "ui.panel.<id>",
         "ui.panel.<id>.widgets",

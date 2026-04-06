@@ -63,6 +63,35 @@ void queueUiCommand(UiState& uiState, const std::string& commandName, const std:
     uiState.requestedCommands.push_back(value.empty() ? commandName : (commandName + "=" + value));
 }
 
+void registerLayoutSlot(UiState& uiState, const std::string& panelId, const std::string& slotId, const UiLayoutRectState& layout)
+{
+    for (auto& slot : uiState.layoutSlots)
+    {
+        if (slot.panelId == panelId && slot.slotId == slotId)
+        {
+            slot.layout = layout;
+            return;
+        }
+    }
+
+    uiState.layoutSlots.push_back(UiLayoutSlotState{
+        .panelId = panelId,
+        .slotId = slotId,
+        .layout = layout,
+    });
+}
+
+void registerLayoutSlots(UiState& uiState, const std::string& panelId, const YogaLayout& layout, std::initializer_list<std::string_view> slotIds)
+{
+    for (const auto slotId : slotIds)
+    {
+        if (layout.has(slotId))
+        {
+            registerLayoutSlot(uiState, panelId, std::string(slotId), layout.rect(slotId));
+        }
+    }
+}
+
 YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
 {
     using Axis = YogaLayout::Axis;
@@ -217,6 +246,7 @@ void UiLayer::render(AppState& state)
     if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
     if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     state.ui.registry.clear();
+    state.ui.layoutSlots.clear();
 
     if (!state.ui.testMode && state.ui.dockingEnabled)
     {
@@ -288,6 +318,20 @@ void UiLayer::render(AppState& state)
                     std::max(0.0f, ImGui::GetContentRegionAvail().y));
             }
             sceneInfoLowerLayout.resize(lowerOrigin.x, lowerOrigin.y, lowerAvail.x, lowerAvail.y);
+            registerLayoutSlots(
+                state.ui,
+                panelId,
+                sceneInfoLowerLayout,
+                {
+                    "panel-theme-label",
+                    "panel-theme-dark",
+                    "panel-theme-light",
+                    "panel-scene-summary-open",
+                    "panel-scene-selected-object-label",
+                    "panel-scene-selected-object",
+                    "panel-scene-table-label",
+                    "panel-scene-table",
+                });
 
             for (const auto& widgetSpec : panelState.widgets)
             {
@@ -476,6 +520,33 @@ void UiLayer::render(AppState& state)
                 propertiesAvail = ImGui::GetContentRegionAvail();
             }
             propertiesLayout.resize(propertiesOrigin.x, propertiesOrigin.y, propertiesAvail.x, propertiesAvail.y);
+            registerLayoutSlots(
+                state.ui,
+                panelId,
+                propertiesLayout,
+                {
+                    "panel-properties-selected-object-label",
+                    "panel-selected-object",
+                    "panel-properties-selected-object",
+                    "input-properties-position-x-label",
+                    "input-properties-position-x",
+                    "input-properties-position-y-label",
+                    "input-properties-position-y",
+                    "input-properties-position-z-label",
+                    "input-properties-position-z",
+                    "input-properties-rotation-x-label",
+                    "input-properties-rotation-x",
+                    "input-properties-rotation-y-label",
+                    "input-properties-rotation-y",
+                    "input-properties-rotation-z-label",
+                    "input-properties-rotation-z",
+                    "input-properties-scale-x-label",
+                    "input-properties-scale-x",
+                    "input-properties-scale-y-label",
+                    "input-properties-scale-y",
+                    "input-properties-scale-z-label",
+                    "input-properties-scale-z",
+                });
 
             if (propertiesLayout.has("panel-properties-selected-object-label"))
             {

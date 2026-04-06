@@ -32,7 +32,7 @@
 
 - [x] Confirm Doxygen coverage is applied consistently to the currently public code surface.
 - [x] Confirm the widget expansion still preserves headless/live simulation symmetry.
-- [ ] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
+- [x] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 

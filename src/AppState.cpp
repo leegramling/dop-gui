@@ -429,6 +429,15 @@ const WidgetState* findWidget(const UiState& ui, const std::string& label)
     return nullptr;
 }
 
+const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& panelId, const std::string& slotId)
+{
+    for (const auto& slot : ui.layoutSlots)
+    {
+        if (slot.panelId == panelId && slot.slotId == slotId) return &slot;
+    }
+    return nullptr;
+}
+
 UiTestAction* findPendingUiAction(UiState& ui, const std::string& label, const std::string& kind)
 {
     for (auto& action : ui.pendingActions)

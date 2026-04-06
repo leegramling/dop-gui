@@ -76,6 +76,16 @@ struct WidgetState
 };
 
 /**
+ * @brief Registered layout slot computed by a panel-local layout engine such as Yoga.
+ */
+struct UiLayoutSlotState
+{
+    std::string panelId;
+    std::string slotId;
+    UiLayoutRectState layout;
+};
+
+/**
  * @brief Pending simulated UI action keyed by widget label.
  */
 struct UiTestAction
@@ -158,6 +168,7 @@ struct UiState
     std::vector<std::string> requestedCommands;
     UiLayoutState layout;
     std::vector<WidgetState> registry;
+    std::vector<UiLayoutSlotState> layoutSlots;
     std::vector<UiTestAction> pendingActions;
     std::optional<UiLayoutRectState> nextWidgetLayout;
     bool dockingEnabled = false;
@@ -223,6 +234,14 @@ WidgetState* findWidget(UiState& ui, const std::string& label);
  * @return Immutable widget pointer, or null when not found.
  */
 const WidgetState* findWidget(const UiState& ui, const std::string& label);
+/**
+ * @brief Find an immutable registered layout slot by panel id and slot id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @param slotId Stable layout slot identifier.
+ * @return Immutable layout slot pointer, or null when not found.
+ */
+const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& panelId, const std::string& slotId);
 /**
  * @brief Find a pending simulated UI action by label and kind.
  * @param ui UI state to search.

@@ -27,6 +27,7 @@
 - [x] Add the first repo-local `YogaLayout` adapter and use it for the `Properties` panel header row.
 - [x] Extend the builder-based Yoga path to the full `Properties` panel so the property rows no longer depend on table placement.
 - [x] Move the lower `Scene Info` controls onto explicit layout slots so theme radios, scene summary, and selected-object controls no longer overlap.
+- [x] Add `ui.layout.slot.<panel>.<slot>` queries so Yoga slot rects can be tested independently of widget rects.
 
 ## Architecture Notes
 
