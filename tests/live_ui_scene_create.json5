@@ -1,0 +1,19 @@
+{
+  commands: [
+    "sleep.ms=1000",
+    "ui.test.click.menuitem-scene-create",
+    "sleep.ms=1000",
+    "ui.test.panel.panel-new-shape.set_text.shape-kind=Sphere",
+    "ui.test.panel.panel-new-shape.set_text.position-x=1.00 m",
+    "ui.test.panel.panel-new-shape.set_text.position-z=0.50 m",
+    "ui.test.panel.panel-new-shape.set_text.color=#00FF00",
+    "ui.test.panel.panel-new-shape.click.create-shape",
+    "sleep.ms=1000",
+    "ui.test.click.menuitem-scene-create",
+    "sleep.ms=1000",
+    "ui.test.panel.panel-new-shape.click.cancel",
+    "sleep.ms=1000",
+    "app.exit",
+  ],
+  queries: [],
+}
