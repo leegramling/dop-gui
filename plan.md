@@ -105,6 +105,7 @@
 - convert one real panel first, with `Properties` as the first target
 - preserve existing `ui.layout.slot.*` and `ui.widget.*` query behavior while the layout source changes
 - avoid exposing the entire Yoga API in JSON5 until the smaller layout vocabulary stabilizes
+- preserve a fallback hand-coded panel path for cases where a panel still needs a custom `initialize` builder flow and explicit `render` logic before the JSON5 UI schema is expressive enough
 
 ## Phase 3F: Window Management And Tear-Out Preparation
 
@@ -153,6 +154,7 @@ Success criteria:
 - preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
 - shift UI test command usage toward panel-scoped widget ids so shorter local names no longer depend on one global flat action namespace
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
+- keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
 
 Next focus after current slice:
 

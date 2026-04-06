@@ -27,6 +27,7 @@
 - [x] Convert `Scene Info` widget ids to shorter panel-local ids while preserving panel-scoped queries and legacy flat widget-query aliases during the transition.
 - [x] Add panel-scoped UI test commands so shorter local widget ids do not depend on globally flat `ui.test.*` labels.
 - [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
+- [ ] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
 
 ## Next Slice Candidates
 

@@ -49,6 +49,7 @@ Documentation requirement:
 - allow GUI actions, CLI actions, and tests to converge on the same command surface
 - prefer explicit command/query data over ad hoc callback-driven test hooks
 - keep `data.*` queries backed by plain application state rather than renderer-owned metadata
+- make declarative JSON5 UI the primary authored path while preserving a fallback hand-coded panel path when the JSON5 schema is not yet sufficient
 
 ## Top-Level Components
 
@@ -154,6 +155,7 @@ Responsibilities:
 - represent a testable authored UI panel controller
 - own panel-local widget binding and layout interpretation
 - expose panel callbacks, docking policy, and future tear-out behavior through explicit state and options
+- support a fallback hand-coded panel path for early prototypes or exceptional panels that still need an `initialize` builder phase and a custom `render` method
 
 Non-responsibilities:
 
