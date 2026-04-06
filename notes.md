@@ -48,6 +48,7 @@
 - [x] Move `Scene Info` onto the same panel-tree render path and replace its text/string/bool binding `if` chains with small binding tables, so both authored panels now share the same default render architecture.
 - [x] Add generic panel-tree binder helpers for the common text/input/checkbox/combo/radio/double widget cases, leaving only selected-object, popup, and table behavior as panel-specific renderers.
 - [x] Switch both current panels to those generic panel-tree binder helpers for the standard widget cases, so the remaining panel-specific code is now concentrated in selected-object, popup, and table behavior.
+- [x] Move both selected-object controls onto the same generic panel-tree combo binder path, leaving popup and table behavior as the only intentional custom renderers still in this branch.
 
 ## Architecture Notes
 

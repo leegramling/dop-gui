@@ -70,25 +70,6 @@ void PropertiesPanel::init(const UiPanelState& panelState)
 {
     _root = UiPanelTree::build(panelState);
 
-    _root.setWidgetRenderer("selected-object", [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-    {
-        auto& state = context.panelContext.state;
-        const auto objectIds = collectSceneObjectIds(state.scene);
-        const auto selectedValue = renderSelectedObjectControl(
-            state.ui,
-            context.layout,
-            node.slots,
-            node.spec.id.c_str(),
-            "panel-properties-selected-object-label",
-            "Selected Object",
-            state.scene.selectedObjectId,
-            objectIds);
-        if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
-        {
-            queueUiCommand(state.ui, "scene.select_object", selectedValue);
-        }
-    });
-
     _root.setWidgetRenderer("selected-object-summary", [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
     {
         auto& state = context.panelContext.state;
@@ -101,6 +82,14 @@ void PropertiesPanel::init(const UiPanelState& panelState)
 
     for (const auto& widget : _root.widgets())
     {
+        if (widget.spec.type == "combo" && widget.spec.bind == "scene.selectedObjectId")
+        {
+            _root.bindStringCombo(
+                widget.spec.id,
+                [](AppState& state) { return &state.scene.selectedObjectId; },
+                [](AppState& state) { return collectSceneObjectIds(state.scene); });
+            continue;
+        }
         if (widget.spec.type != "input_double") continue;
 
         _root.bindDoubleInput(widget.spec.id, [bind = widget.spec.bind](AppState& state)

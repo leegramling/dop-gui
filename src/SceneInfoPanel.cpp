@@ -141,30 +141,16 @@ void SceneInfoPanel::init(const UiPanelState& panelState)
         {
             _root.bindStringCombo(widget.spec.id, [bind = widget.spec.bind](AppState& state) { return resolveStringBinding(state, bind); });
         }
+        else if (widget.spec.type == "combo" && widget.spec.bind == "scene.selectedObjectId")
+        {
+            _root.bindStringCombo(
+                widget.spec.id,
+                [](AppState& state) { return &state.scene.selectedObjectId; },
+                [](AppState& state) { return collectSceneObjectIds(state.scene); });
+        }
         else if (isThemeRadio(widget))
         {
             _root.bindRadioChoice(widget.spec.id, [](AppState& state) { return &state.ui.themeMode; });
-        }
-        else if (widget.spec.id == "selected-object")
-        {
-            _root.setWidgetRenderer(widget.spec.id, [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-            {
-                auto& state = context.panelContext.state;
-                const auto objectIds = collectSceneObjectIds(state.scene);
-                const auto selectedValue = renderSelectedObjectControl(
-                    state.ui,
-                    context.layout,
-                    node.slots,
-                    node.spec.id.c_str(),
-                    "panel-scene-selected-object-label",
-                    "Selected Object",
-                    state.scene.selectedObjectId,
-                    objectIds);
-                if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
-                {
-                    queueUiCommand(state.ui, "scene.select_object", selectedValue);
-                }
-            });
         }
         else if (widget.spec.id == "scene-summary-open")
         {

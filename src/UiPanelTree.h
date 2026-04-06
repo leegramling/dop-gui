@@ -39,6 +39,7 @@ public:
     using WidgetRenderer = std::function<void(UiPanelRenderContext&, const UiPanelWidgetNode&)>;
     using TextBindingReader = std::function<std::optional<std::string>(AppState&)>;
     using StringBindingAccessor = std::function<std::string*(AppState&)>;
+    using StringOptionsReader = std::function<std::vector<std::string>(AppState&)>;
     using BoolBindingAccessor = std::function<bool*(AppState&)>;
     using DoubleBindingAccessor = std::function<double*(AppState&)>;
 
@@ -105,6 +106,13 @@ public:
      * @param accessor Function that returns the bound string state pointer.
      */
     void bindStringCombo(std::string_view widgetId, StringBindingAccessor accessor);
+    /**
+     * @brief Bind a combo widget to a mutable string state value with dynamic options.
+     * @param widgetId Stable widget identifier.
+     * @param accessor Function that returns the bound string state pointer.
+     * @param optionsReader Function that computes the current combo options from application state.
+     */
+    void bindStringCombo(std::string_view widgetId, StringBindingAccessor accessor, StringOptionsReader optionsReader);
     /**
      * @brief Bind a radio widget to a mutable string state value that matches the widget arg.
      * @param widgetId Stable widget identifier.

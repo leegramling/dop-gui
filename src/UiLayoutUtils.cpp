@@ -159,30 +159,6 @@ std::vector<std::string> collectSceneObjectIds(const SceneState& scene)
     return objectIds;
 }
 
-std::string renderSelectedObjectControl(
-    UiState& uiState,
-    const YogaLayout& layout,
-    const WidgetSlotBinding& slots,
-    const char* widgetId,
-    const char* labelWidgetId,
-    const char* labelText,
-    const std::string& selectedObjectId,
-    const std::vector<std::string>& objectIds)
-{
-    setNextWidgetLayoutIfPresent(uiState, layout, slots.labelSlotId);
-    Text(uiState, labelWidgetId, labelText);
-
-    if (objectIds.empty()) return selectedObjectId;
-
-    setNextWidgetLayoutIfPresent(uiState, layout, slots.valueSlotId);
-    const auto selectedValue = ComboBox(uiState, widgetId, "", selectedObjectId, objectIds);
-    if (auto* widget = findWidget(uiState, uiState.currentPanelId, widgetId))
-    {
-        widget->textValue = selectedValue;
-    }
-    return selectedValue;
-}
-
 YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode)
 {
     return buildYogaLayoutSpec(rootNode, {});

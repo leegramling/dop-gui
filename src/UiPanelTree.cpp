@@ -144,6 +144,26 @@ void UiPanelTree::bindStringCombo(std::string_view widgetId, StringBindingAccess
     });
 }
 
+void UiPanelTree::bindStringCombo(std::string_view widgetId, StringBindingAccessor accessor, StringOptionsReader optionsReader)
+{
+    setWidgetRenderer(widgetId, [accessor = std::move(accessor), optionsReader = std::move(optionsReader)](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
+    {
+        auto& state = context.panelContext.state;
+        auto* value = accessor(state);
+        if (!value) return;
+        const auto options = optionsReader(state);
+        if (options.empty()) return;
+        setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
+        const auto selected = ComboBox(state.ui, node.spec.id.c_str(), "", *value, options);
+        if (selected != *value && !node.spec.onChange.empty())
+        {
+            queueUiCommand(state.ui, node.spec.onChange, selected);
+        }
+        setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.labelSlotId);
+        Text(state.ui, node.slots.labelSlotId.c_str(), node.spec.label);
+    });
+}
+
 void UiPanelTree::bindRadioChoice(std::string_view widgetId, StringBindingAccessor accessor)
 {
     setWidgetRenderer(widgetId, [accessor = std::move(accessor)](UiPanelRenderContext& context, const UiPanelWidgetNode& node)

@@ -32,6 +32,7 @@
 - [x] Move `Scene Info` onto the same built panel-tree render path and replace its basic text/string/bool bind `if` chains with table-driven binding maps.
 - [x] Add generic panel-tree binder helpers for common text/input/checkbox/combo/radio/double widget patterns so panel classes only keep custom renderers for exceptional widgets.
 - [x] Switch both panels to the shared generic panel-tree binder helpers for the common widget cases, leaving only selected-object, popup, and table behavior as custom renderers.
+- [x] Move the selected-object controls in both panels onto the shared generic panel-tree combo binder path so popup and table behavior are the only intentional custom renderers left in this feature.
 - [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
 - [ ] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
 

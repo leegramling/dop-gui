@@ -55,6 +55,7 @@ Documentation requirement:
 - prefer table-driven or generic bind resolution inside built panel-tree renderers over panel-local `if` chains when widget bindings come from authored JSON5
 - centralize common widget binding and render patterns in reusable panel-tree helpers so authored panels only retain exceptional behavior that the generic JSON5 path cannot yet express
 - keep the goal that standard authored widgets should need no panel-specific renderer code once the generic panel-tree binders cover their behavior
+- treat popup and table behaviors as the current acceptable custom-renderer exceptions for this feature branch, with standard authored controls such as selected-object combos expected to flow through the generic panel-tree binders
 
 ## Top-Level Components
 
