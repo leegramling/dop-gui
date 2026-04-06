@@ -142,9 +142,18 @@
 - grow the scene model so larger composed scenes can be constructed and queried cleanly
 - keep primitive-generated objects available for tests and lightweight bootstrap scenes
 
+## Phase 4C: Hand-Coded Panel Dev Example
+
+- add a hand-coded `New Shape` panel as the explicit fallback-panel example
+- define panel-local Yoga layout in `init()` instead of JSON5 for this example
+- define widget callbacks in `render()` using the wrapped widget path
+- keep the panel queryable and controllable through the existing test command surface
+- add scene-state and renderer support for `sphere`, `torus`, and `pyramid`
+- let the panel create new scene objects with transform and color data
+
 ## Current Focus
 
-Current focus is broader authored-layout adoption after the first `Phase 3E1` conversions: keep the current Yoga/query path stable while reducing the remaining builder-only layout assumptions and moving from long flat widget ids toward panel-local declarative ids.
+Current focus is a deliberate hand-coded panel example after the authored-layout milestone: add a `New Shape` panel that demonstrates the fallback `Panel` path with explicit `init()` layout and `render()` callbacks while staying fully testable and extending scene/render support for new primitive kinds.
 
 Success criteria:
 
@@ -162,12 +171,13 @@ Success criteria:
 - finish the current feature by moving selected-object controls onto the same generic panel-tree binder path, leaving popup and table behavior as the last intentional custom renderers to defer
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
+- prove the fallback path with one real hand-coded panel that is still queryable and scriptable through the same UI test infrastructure
+- add `sphere`, `torus`, and `pyramid` as new renderable scene kinds created through that panel
+- keep new-shape creation state flowing through plain application data before render sync
+- keep the hand-coded example narrow and complete so the next branch can return to broader scene-asset or declarative-UI work without carrying partial panel scaffolding
 
 Next focus after current slice:
 
-- expand authored layout support only after the first minimal vocabulary is stable
-- finish shortening authored widget ids panel by panel once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
-- shift more command/query and test usage toward scoped widget paths as shorter local ids become normal
-- extend the reusable JSON5 panel-tree path beyond `Properties` so panel classes stop owning custom layout builders by default
-- extend the reusable JSON5 panel-tree render path beyond `Properties` so panel classes stop owning custom widget dispatch by default
-- add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams
+- move `.gltf` / `.glb` scene growth into the next feature once the hand-coded panel example is complete
+- keep reducing legacy flat widget-id reliance once the new panel also works with panel-scoped commands and queries
+- revisit popup/table generalization in a later feature if we still want zero custom renderers in the declarative path

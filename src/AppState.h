@@ -20,6 +20,8 @@ struct SceneObjectState
     vsg::dvec3 position{0.0, 0.0, 0.0};
     vsg::dvec3 rotation{0.0, 0.0, 0.0};
     vsg::dvec3 scale{1.0, 1.0, 1.0};
+    std::string colorHex = "#D9D9D9";
+    vsg::vec4 color{0.85f, 0.85f, 0.85f, 1.0f};
 };
 
 /**
@@ -232,6 +234,20 @@ AppState loadAppStateFromSceneFile(const std::string& filename);
  * @return Parsed UI layout state.
  */
 UiLayoutState loadUiLayoutFromFile(const std::string& filename);
+/**
+ * @brief Find a mutable authored UI panel by its stable panel id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @return Mutable panel pointer, or null when not found.
+ */
+UiPanelState* findPanel(UiState& ui, const std::string& panelId);
+/**
+ * @brief Find an immutable authored UI panel by its stable panel id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @return Immutable panel pointer, or null when not found.
+ */
+const UiPanelState* findPanel(const UiState& ui, const std::string& panelId);
 /**
  * @brief Find a mutable scene object by id.
  * @param scene Scene to search.

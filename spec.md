@@ -56,6 +56,7 @@ Documentation requirement:
 - centralize common widget binding and render patterns in reusable panel-tree helpers so authored panels only retain exceptional behavior that the generic JSON5 path cannot yet express
 - keep the goal that standard authored widgets should need no panel-specific renderer code once the generic panel-tree binders cover their behavior
 - treat popup and table behaviors as the current acceptable custom-renderer exceptions for this feature branch, with standard authored controls such as selected-object combos expected to flow through the generic panel-tree binders
+- keep a documented hand-coded panel path available for development examples, where a panel can define Yoga layout in `init()` and explicit widget/callback behavior in `render()` when that is the point of the example
 
 ## Top-Level Components
 
@@ -330,6 +331,29 @@ Initial UI target:
 - a menubar with `File -> Exit`
 - a menubar with `Scene -> cubes`
 - a menubar with `Scene -> Shapes`
+
+Hand-coded development example target:
+
+- add a `New Shape` panel implemented as a hand-coded `Panel`-derived class
+- define its Yoga layout in `init()`
+- define its widget callbacks directly in `render()`
+- keep it fully testable through the existing wrapped widget and `ui.test.*` paths
+- use it as the reference example for panels that intentionally do not start from JSON5-authored widget/layout specs
+
+`New Shape` panel initial fields:
+
+- shape type combo with `Sphere`, `Torus`, and `Pyramid`
+- location `x`, `y`, `z`
+- rotation `x`, `y`, `z`
+- scale `x`, `y`, `z`
+- color hex input with default-style values such as `#00FF00`
+
+Required behavior:
+
+- panel callbacks should construct a new scene object request from those widget values
+- the resulting shape should be added to plain application scene state first
+- `VsgVisualizer` must gain render support for `sphere`, `torus`, and `pyramid`
+- the panel must remain testable in both headless and live GUI modes
 
 Next UI expansion target:
 

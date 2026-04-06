@@ -33,6 +33,7 @@ Usage:
   ./test_run.sh live-bg [extra dop-gui args...]
   ./test_run.sh live-grid-off [extra dop-gui args...]
   ./test_run.sh live-scene-cubes [extra dop-gui args...]
+  ./test_run.sh live-scene-create [extra dop-gui args...]
   ./test_run.sh live-regression [extra dop-gui args...]
 
 Examples:
@@ -48,6 +49,7 @@ Examples:
   ./test_run.sh live-bg
   ./test_run.sh live-grid-off
   ./test_run.sh live-scene-cubes
+  ./test_run.sh live-scene-create
   ./test_run.sh live-regression
 
 Notes:
@@ -78,6 +80,10 @@ case "$MODE" in
     live-scene-cubes)
         build_app
         exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_ui_scene_cubes.json5" --stay-open --startup-delay-ms 5000 "${@:2}"
+        ;;
+    live-scene-create)
+        build_app
+        exec "$BUILD_DIR/dop-gui" --script "$ROOT_DIR/tests/live_ui_scene_create.json5" --stay-open "${@:2}"
         ;;
     live-regression)
         build_app

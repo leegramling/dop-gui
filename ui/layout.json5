@@ -9,6 +9,7 @@
     {
       label: "Scene",
       items: [
+        { label: "Create", command: "ui.panel.open=panel-new-shape" },
         { label: "cubes", command: "scene.load.cubes" },
         { label: "Shapes", command: "scene.load.shapes" },
       ],
@@ -180,6 +181,13 @@
         { id: "scale-y", slotId: "input-properties-scale-y", type: "input_double", label: "Scale Y", bind: "scene.selected.scale.y", precision: 6 },
         { id: "scale-z", slotId: "input-properties-scale-z", type: "input_double", label: "Scale Z", bind: "scene.selected.scale.z", precision: 6 },
       ],
+    },
+    {
+      label: "New Shape",
+      open: false,
+      closable: true,
+      flags: ["NoCollapse"],
+      layout: { x: 792, y: 48, w: 360, h: 520 },
     },
   ],
 }

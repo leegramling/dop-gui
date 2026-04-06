@@ -1,0 +1,10 @@
+{
+  actions: [
+    { query: "ui.panel.panel-new-shape" },
+    { command: "ui.test.click.menuitem-scene-create" },
+    { query: "ui.panel.panel-new-shape" },
+    { query: "ui.panel.panel-new-shape.widget.shape-kind" },
+    { command: "ui.test.panel.panel-new-shape.click.cancel" },
+    { query: "ui.panel.panel-new-shape" },
+  ],
+}

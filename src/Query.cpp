@@ -38,6 +38,16 @@ std::string escapeJson(const std::string& value)
     return out.str();
 }
 
+std::string sanitizePanelId(std::string label)
+{
+    for (auto& ch : label)
+    {
+        if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+        else if (ch == ' ' || ch == '.') ch = '-';
+    }
+    return "panel-" + label;
+}
+
 QueryValuePtr makeValuePtr(QueryValue value)
 {
     return std::make_shared<QueryValue>(std::move(value));
@@ -100,6 +110,13 @@ QueryValue makeSceneObjectValue(const SceneObjectState& object, bool includeTran
     {
         fields.push_back(makeField("kind", makeStringValue(object.kind)));
         fields.push_back(makeField("vertexCount", makeUIntValue(object.vertexCount)));
+        fields.push_back(makeField("colorHex", makeStringValue(object.colorHex)));
+        fields.push_back(makeField("color", makeArrayValue({
+            makeDoubleValue(object.color.r),
+            makeDoubleValue(object.color.g),
+            makeDoubleValue(object.color.b),
+            makeDoubleValue(object.color.a),
+        })));
     }
 
     if (includeTransform)
@@ -217,7 +234,7 @@ QueryValue makePanelSpecValue(const UiPanelState& panel)
 
     return makeObjectValue({
         makeField("label", makeStringValue(panel.label)),
-        makeField("id", makeStringValue("panel-" + panel.label)),
+        makeField("id", makeStringValue(sanitizePanelId(panel.label))),
         makeField("open", makeBoolValue(panel.open)),
         makeField("closable", makeBoolValue(panel.closable)),
         makeField("flags", QueryValue{std::move(flags)}),

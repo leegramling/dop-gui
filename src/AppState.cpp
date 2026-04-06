@@ -9,6 +9,8 @@
 
 namespace
 {
+std::string defaultObjectColorHex(std::string_view kind);
+
 std::string readFile(const std::string& filename)
 {
     std::ifstream file(filename);
@@ -346,14 +348,23 @@ AppState loadSceneStateFromFile(const std::string& filename)
 
     for (const auto& objectBlock : extractObjectEntries(objectsBlock))
     {
+        const auto kind = parseStringField(objectBlock, "kind");
+        const auto colorHex = parseOptionalStringField(objectBlock, "color").value_or(defaultObjectColorHex(kind));
         state.scene.objects.push_back(SceneObjectState{
             .id = parseStringField(objectBlock, "id"),
-            .kind = parseStringField(objectBlock, "kind"),
+            .kind = kind,
             .vertexCount = parseUIntField(objectBlock, "vertexCount"),
             .position = parseVec3Field(objectBlock, "position"),
             .rotation = parseOptionalVec3Field(objectBlock, "rotation").value_or(vsg::dvec3{0.0, 0.0, 0.0}),
             .scale = parseVec3Field(objectBlock, "scale"),
+            .colorHex = colorHex,
         });
+        auto& object = state.scene.objects.back();
+        if (!tryParseHexColor(object.colorHex, object.color))
+        {
+            object.colorHex = defaultObjectColorHex(object.kind);
+            tryParseHexColor(object.colorHex, object.color);
+        }
     }
 
     if (!state.scene.objects.empty()) state.scene.selectedObjectId = state.scene.objects.front().id;
@@ -478,6 +489,17 @@ float parseHexByte(const std::string& text, std::size_t offset)
     if (high < 0 || low < 0) throw std::runtime_error("Invalid hex color component.");
     return static_cast<float>((high * 16) + low) / 255.0f;
 }
+std::string defaultObjectColorHex(std::string_view kind)
+{
+    if (kind == "triangle") return "#F24D40";
+    if (kind == "rectangle") return "#33B2F2";
+    if (kind == "tristrip") return "#33D973";
+    if (kind == "cube") return "#F2CC40";
+    if (kind == "sphere") return "#4DD9A6";
+    if (kind == "torus") return "#CC66F2";
+    if (kind == "pyramid") return "#F28C33";
+    return "#D9D9D9";
+}
 }
 
 AppState loadAppStateFromSceneFile(const std::string& filename)
@@ -503,6 +525,38 @@ UiLayoutState loadUiLayoutFromFile(const std::string& filename)
     }
 
     return layout;
+}
+
+UiPanelState* findPanel(UiState& ui, const std::string& panelId)
+{
+    for (auto& panel : ui.layout.panels)
+    {
+        std::string candidateId = panel.label;
+        for (auto& ch : candidateId)
+        {
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+            else if (ch == ' ' || ch == '.') ch = '-';
+        }
+        candidateId = "panel-" + candidateId;
+        if (candidateId == panelId) return &panel;
+    }
+    return nullptr;
+}
+
+const UiPanelState* findPanel(const UiState& ui, const std::string& panelId)
+{
+    for (const auto& panel : ui.layout.panels)
+    {
+        std::string candidateId = panel.label;
+        for (auto& ch : candidateId)
+        {
+            if (ch >= 'A' && ch <= 'Z') ch = static_cast<char>(ch - 'A' + 'a');
+            else if (ch == ' ' || ch == '.') ch = '-';
+        }
+        candidateId = "panel-" + candidateId;
+        if (candidateId == panelId) return &panel;
+    }
+    return nullptr;
 }
 
 AppState createBootstrapAppState()

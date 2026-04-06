@@ -2,6 +2,7 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/new-shape-panel-dev-example`.
 - [x] Create feature branch `feature/widget-layout-doxygen-gltf`.
 - [x] Create feature branch `feature/imgui-ui-layout-testable`.
 - [x] Create feature branch `feature/app-input-visualizer-command`.
@@ -49,6 +50,14 @@
 - [x] Add generic panel-tree binder helpers for the common text/input/checkbox/combo/radio/double widget cases, leaving only selected-object, popup, and table behavior as panel-specific renderers.
 - [x] Switch both current panels to those generic panel-tree binder helpers for the standard widget cases, so the remaining panel-specific code is now concentrated in selected-object, popup, and table behavior.
 - [x] Move both selected-object controls onto the same generic panel-tree combo binder path, leaving popup and table behavior as the only intentional custom renderers still in this branch.
+- [x] Record the next feature as a hand-coded `New Shape` panel dev example, with layout in `init()`, explicit widget callbacks in `render()`, and full testability through the existing UI command/query seam.
+- [x] Record the required new primitive scene/render support for `sphere`, `torus`, and `pyramid`, created from panel-entered transform and color values.
+- [x] Implement `New Shape` as a hand-coded `Panel`-derived dev example, with Yoga layout built in `init()` and explicit wrapped-widget callbacks in `render()`.
+- [x] Add headless panel-driven shape creation coverage for `Sphere`, proving that the panel can create new scene objects through the existing `ui.test.panel.*` command path.
+- [x] Extend scene object state and renderer support to carry color and render `sphere`, `torus`, and `pyramid` primitives.
+- [x] Add `Scene -> Create` so the hand-coded dialog opens from the menubar instead of staying open by default.
+- [x] Close the `New Shape` dialog on both `Create` and `Cancel`, and cover the open/create/close/reopen/cancel flow in headless UI scripts.
+- [x] Recompile newly created scene objects through the viewer compile manager so live shape creation no longer crashes during VSG record traversal.
 
 ## Architecture Notes
 

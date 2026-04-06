@@ -69,6 +69,9 @@ public:
     vsg::ref_ptr<vsg::RenderGraph> renderGraph() const;
 
 private:
+    void rebuildScene(const AppState& state);
+    void populateScene(const AppState& state);
+    void compileSceneIfNeeded();
     vsg::ref_ptr<vsg::BindGraphicsPipeline> createBindGraphicsPipeline() const;
     vsg::ref_ptr<vsg::VertexIndexDraw> createDrawCommands(const SceneObjectState& object) const;
     vsg::ref_ptr<vsg::vec4Array> createColors(const SceneObjectState& object, std::size_t count) const;
@@ -77,9 +80,11 @@ private:
     vsg::ref_ptr<vsg::Group> _scene;
     vsg::ref_ptr<vsg::Camera> _camera;
     vsg::ref_ptr<vsg::LookAt> _lookAt;
+    vsg::ref_ptr<vsg::Viewer> _viewer;
     vsg::ref_ptr<vsg::CommandGraph> _commandGraph;
     vsg::ref_ptr<vsg::View> _view;
     vsg::ref_ptr<vsg::RenderGraph> _renderGraph;
+    vsg::ref_ptr<vsg::BindGraphicsPipeline> _bindPipeline;
     vsg::ref_ptr<vsg::MatrixTransform> _gridTransform;
     std::vector<vsg::ref_ptr<vsg::MatrixTransform>> _objectTransforms;
 };
