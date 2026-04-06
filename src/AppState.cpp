@@ -548,6 +548,15 @@ const WidgetState* findWidget(const UiState& ui, const std::string& label)
     return nullptr;
 }
 
+const WidgetState* findWidget(const UiState& ui, const std::string& panelId, const std::string& widgetId)
+{
+    for (const auto& widget : ui.registry)
+    {
+        if (widget.panelId == panelId && widget.widgetId == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
 const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& panelId, const std::string& slotId)
 {
     for (const auto& slot : ui.layoutSlots)

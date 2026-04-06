@@ -167,7 +167,9 @@ void UiManager::render(AppState& state)
             panelState.layout,
             panelController->minSize(panelState));
         if (!panelWindow.begin()) continue;
+        state.ui.currentPanelId = panelId;
         panelController->render(context, panelState);
+        state.ui.currentPanelId.clear();
     }
 
     state.ui.pendingActions.clear();

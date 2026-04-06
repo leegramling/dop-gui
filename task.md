@@ -5,6 +5,7 @@
 - [x] Define the first declarative JSON5 flex-layout slice for `Properties`.
 - [x] Extend the declarative JSON5 flex-layout path to `Scene Info`.
 - [x] Reduce duplicated slot naming in authored flex layout with `widget:` and `labelFor:` references.
+- [x] Add panel-scoped runtime widget lookup with `ui.panel.<panel>.widget.<id>` while keeping `ui.widget.<id>` working.
 
 ## Next Tasks
 

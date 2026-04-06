@@ -14,12 +14,16 @@ WidgetState& ensureWidget(UiState& uiState, std::string_view label, std::string_
 {
     if (auto* existing = findWidget(uiState, std::string(label)))
     {
+        existing->panelId = uiState.currentPanelId;
+        existing->widgetId = std::string(label);
         existing->type = std::string(type);
         return *existing;
     }
 
     uiState.registry.push_back(WidgetState{
         .label = std::string(label),
+        .panelId = uiState.currentPanelId,
+        .widgetId = std::string(label),
         .type = std::string(type),
     });
     return uiState.registry.back();

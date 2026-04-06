@@ -69,6 +69,8 @@ struct UiLayoutRectState
 struct WidgetState
 {
     std::string label;
+    std::string panelId;
+    std::string widgetId;
     std::string type;
     std::string textValue;
     bool boolValue = false;
@@ -189,6 +191,7 @@ struct UiState
     std::vector<UiLayoutSlotState> layoutSlots;
     std::vector<UiTestAction> pendingActions;
     std::optional<UiLayoutRectState> nextWidgetLayout;
+    std::string currentPanelId;
     bool dockingEnabled = false;
     bool viewportsEnabled = false;
     bool platformCreateWindowCallback = false;
@@ -252,6 +255,14 @@ WidgetState* findWidget(UiState& ui, const std::string& label);
  * @return Immutable widget pointer, or null when not found.
  */
 const WidgetState* findWidget(const UiState& ui, const std::string& label);
+/**
+ * @brief Find an immutable registered widget by panel id and widget id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @param widgetId Stable widget identifier within the panel.
+ * @return Immutable widget pointer, or null when not found.
+ */
+const WidgetState* findWidget(const UiState& ui, const std::string& panelId, const std::string& widgetId);
 /**
  * @brief Find an immutable registered layout slot by panel id and slot id.
  * @param ui UI state to search.

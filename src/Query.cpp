@@ -116,6 +116,8 @@ QueryValue makeWidgetValue(const WidgetState& widget)
 {
     return makeObjectValue({
         makeField("label", makeStringValue(widget.label)),
+        makeField("panelId", makeStringValue(widget.panelId)),
+        makeField("widgetId", makeStringValue(widget.widgetId)),
         makeField("type", makeStringValue(widget.type)),
         makeField("textValue", makeStringValue(widget.textValue)),
         makeField("boolValue", makeBoolValue(widget.boolValue)),
@@ -487,7 +489,10 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
     if (segments.size() >= 2 && segments[0] == "panel")
     {
         std::string panelId = segments[1];
-        for (std::size_t i = 2; i < segments.size() && segments[i] != "widgets"; ++i) panelId += "." + segments[i];
+        for (std::size_t i = 2; i < segments.size() && segments[i] != "widgets" && segments[i] != "widget"; ++i)
+        {
+            panelId += "." + segments[i];
+        }
 
         const UiPanelState* panel = nullptr;
         for (const auto& candidate : app.state().ui.layout.panels)
@@ -516,6 +521,14 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
                 widgets.elements.push_back(makeValuePtr(makeWidgetSpecValue(widget)));
             }
             return QueryValue{std::move(widgets)};
+        }
+        if (segments.size() >= 4 && segments[2] == "widget")
+        {
+            std::string widgetId = segments[3];
+            for (std::size_t i = 4; i < segments.size(); ++i) widgetId += "." + segments[i];
+            const auto* widget = findWidget(app.state().ui, panelId, widgetId);
+            if (!widget) throw std::runtime_error("Unknown UI panel widget: " + panelId + "." + widgetId);
+            return makeWidgetValue(*widget);
         }
     }
 
