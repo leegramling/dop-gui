@@ -235,22 +235,20 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         }
     }
 
-    std::vector<std::string> objectIds;
-    objectIds.reserve(state.scene.objects.size());
-    for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-
+    const auto objectIds = collectSceneObjectIds(state.scene);
     const auto selectedObjectSlots = binding("panel-scene-selected-object");
-    setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, selectedObjectSlots.labelSlotId);
-    Text(state.ui, selectedObjectSlots.labelSlotId.c_str(), "Selected Object");
-
-    if (!objectIds.empty())
+    const auto selectedObject = renderSelectedObjectControl(
+        state.ui,
+        sceneInfoLayout,
+        selectedObjectSlots,
+        "panel-scene-selected-object",
+        "panel-scene-selected-object-label",
+        "Selected Object",
+        state.scene.selectedObjectId,
+        objectIds);
+    if (!selectedObject.empty() && selectedObject != state.scene.selectedObjectId)
     {
-        setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, selectedObjectSlots.valueSlotId);
-        const auto selectedObject = ComboBox(state.ui, "panel-scene-selected-object", "", state.scene.selectedObjectId, objectIds);
-        if (!selectedObject.empty() && selectedObject != state.scene.selectedObjectId)
-        {
-            queueUiCommand(state.ui, "scene.select_object", selectedObject);
-        }
+        queueUiCommand(state.ui, "scene.select_object", selectedObject);
     }
 
     setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, "panel-theme-label");
@@ -310,10 +308,5 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
                 }
             });
         }
-    }
-
-    if (auto* selectedWidget = findWidget(state.ui, "panel-scene-selected-object"))
-    {
-        selectedWidget->textValue = state.scene.selectedObjectId;
     }
 }

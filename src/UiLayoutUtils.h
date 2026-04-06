@@ -62,3 +62,30 @@ void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, st
 WidgetSlotBinding makeWidgetSlotBinding(
     std::string_view widgetId,
     const std::function<std::string(std::string_view)>& labelResolver);
+/**
+ * @brief Collect the current ordered scene object ids for selection widgets.
+ * @param scene Scene state to inspect.
+ * @return Ordered list of scene object ids.
+ */
+std::vector<std::string> collectSceneObjectIds(const SceneState& scene);
+/**
+ * @brief Render a shared selected-object control using a label slot and combo slot.
+ * @param uiState UI state used for widget registry and pending layout placement.
+ * @param layout Yoga layout that owns the selection slots.
+ * @param slots Slot binding for the selected-object widget.
+ * @param widgetId Stable combo widget id.
+ * @param labelWidgetId Stable label widget id.
+ * @param labelText Visible label text.
+ * @param selectedObjectId Current selected object id.
+ * @param objectIds Ordered selectable object ids.
+ * @return Final selected object id after this evaluation.
+ */
+std::string renderSelectedObjectControl(
+    UiState& uiState,
+    const YogaLayout& layout,
+    const WidgetSlotBinding& slots,
+    const char* widgetId,
+    const char* labelWidgetId,
+    const char* labelText,
+    const std::string& selectedObjectId,
+    const std::vector<std::string>& objectIds);

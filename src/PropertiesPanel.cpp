@@ -118,15 +118,16 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
     registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, slotIds(panelState));
 
     const auto selectedObjectSlots = binding("panel-selected-object");
-    setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, "panel-properties-selected-object-label");
-    Text(state.ui, "panel-properties-selected-object-label", "Selected Object");
-
-    std::vector<std::string> objectIds;
-    objectIds.reserve(state.scene.objects.size());
-    for (const auto& object : state.scene.objects) objectIds.push_back(object.id);
-
-    setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, selectedObjectSlots.valueSlotId);
-    const auto selectedValue = ComboBox(state.ui, "panel-selected-object", "", state.scene.selectedObjectId, objectIds);
+    const auto objectIds = collectSceneObjectIds(state.scene);
+    const auto selectedValue = renderSelectedObjectControl(
+        state.ui,
+        propertiesLayout,
+        selectedObjectSlots,
+        "panel-selected-object",
+        "panel-properties-selected-object-label",
+        "Selected Object",
+        state.scene.selectedObjectId,
+        objectIds);
     if (!selectedValue.empty() && selectedValue != state.scene.selectedObjectId)
     {
         queueUiCommand(state.ui, "scene.select_object", selectedValue);
