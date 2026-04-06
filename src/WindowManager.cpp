@@ -1,6 +1,8 @@
 #include "WindowManager.h"
 
 #include <algorithm>
+#include <iostream>
+#include <sstream>
 
 namespace
 {
@@ -104,6 +106,7 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
     uiState.rendererDestroyRequestCount = _callbackState.rendererDestroyRequestCount;
     uiState.lastTearOutEvent = _callbackState.lastEvent;
     uiState.lastTearOutViewportId = static_cast<std::uint64_t>(_callbackState.lastViewportId);
+    const_cast<WindowManager*>(this)->emitStatusToStderrIfChanged(uiState);
 }
 
 vsg::ref_ptr<vsg::Window> WindowManager::primaryWindow() const
@@ -252,4 +255,32 @@ void WindowManager::rendererDestroyWindow(ImGuiViewport* viewport)
 void WindowManager::rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 {
     if (viewport) viewport->Size = size;
+}
+
+void WindowManager::emitStatusToStderrIfChanged(const UiState& uiState)
+{
+    if (uiState.testMode) return;
+
+    std::ostringstream out;
+    out << "[tearout] "
+        << "primary=" << (uiState.primaryWindowRegistered ? "1" : "0")
+        << " docking=" << (uiState.dockingEnabled ? "1" : "0")
+        << " viewports=" << (uiState.viewportsEnabled ? "1" : "0")
+        << " backend_platform=" << (uiState.backendPlatformHasViewports ? "1" : "0")
+        << " backend_renderer=" << (uiState.backendRendererHasViewports ? "1" : "0")
+        << " callbacks_installed=" << (uiState.platformCallbacksInstalled && uiState.rendererCallbacksInstalled ? "1" : "0")
+        << " platform_create_cb=" << (uiState.platformCreateWindowCallback ? "1" : "0")
+        << " renderer_create_cb=" << (uiState.rendererCreateWindowCallback ? "1" : "0")
+        << " supported=" << (uiState.tearOutCallbacksSupported ? "1" : "0")
+        << " viewports_count=" << uiState.viewportCount
+        << " monitors=" << uiState.monitorCount
+        << " platform_create_requests=" << uiState.platformCreateRequestCount
+        << " renderer_create_requests=" << uiState.rendererCreateRequestCount
+        << " last_event=" << (uiState.lastTearOutEvent.empty() ? "none" : uiState.lastTearOutEvent)
+        << " last_viewport=" << uiState.lastTearOutViewportId;
+
+    const auto message = out.str();
+    if (message == _lastStatusLog) return;
+    _lastStatusLog = message;
+    std::cerr << message << '\n';
 }

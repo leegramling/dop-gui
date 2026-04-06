@@ -73,6 +73,7 @@ private:
     void recordRendererDestroyWindow(ImGuiViewport* viewport);
     void installPlatformMonitorSnapshot();
     void installMainViewportHandles();
+    void emitStatusToStderrIfChanged(const UiState& uiState);
 
     static WindowManager* callbackOwner();
     static void setCallbackOwner(WindowManager* owner);
@@ -93,4 +94,5 @@ private:
 
     vsg::ref_ptr<vsg::Window> _primaryWindow;
     CallbackState _callbackState;
+    std::string _lastStatusLog;
 };
