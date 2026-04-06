@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panel.h"
+#include "UiPanelTree.h"
 
 /**
  * @brief Selected-object properties panel controller.
@@ -25,4 +26,14 @@ public:
      * @param panelState Authored panel specification.
      */
     void render(PanelContext& context, const UiPanelState& panelState) override;
+
+protected:
+    /**
+     * @brief Build the declarative runtime tree the first time the panel is used.
+     * @param panelState Authored panel specification.
+     */
+    void init(const UiPanelState& panelState) override;
+
+private:
+    UiPanelTree _root;
 };

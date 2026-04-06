@@ -195,3 +195,18 @@ YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode, const std:
     spec.root = appendFlexNode(spec, rootNode, widgets, std::nullopt, generatedIndex);
     return spec;
 }
+
+std::vector<std::string> collectYogaSlotIds(const UiFlexNodeState& rootNode, const std::vector<UiWidgetSpecState>& widgets)
+{
+    std::vector<std::string> slotIds;
+    std::size_t generatedIndex = 0;
+
+    std::function<void(const UiFlexNodeState&)> append = [&](const UiFlexNodeState& node)
+    {
+        slotIds.push_back(resolvedNodeSlotId(node, widgets, generatedIndex));
+        for (const auto& child : node.children) append(child);
+    };
+
+    append(rootNode);
+    return slotIds;
+}

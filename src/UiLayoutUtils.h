@@ -114,3 +114,10 @@ YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode);
  * @return Yoga layout spec equivalent to the authored flex tree.
  */
 YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode, const std::vector<UiWidgetSpecState>& widgets);
+/**
+ * @brief Collect the resolved Yoga slot ids used by an authored declarative flex-layout tree.
+ * @param rootNode Root flex-layout node loaded from JSON5.
+ * @param widgets Widget specs available to resolve `widget` and `labelFor` references.
+ * @return Ordered resolved slot ids used by the layout tree.
+ */
+std::vector<std::string> collectYogaSlotIds(const UiFlexNodeState& rootNode, const std::vector<UiWidgetSpecState>& widgets);

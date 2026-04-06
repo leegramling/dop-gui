@@ -2,111 +2,14 @@
 
 #include "UiLayoutUtils.h"
 #include "Widgets.h"
-#include "YogaLayout.h"
 
 #include <vsgImGui/imgui.h>
 
 namespace
 {
-const UiWidgetSpecState* findWidgetSpec(const UiPanelState& panelState, std::string_view widgetId)
+const UiPanelWidgetNode* findWidget(const UiPanelTree& root, std::string_view widgetId)
 {
-    for (const auto& widget : panelState.widgets)
-    {
-        if (widget.id == widgetId) return &widget;
-    }
-    return nullptr;
-}
-
-std::string labelSlotId(const UiPanelState& panelState, std::string_view widgetId)
-{
-    if (const auto* widget = findWidgetSpec(panelState, widgetId))
-    {
-        return labelSlotForWidget(*widget);
-    }
-    return std::string(widgetId) + "-label";
-}
-
-WidgetSlotBinding binding(const UiPanelState& panelState, std::string_view widgetId)
-{
-    if (const auto* widget = findWidgetSpec(panelState, widgetId))
-    {
-        return WidgetSlotBinding{
-            .valueSlotId = valueSlotForWidget(*widget),
-            .labelSlotId = labelSlotForWidget(*widget),
-        };
-    }
-    return makeWidgetSlotBinding(widgetId, [&](std::string_view id) { return labelSlotId(panelState, id); });
-}
-
-std::vector<std::string> slotIds(const UiPanelState& panelState)
-{
-    std::vector<std::string> ids{
-        "panel-properties-selected-object-label",
-        "panel-selected-object",
-        "panel-properties-selected-object",
-    };
-
-    for (const auto& widgetSpec : panelState.widgets)
-    {
-        if (widgetSpec.type != "input_double") continue;
-        ids.push_back(labelSlotId(panelState, widgetSpec.id));
-        ids.push_back(valueSlotForWidget(widgetSpec));
-    }
-
-    return ids;
-}
-
-YogaLayout::Spec buildLayout(const UiPanelState& panelState)
-{
-    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout, panelState.widgets);
-
-    using Axis = YogaLayout::Axis;
-    using Builder = YogaLayout::Builder;
-    using Length = YogaLayout::Length;
-    using Style = YogaLayout::Style;
-
-    Style root;
-    root.direction = Axis::Column;
-    root.gap = 8.0f;
-    root.width = Length::percent(100.0f);
-    root.height = Length::autoV();
-
-    Style row;
-    row.direction = Axis::Row;
-    row.gap = 8.0f;
-    row.width = Length::percent(100.0f);
-    row.height = Length::px(24.0f);
-
-    Style label;
-    label.width = Length::px(116.0f);
-    label.height = Length::px(24.0f);
-
-    Style input;
-    input.width = Length::flex(1.0f);
-    input.height = Length::px(24.0f);
-
-    Style fullWidth;
-    fullWidth.width = Length::percent(100.0f);
-    fullWidth.height = Length::px(20.0f);
-
-    Builder builder;
-    builder.root("properties-root", root)
-        .begin("properties-selection-row", row)
-            .item("panel-properties-selected-object-label", label)
-            .item("panel-selected-object", input)
-        .end()
-        .item("panel-properties-selected-object", fullWidth);
-
-    for (const auto& widgetSpec : panelState.widgets)
-    {
-        if (widgetSpec.type != "input_double") continue;
-        builder.begin("row-" + widgetSpec.id, row)
-            .item(labelSlotId(panelState, widgetSpec.id), label)
-            .item(valueSlotForWidget(widgetSpec), input)
-        .end();
-    }
-
-    return builder.build();
+    return root.findWidget(widgetId);
 }
 }
 
@@ -121,12 +24,17 @@ PanelMinSize PropertiesPanel::minSize(const UiPanelState& panelState) const
     return PanelMinSize{.width = 360.0f, .height = 356.0f, .enabled = true};
 }
 
+void PropertiesPanel::init(const UiPanelState& panelState)
+{
+    _root = UiPanelTree::build(panelState);
+}
+
 void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelState)
 {
     auto& state = context.state;
     auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
     YogaLayout propertiesLayout;
-    propertiesLayout.setLayout(buildLayout(panelState));
+    propertiesLayout.setLayout(_root.layoutSpec());
     ImVec2 origin{0.0f, 0.0f};
     ImVec2 avail{
         panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) : 320.0f,
@@ -137,16 +45,16 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
         avail = ImGui::GetContentRegionAvail();
     }
     propertiesLayout.resize(origin.x, origin.y, avail.x, avail.y);
-    registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, slotIds(panelState));
+    registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, _root.slotIds());
 
-    const auto* selectedObjectWidget = findWidgetSpec(panelState, "selected-object");
-    const auto selectedObjectSlots = selectedObjectWidget ? binding(panelState, selectedObjectWidget->id) : binding(panelState, "selected-object");
+    const auto* selectedObjectWidget = findWidget(_root, "selected-object");
+    const auto selectedObjectSlots = selectedObjectWidget ? selectedObjectWidget->slots : makeWidgetSlotBinding("selected-object", [](std::string_view id) { return std::string(id) + "-label"; });
     const auto objectIds = collectSceneObjectIds(state.scene);
     const auto selectedValue = renderSelectedObjectControl(
         state.ui,
         propertiesLayout,
         selectedObjectSlots,
-        selectedObjectWidget ? selectedObjectWidget->id.c_str() : "selected-object",
+        selectedObjectWidget ? selectedObjectWidget->spec.id.c_str() : "selected-object",
         "panel-properties-selected-object-label",
         "Selected Object",
         state.scene.selectedObjectId,
@@ -168,7 +76,8 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
 
     auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
     {
-        const auto slots = binding(panelState, widgetSpec.id);
+        const auto* node = findWidget(_root, widgetSpec.id);
+        const auto slots = node ? node->slots : makeWidgetSlotBinding(widgetSpec.id, [](std::string_view id) { return std::string(id) + "-label"; });
         setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, slots.labelSlotId);
         Text(state.ui, slots.labelSlotId.c_str(), widgetSpec.label);
 
@@ -182,8 +91,9 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
         return;
     }
 
-    for (const auto& widgetSpec : panelState.widgets)
+    for (const auto& node : _root.widgets())
     {
+        const auto& widgetSpec = node.spec;
         if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.selectedObjectId")
         {
             continue;
