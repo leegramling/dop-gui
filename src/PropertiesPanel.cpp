@@ -8,14 +8,27 @@
 
 namespace
 {
-std::string labelSlotId(std::string_view widgetId)
+const UiWidgetSpecState* findWidgetSpec(const UiPanelState& panelState, std::string_view widgetId)
 {
+    for (const auto& widget : panelState.widgets)
+    {
+        if (widget.id == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
+std::string labelSlotId(const UiPanelState& panelState, std::string_view widgetId)
+{
+    if (const auto* widget = findWidgetSpec(panelState, widgetId))
+    {
+        return labelSlotForWidget(*widget);
+    }
     return std::string(widgetId) + "-label";
 }
 
-WidgetSlotBinding binding(std::string_view widgetId)
+WidgetSlotBinding binding(const UiPanelState& panelState, std::string_view widgetId)
 {
-    return makeWidgetSlotBinding(widgetId, labelSlotId);
+    return makeWidgetSlotBinding(widgetId, [&](std::string_view id) { return labelSlotId(panelState, id); });
 }
 
 std::vector<std::string> slotIds(const UiPanelState& panelState)
@@ -29,7 +42,7 @@ std::vector<std::string> slotIds(const UiPanelState& panelState)
     for (const auto& widgetSpec : panelState.widgets)
     {
         if (widgetSpec.type != "input_double") continue;
-        ids.push_back(labelSlotId(widgetSpec.id));
+        ids.push_back(labelSlotId(panelState, widgetSpec.id));
         ids.push_back(widgetSpec.id);
     }
 
@@ -38,7 +51,7 @@ std::vector<std::string> slotIds(const UiPanelState& panelState)
 
 YogaLayout::Spec buildLayout(const UiPanelState& panelState)
 {
-    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout);
+    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout, panelState.widgets);
 
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
@@ -81,7 +94,7 @@ YogaLayout::Spec buildLayout(const UiPanelState& panelState)
     {
         if (widgetSpec.type != "input_double") continue;
         builder.begin("row-" + widgetSpec.id, row)
-            .item(labelSlotId(widgetSpec.id), label)
+            .item(labelSlotId(panelState, widgetSpec.id), label)
             .item(widgetSpec.id, input)
         .end();
     }
@@ -119,7 +132,7 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
     propertiesLayout.resize(origin.x, origin.y, avail.x, avail.y);
     registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, slotIds(panelState));
 
-    const auto selectedObjectSlots = binding("panel-selected-object");
+    const auto selectedObjectSlots = binding(panelState, "panel-selected-object");
     const auto objectIds = collectSceneObjectIds(state.scene);
     const auto selectedValue = renderSelectedObjectControl(
         state.ui,
@@ -147,7 +160,7 @@ void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelSta
 
     auto emitEditablePropertyRow = [&](const UiWidgetSpecState& widgetSpec, double& value, int precision, const char* unit)
     {
-        const auto slots = binding(widgetSpec.id);
+        const auto slots = binding(panelState, widgetSpec.id);
         setNextWidgetLayoutIfPresent(state.ui, propertiesLayout, slots.labelSlotId);
         Text(state.ui, slots.labelSlotId.c_str(), widgetSpec.label);
 

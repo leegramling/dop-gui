@@ -54,6 +54,12 @@ void registerLayoutSlots(UiState& uiState, const std::string& panelId, const Yog
  */
 void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, std::string_view slotId);
 /**
+ * @brief Resolve the runtime label slot for a widget spec.
+ * @param widget Widget spec to inspect.
+ * @return Explicit label slot id, or the default `<id>-label` slot.
+ */
+std::string labelSlotForWidget(const UiWidgetSpecState& widget);
+/**
  * @brief Build a widget-to-slot binding using a panel-specific label-slot resolver.
  * @param widgetId Stable widget identifier.
  * @param labelResolver Function that maps widget ids to label slot ids.
@@ -95,3 +101,10 @@ std::string renderSelectedObjectControl(
  * @return Yoga layout spec equivalent to the authored flex tree.
  */
 YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode);
+/**
+ * @brief Build a Yoga layout spec from an authored declarative flex-layout tree using widget-aware slot resolution.
+ * @param rootNode Root flex-layout node loaded from JSON5.
+ * @param widgets Widget specs available to resolve `widget` and `labelFor` references.
+ * @return Yoga layout spec equivalent to the authored flex tree.
+ */
+YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode, const std::vector<UiWidgetSpecState>& widgets);

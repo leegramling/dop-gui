@@ -138,7 +138,7 @@ YogaLayout::Spec buildLayout()
 
 YogaLayout::Spec buildLayout(const UiPanelState& panelState)
 {
-    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout);
+    if (panelState.flexLayout) return buildYogaLayoutSpec(*panelState.flexLayout, panelState.widgets);
 
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;

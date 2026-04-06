@@ -155,5 +155,5 @@ Success criteria:
 Next focus after current slice:
 
 - expand authored layout support only after the first minimal vocabulary is stable
-- reduce remaining duplication between authored widget definitions and authored layout slot ids
+- continue reducing remaining duplication between authored widget definitions and authored layout slot ids, eventually moving toward shorter panel-local ids
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

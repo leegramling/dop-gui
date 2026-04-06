@@ -4,6 +4,7 @@
 
 - [x] Define the first declarative JSON5 flex-layout slice for `Properties`.
 - [x] Extend the declarative JSON5 flex-layout path to `Scene Info`.
+- [x] Reduce duplicated slot naming in authored flex layout with `widget:` and `labelFor:` references.
 
 ## Next Tasks
 
@@ -20,6 +21,7 @@
 - [x] Convert the `Properties` panel layout from builder code to authored JSON5 layout.
 - [x] Preserve `ui.layout.slot.*` and `ui.widget.*` query behavior during the layout-source transition.
 - [x] Move `Scene Info` from builder code to authored JSON5 flex layout.
+- [x] Add widget-aware slot references so authored flex layout no longer has to repeat most value and label slot ids verbatim.
 
 ## Next Slice Candidates
 

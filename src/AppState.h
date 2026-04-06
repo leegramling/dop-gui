@@ -111,6 +111,7 @@ struct UiMenuItemState
 struct UiWidgetSpecState
 {
     std::string id;
+    std::string labelSlot;
     std::string type;
     std::string label;
     std::string bind;
@@ -131,6 +132,8 @@ struct UiFlexNodeState
 {
     std::string type;
     std::string slot;
+    std::string widget;
+    std::string labelFor;
     double gap = 0.0;
     std::optional<double> width;
     std::optional<double> height;

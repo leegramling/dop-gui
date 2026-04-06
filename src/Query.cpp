@@ -160,6 +160,7 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 
     return makeObjectValue({
         makeField("id", makeStringValue(widget.id)),
+        makeField("labelSlot", makeStringValue(widget.labelSlot)),
         makeField("type", makeStringValue(widget.type)),
         makeField("label", makeStringValue(widget.label)),
         makeField("bind", makeStringValue(widget.bind)),
@@ -185,6 +186,8 @@ QueryValue makeFlexNodeValue(const UiFlexNodeState& node)
     return makeObjectValue({
         makeField("type", makeStringValue(node.type)),
         makeField("slot", makeStringValue(node.slot)),
+        makeField("widget", makeStringValue(node.widget)),
+        makeField("labelFor", makeStringValue(node.labelFor)),
         makeField("gap", makeDoubleValue(node.gap)),
         makeField("width", node.width ? makeDoubleValue(*node.width) : makeNullValue()),
         makeField("height", node.height ? makeDoubleValue(*node.height) : makeNullValue()),

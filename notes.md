@@ -34,6 +34,8 @@
 - [x] Keep `ui.layout`, `ui.layout.slot.*`, and `ui.widget.*` inspection stable while `Properties` moves from builder-only layout to JSON5-authored flex layout.
 - [x] Move `Scene Info` onto the same JSON5-authored flex-layout path so both main panels now use authored Yoga trees rather than builder-only layout definitions.
 - [x] Extract the flex-tree-to-Yoga conversion into shared UI layout helpers so declarative layout parsing is no longer panel-specific.
+- [x] Let authored flex-layout nodes reference `widget:` and `labelFor:` instead of repeating most slot ids verbatim.
+- [x] Add `labelSlot` to widget specs so exceptional label-slot names like `panel-properties-selected-object-label` can still stay stable while layout becomes less repetitive.
 
 ## Architecture Notes
 

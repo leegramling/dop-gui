@@ -4,6 +4,15 @@
 
 namespace
 {
+const UiWidgetSpecState* findWidgetSpec(const std::vector<UiWidgetSpecState>& widgets, std::string_view widgetId)
+{
+    for (const auto& widget : widgets)
+    {
+        if (widget.id == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
 YogaLayout::Length flexLength(const std::optional<double>& pxValue, const std::optional<double>& flexValue)
 {
     if (flexValue && *flexValue > 0.0) return YogaLayout::Length::flex(static_cast<float>(*flexValue));
@@ -21,13 +30,29 @@ YogaLayout::Style styleFromFlexNode(const UiFlexNodeState& node)
     return style;
 }
 
+std::string resolvedNodeSlotId(const UiFlexNodeState& node, const std::vector<UiWidgetSpecState>& widgets, std::size_t& generatedIndex)
+{
+    if (!node.slot.empty()) return node.slot;
+    if (!node.widget.empty()) return node.widget;
+    if (!node.labelFor.empty())
+    {
+        if (const auto* widget = findWidgetSpec(widgets, node.labelFor))
+        {
+            return labelSlotForWidget(*widget);
+        }
+        return node.labelFor + "-label";
+    }
+    return "flex-node-" + std::to_string(generatedIndex++);
+}
+
 std::size_t appendFlexNode(
     YogaLayout::Spec& spec,
     const UiFlexNodeState& node,
+    const std::vector<UiWidgetSpecState>& widgets,
     std::optional<std::size_t> parentIndex,
     std::size_t& generatedIndex)
 {
-    const auto name = !node.slot.empty() ? node.slot : ("flex-node-" + std::to_string(generatedIndex++));
+    const auto name = resolvedNodeSlotId(node, widgets, generatedIndex);
     spec.nodes.push_back(YogaLayout::Node{
         .name = name,
         .style = styleFromFlexNode(node),
@@ -37,7 +62,7 @@ std::size_t appendFlexNode(
     if (parentIndex) spec.nodes[*parentIndex].children.push_back(index);
     for (const auto& child : node.children)
     {
-        appendFlexNode(spec, child, index, generatedIndex);
+        appendFlexNode(spec, child, widgets, index, generatedIndex);
     }
     return index;
 }
@@ -97,6 +122,12 @@ void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, st
     }
 }
 
+std::string labelSlotForWidget(const UiWidgetSpecState& widget)
+{
+    if (!widget.labelSlot.empty()) return widget.labelSlot;
+    return widget.id + "-label";
+}
+
 WidgetSlotBinding makeWidgetSlotBinding(
     std::string_view widgetId,
     const std::function<std::string(std::string_view)>& labelResolver)
@@ -141,8 +172,13 @@ std::string renderSelectedObjectControl(
 
 YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode)
 {
+    return buildYogaLayoutSpec(rootNode, {});
+}
+
+YogaLayout::Spec buildYogaLayoutSpec(const UiFlexNodeState& rootNode, const std::vector<UiWidgetSpecState>& widgets)
+{
     YogaLayout::Spec spec;
     std::size_t generatedIndex = 0;
-    spec.root = appendFlexNode(spec, rootNode, std::nullopt, generatedIndex);
+    spec.root = appendFlexNode(spec, rootNode, widgets, std::nullopt, generatedIndex);
     return spec;
 }
