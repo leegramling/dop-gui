@@ -92,7 +92,13 @@ void registerLayoutSlots(UiState& uiState, const std::string& panelId, const Yog
     }
 }
 
-YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
+struct YogaPanelDefinition
+{
+    YogaLayout::Spec spec;
+    PanelMinSize minSize;
+};
+
+YogaPanelDefinition buildPropertiesPanelLayout(const UiPanelState& panelState)
 {
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
@@ -146,10 +152,13 @@ YogaLayout::Spec buildPropertiesPanelLayout(const UiPanelState& panelState)
         .end();
     }
 
-    return builder.build();
+    return YogaPanelDefinition{
+        .spec = builder.build(),
+        .minSize = PanelMinSize{.width = 360.0f, .height = 356.0f, .enabled = true},
+    };
 }
 
-YogaLayout::Spec buildSceneInfoPanelLayout()
+YogaPanelDefinition buildSceneInfoPanelLayout()
 {
     using Axis = YogaLayout::Axis;
     using Builder = YogaLayout::Builder;
@@ -194,7 +203,8 @@ YogaLayout::Spec buildSceneInfoPanelLayout()
     table.width = Length::percent(100.0f);
     table.height = Length::px(180.0f);
 
-    return Builder{}
+    return YogaPanelDefinition{
+        .spec = Builder{}
         .root("scene-info-lower-root", root)
             .item("panel-fps", metricRow)
             .item("panel-object-count", metricRow)
@@ -217,7 +227,9 @@ YogaLayout::Spec buildSceneInfoPanelLayout()
             .end()
             .item("panel-scene-table-label", labelRow)
             .item("panel-scene-table", table)
-        .build();
+        .build(),
+        .minSize = PanelMinSize{.width = 360.0f, .height = 492.0f, .enabled = true},
+    };
 }
 }
 
@@ -305,6 +317,15 @@ void UiLayer::render(AppState& state)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
         bool panelOpen = panelState.open;
+        PanelMinSize minSize;
+        if (panelId == "panel-scene-info")
+        {
+            minSize = buildSceneInfoPanelLayout().minSize;
+        }
+        else if (panelId == "panel-properties")
+        {
+            minSize = buildPropertiesPanelLayout(panelState).minSize;
+        }
         Panel panel(
             state.ui,
             panelId.c_str(),
@@ -312,14 +333,15 @@ void UiLayer::render(AppState& state)
             panelOpen,
             panelState.closable,
             panelState.flags,
-            panelState.layout);
+            panelState.layout,
+            minSize);
         if (!panel.begin()) continue;
 
         if (panelId == "panel-scene-info")
         {
-            static const auto sceneInfoPanelSpec = buildSceneInfoPanelLayout();
+            static const auto sceneInfoPanelDefinition = buildSceneInfoPanelLayout();
             YogaLayout sceneInfoLayout;
-            sceneInfoLayout.setLayout(sceneInfoPanelSpec);
+            sceneInfoLayout.setLayout(sceneInfoPanelDefinition.spec);
             ImVec2 lowerOrigin{16.0f, 16.0f};
             ImVec2 lowerAvail{
                 panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) - 32.0f : 328.0f,
@@ -552,9 +574,9 @@ void UiLayer::render(AppState& state)
         else if (panelId == "panel-properties")
         {
             auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
-            const auto propertiesSpec = buildPropertiesPanelLayout(panelState);
+            const auto propertiesDefinition = buildPropertiesPanelLayout(panelState);
             YogaLayout propertiesLayout;
-            propertiesLayout.setLayout(propertiesSpec);
+            propertiesLayout.setLayout(propertiesDefinition.spec);
             ImVec2 propertiesOrigin{0.0f, 0.0f};
             ImVec2 propertiesAvail{
                 panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) : 320.0f,

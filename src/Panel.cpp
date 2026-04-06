@@ -4,6 +4,8 @@
 
 #include <vsgImGui/imgui.h>
 
+#include <cfloat>
+
 namespace
 {
 ImGuiWindowFlags decodeFlags(const std::vector<std::string>& flags)
@@ -26,14 +28,16 @@ Panel::Panel(
     bool& isOpen,
     bool closable,
     const std::vector<std::string>& flags,
-    const UiLayoutRectState& layout) :
+    const UiLayoutRectState& layout,
+    const PanelMinSize& minSize) :
     _uiState(uiState),
     _id(id),
     _title(title),
     _isOpen(isOpen),
     _closable(closable),
     _flags(decodeFlags(flags)),
-    _layout(layout)
+    _layout(layout),
+    _minSize(minSize)
 {
 }
 
@@ -58,6 +62,13 @@ bool Panel::begin()
         {
             ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_layout.width), static_cast<float>(_layout.height)), ImGuiCond_Once);
         }
+    }
+
+    if (_minSize.enabled)
+    {
+        ImGui::SetNextWindowSizeConstraints(
+            ImVec2(_minSize.width, _minSize.height),
+            ImVec2(FLT_MAX, FLT_MAX));
     }
 
     bool* openPtr = _closable ? &_isOpen : nullptr;

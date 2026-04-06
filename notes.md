@@ -29,6 +29,7 @@
 - [x] Move the lower `Scene Info` controls onto explicit layout slots so theme radios, scene summary, and selected-object controls no longer overlap.
 - [x] Add `ui.layout.slot.<panel>.<slot>` queries so Yoga slot rects can be tested independently of widget rects.
 - [x] Move the top `Scene Info` controls onto the same builder-based Yoga layout so the full panel is covered by slot queries.
+- [x] Add minimum size constraints for the Yoga-backed panels so resizing cannot collapse controls into overlap.
 
 ## Architecture Notes
 
