@@ -151,6 +151,7 @@ Success criteria:
 - prove the main panels can load their flex-layout structures from JSON5 and still drive Yoga layout rects
 - preserve `ui.layout.slot.*` inspection while changing the authored layout source
 - preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
+- shift UI test command usage toward panel-scoped widget ids so shorter local names no longer depend on one global flat action namespace
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 
 Next focus after current slice:

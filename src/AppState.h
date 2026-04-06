@@ -95,6 +95,8 @@ struct UiLayoutSlotState
 struct UiTestAction
 {
     std::string label;
+    std::string panelId;
+    std::string widgetId;
     std::string kind;
     std::string textValue;
     bool boolValue = false;

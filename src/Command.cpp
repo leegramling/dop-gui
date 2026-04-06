@@ -146,12 +146,46 @@ std::string canonicalizeCommandPath(const std::string& name)
     constexpr std::string_view uiClickPrefix = "ui.test.click.";
     constexpr std::string_view uiSetBoolPrefix = "ui.test.set_bool.";
     constexpr std::string_view uiSetTextPrefix = "ui.test.set_text.";
+    constexpr std::string_view uiPanelPrefix = "ui.test.panel.";
 
     if (path.rfind(uiClickPrefix.data(), 0) == 0 && path.size() > uiClickPrefix.size()) return path;
     if (path.rfind(uiSetBoolPrefix.data(), 0) == 0 && path.size() > uiSetBoolPrefix.size()) return path;
     if (path.rfind(uiSetTextPrefix.data(), 0) == 0 && path.size() > uiSetTextPrefix.size()) return path;
+    if (path.rfind(uiPanelPrefix.data(), 0) == 0 && path.size() > uiPanelPrefix.size()) return path;
 
     throw std::runtime_error("Unknown command: " + name);
+}
+
+struct PanelScopedUiAction
+{
+    std::string panelId;
+    std::string widgetId;
+    std::string kind;
+};
+
+PanelScopedUiAction parsePanelScopedUiAction(std::string_view canonicalPath)
+{
+    constexpr std::string_view prefix = "ui.test.panel.";
+    const auto suffix = canonicalPath.substr(prefix.size());
+
+    auto clickPos = suffix.find(".click.");
+    auto setBoolPos = suffix.find(".set_bool.");
+    auto setTextPos = suffix.find(".set_text.");
+
+    auto build = [&](std::size_t splitPos, std::string_view separator, std::string_view kind) -> PanelScopedUiAction
+    {
+        PanelScopedUiAction action;
+        action.panelId = std::string(suffix.substr(0, splitPos));
+        action.widgetId = std::string(suffix.substr(splitPos + separator.size()));
+        action.kind = std::string(kind);
+        return action;
+    };
+
+    if (clickPos != std::string_view::npos) return build(clickPos, ".click.", "click");
+    if (setBoolPos != std::string_view::npos) return build(setBoolPos, ".set_bool.", "set_bool");
+    if (setTextPos != std::string_view::npos) return build(setTextPos, ".set_text.", "set_text");
+
+    throw std::runtime_error("Invalid panel-scoped ui.test command: " + std::string(canonicalPath));
 }
 
 std::string executeHelp(App&, const CommandByPath&)
@@ -354,6 +388,19 @@ std::string executeUiClick(App& app, const CommandByPath& command)
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"click\"}";
 }
 
+std::string executePanelScopedUiClick(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"click\"}";
+}
+
 std::string executeUiSetBool(App& app, const CommandByPath& command)
 {
     constexpr std::string_view prefix = "ui.test.set_bool.";
@@ -373,6 +420,26 @@ std::string executeUiSetBool(App& app, const CommandByPath& command)
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_bool\",\"value\":" + (boolValue ? "true" : "false") + "}";
 }
 
+std::string executePanelScopedUiSetBool(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+
+    bool boolValue = false;
+    if (command.rawArg == "1" || command.rawArg == "true") boolValue = true;
+    else if (command.rawArg == "0" || command.rawArg == "false") boolValue = false;
+    else throw std::runtime_error("ui.test.panel.<panel>.set_bool.<widget> requires true/false or 1/0.");
+
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+        .boolValue = boolValue,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"set_bool\",\"value\":" + (boolValue ? "true" : "false") + "}";
+}
+
 std::string executeUiSetText(App& app, const CommandByPath& command)
 {
     constexpr std::string_view prefix = "ui.test.set_text.";
@@ -384,6 +451,20 @@ std::string executeUiSetText(App& app, const CommandByPath& command)
     });
 
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_text\",\"value\":\"" + escapeJson(command.rawArg) + "\"}";
+}
+
+std::string executePanelScopedUiSetText(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+        .textValue = command.rawArg,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"set_text\",\"value\":\"" + escapeJson(command.rawArg) + "\"}";
 }
 
 const std::vector<CommandRoute>& commandRoutes()
@@ -403,6 +484,13 @@ const std::vector<CommandRoute>& commandRoutes()
         CommandRoute{.prefix = "data.scene.object.", .execute = executeSceneTranslate},
         CommandRoute{.prefix = "view.camera.set_pose", .execute = executeSetCameraPose},
         CommandRoute{.prefix = "sleep.ms", .execute = executeSleep},
+        CommandRoute{.prefix = "ui.test.panel.", .execute = [](App& app, const CommandByPath& command) -> std::string
+        {
+            if (command.canonicalPath.find(".click.") != std::string::npos) return executePanelScopedUiClick(app, command);
+            if (command.canonicalPath.find(".set_bool.") != std::string::npos) return executePanelScopedUiSetBool(app, command);
+            if (command.canonicalPath.find(".set_text.") != std::string::npos) return executePanelScopedUiSetText(app, command);
+            throw std::runtime_error("Invalid panel-scoped ui.test command: " + command.canonicalPath);
+        }},
         CommandRoute{.prefix = "ui.test.click.", .execute = executeUiClick},
         CommandRoute{.prefix = "ui.test.set_bool.", .execute = executeUiSetBool},
         CommandRoute{.prefix = "ui.test.set_text.", .execute = executeUiSetText},
@@ -503,6 +591,9 @@ std::vector<std::string> commandNames()
         "data.scene.object.<id>.translate=<dx>,<dy>,<dz>",
         "view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>",
         "sleep.ms=<milliseconds>",
+        "ui.test.panel.<panel>.click.<widget>",
+        "ui.test.panel.<panel>.set_bool.<widget>=<true|false>",
+        "ui.test.panel.<panel>.set_text.<widget>=<value>",
         "ui.test.click.<label>",
         "ui.test.set_bool.<label>=<true|false>",
         "ui.test.set_text.<label>=<value>",

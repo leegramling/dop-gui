@@ -1,6 +1,6 @@
 {
   commands: [
-    "ui.test.set_bool.display-grid=false",
+    "ui.test.panel.panel-scene-info.set_bool.display-grid=false",
   ],
   queries: [
     "ui.panel.panel-scene-info.widget.display-grid",

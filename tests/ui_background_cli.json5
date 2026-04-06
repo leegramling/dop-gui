@@ -1,6 +1,6 @@
 {
   commands: [
-    "ui.test.set_text.background-color=#0000FF",
+    "ui.test.panel.panel-scene-info.set_text.background-color=#0000FF",
   ],
   queries: [
     "ui.panel.panel-scene-info.widget.background-color",

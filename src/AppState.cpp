@@ -625,7 +625,13 @@ UiTestAction* findPendingUiAction(UiState& ui, std::string_view panelId, std::st
 {
     for (auto& action : ui.pendingActions)
     {
-        if (action.kind == kind && matchesWidgetReference(panelId, widgetId, action.label))
+        if (action.kind != kind) continue;
+        if (!action.panelId.empty() || !action.widgetId.empty())
+        {
+            if (action.panelId == panelId && action.widgetId == widgetId) return &action;
+            continue;
+        }
+        if (matchesWidgetReference(panelId, widgetId, action.label))
         {
             return &action;
         }

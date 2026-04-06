@@ -1,7 +1,7 @@
 {
   commands: [
-    "ui.test.set_text.scene-select=shapes",
-    "ui.test.click.theme-light",
+    "ui.test.panel.panel-scene-info.set_text.scene-select=shapes",
+    "ui.test.panel.panel-scene-info.click.theme-light",
   ],
   queries: [
     "ui.panel.panel-scene-info.widget.scene-select",

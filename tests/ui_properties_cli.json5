@@ -1,9 +1,9 @@
 {
   commands: [
     "ui.test.click.table-scene-objects-row-bootstrap_cube-select",
-    "ui.test.set_text.position-x=1.25 m",
-    "ui.test.set_text.rotation-z=45 deg",
-    "ui.test.set_text.scale-z=0.900000",
+    "ui.test.panel.panel-properties.set_text.position-x=1.25 m",
+    "ui.test.panel.panel-properties.set_text.rotation-z=45 deg",
+    "ui.test.panel.panel-properties.set_text.scale-z=0.900000",
   ],
   queries: [
     "ui.widget.table-scene-objects-row-bootstrap_cube-select",

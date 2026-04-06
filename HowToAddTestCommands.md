@@ -36,6 +36,8 @@ Example command types:
 
 - `scene.load.cubes`
 - `app.exit`
+- `ui.test.panel.panel-scene-info.click.theme-light`
+- `ui.test.panel.panel-properties.set_text.position-x=1.25 m`
 - `ui.test.click.menuitem-scene-cubes`
 - `ui.test.set_text.panel-bgcolor=#0000FF`
 
@@ -57,9 +59,9 @@ Example query types:
 
 ## Adding A New UI Test Command
 
-UI test commands should target the widget label, not the visual caption.
+UI test commands should target the stable widget id, not the visual caption.
 
-1. Give the widget a stable label such as `panel-bgcolor` or `menuitem-scene-cubes`.
+1. Give the widget a stable id such as `background-color`, `position-x`, or `menuitem-scene-cubes`.
 2. Register the widget label in the wrapper layer.
 3. Add a `ui.test.*` command path that stores an explicit pending action by label.
 4. Make the wrapped widget consume the pending action in both headless and live GUI mode.
@@ -69,9 +71,14 @@ UI test commands should target the widget label, not the visual caption.
 
 Use these command shapes as the default pattern:
 
+- `ui.test.panel.<panel>.click.<widget>`
+- `ui.test.panel.<panel>.set_bool.<widget>=true|false`
+- `ui.test.panel.<panel>.set_text.<widget>=<value>`
 - `ui.test.click.<label>`
 - `ui.test.set_bool.<label>=true|false`
 - `ui.test.set_text.<label>=<value>`
+
+Prefer the panel-scoped `ui.test.panel.<panel>...` forms for new UI work. Keep the flat `ui.test.*.<label>` forms only for compatibility with older widget ids and global menu items.
 
 ## Adding A New Script
 
@@ -90,7 +97,7 @@ Example:
 {
   actions: [
     { command: "scene.load.cubes" },
-    { command: "ui.test.set_bool.panel-display-grid=false" },
+    { command: "ui.test.panel.panel-scene-info.set_bool.display-grid=false" },
     { query: "view.background.color" },
     { sleepMs: 500 },
     { command: "app.exit" },

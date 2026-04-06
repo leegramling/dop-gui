@@ -1,6 +1,6 @@
 {
   commands: [
-    "ui.test.click.scene-summary-open",
+    "ui.test.panel.panel-scene-info.click.scene-summary-open",
   ],
   queries: [
     "ui.widget.popup-scene-summary",
