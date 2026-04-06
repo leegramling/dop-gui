@@ -479,6 +479,8 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
         return makeObjectValue({
             makeField("dockingEnabled", makeBoolValue(app.state().ui.dockingEnabled)),
             makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
+            makeField("backendPlatformHasViewports", makeBoolValue(app.state().ui.backendPlatformHasViewports)),
+            makeField("backendRendererHasViewports", makeBoolValue(app.state().ui.backendRendererHasViewports)),
             makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
             makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
             makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
@@ -492,6 +494,8 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("primaryWindowRegistered", makeBoolValue(app.state().ui.primaryWindowRegistered)),
             makeField("dockingEnabled", makeBoolValue(app.state().ui.dockingEnabled)),
             makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
+            makeField("backendPlatformHasViewports", makeBoolValue(app.state().ui.backendPlatformHasViewports)),
+            makeField("backendRendererHasViewports", makeBoolValue(app.state().ui.backendRendererHasViewports)),
             makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
             makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
             makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),

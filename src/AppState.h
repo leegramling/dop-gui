@@ -201,6 +201,8 @@ struct UiState
     std::string currentPanelId;
     bool dockingEnabled = false;
     bool viewportsEnabled = false;
+    bool backendPlatformHasViewports = false;
+    bool backendRendererHasViewports = false;
     bool platformCreateWindowCallback = false;
     bool platformDestroyWindowCallback = false;
     bool rendererCreateWindowCallback = false;
