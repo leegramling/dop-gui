@@ -2,11 +2,14 @@
 
 ## Active Slice
 
-- [x] Define the first declarative JSON5 flex-layout slice for `Properties`.
-- [x] Extend the declarative JSON5 flex-layout path to `Scene Info`.
-- [x] Reduce duplicated slot naming in authored flex layout with `widget:` and `labelFor:` references.
-- [x] Add panel-scoped runtime widget lookup with `ui.panel.<panel>.widget.<id>` while keeping `ui.widget.<id>` working.
-- [x] Convert `Properties` widget ids to shorter panel-local ids while keeping stable layout slot ids and legacy flat widget-query aliases.
+- [ ] Add a hand-coded `New Shape` panel as the documented fallback-panel development example.
+- [ ] Define the `New Shape` panel Yoga layout in `init()` and widget callbacks in `render()`.
+- [ ] Add shape type selection for `Sphere`, `Torus`, and `Pyramid`.
+- [ ] Add transform inputs for location `x/y/z`, rotation `x/y/z`, and scale `x/y/z`.
+- [ ] Add a color hex input for the created shape.
+- [ ] Make the panel testable through headless and live `ui.test.*` flows.
+- [ ] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
+- [ ] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
 
 ## Next Tasks
 
@@ -34,7 +37,7 @@
 - [x] Switch both panels to the shared generic panel-tree binder helpers for the common widget cases, leaving only selected-object, popup, and table behavior as custom renderers.
 - [x] Move the selected-object controls in both panels onto the shared generic panel-tree combo binder path so popup and table behavior are the only intentional custom renderers left in this feature.
 - [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
-- [ ] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
+- [x] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
 
 ## Next Slice Candidates
 
@@ -47,6 +50,7 @@
 - [x] Add test commands and queries for the first richer widgets such as radio groups and combos.
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
+- [ ] Add test commands and queries for hand-coded panel-driven scene creation.
 
 ## Follow-Up Validation
 
@@ -57,6 +61,7 @@
 - [x] Confirm `Scene Info` and `Properties` both preserve the existing runtime slot/widget query surface after the JSON5 layout transition.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
+- [ ] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless and live UI test flows.
 
 ## Constraints
 
@@ -72,4 +77,4 @@
 
 - [x] Current public interfaces are documented in Doxygen style.
 - [x] A `HowToAddTestCommands` guide exists in the repo.
-- [ ] The next widget/panel/theme/docking/Yoga/gltf scope is clearly implemented in thin slices.
+- [ ] The current hand-coded panel dev-example scope is clearly implemented in thin slices.
