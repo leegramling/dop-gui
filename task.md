@@ -4,6 +4,7 @@
 
 - [x] Confirm whether the current docking path exposes panel tear-out or viewport callbacks that `WindowManager` can observe.
 - [x] Route the first tear-out callback/status reporting through `WindowManager`.
+- [x] Enable the ImGui `ViewportsEnable` experiment and confirm whether backend viewport support and create/destroy callbacks appear.
 - [ ] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
 - [ ] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
 - [ ] Prepare `VsgVisualizer` to create per-window render resources and UI command graphs for a managed secondary window.

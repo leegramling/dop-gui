@@ -62,6 +62,7 @@
 - [x] Record the next feature as tear-out and reattach work centered on `WindowManager`, secondary-window traits, and UI command-graph movement between windows.
 - [x] Add `ui.tearout.status` so `WindowManager` exposes current docking/viewport callback viability, viewport counts, and primary-window registration through the query surface.
 - [x] Confirm the current `vsgImGui` path still reports no ImGui platform/renderer tear-out callbacks, so secondary-window work remains gated behind future callback viability.
+- [x] Enable `ImGuiConfigFlags_ViewportsEnable` in the app integration and confirm that the flag alone still does not install platform/renderer viewport support or create/destroy callbacks in the current `vsgImGui` path.
 
 ## Architecture Notes
 
