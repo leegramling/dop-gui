@@ -143,7 +143,7 @@
 
 ## Current Focus
 
-Current focus is the transition from `Phase 3E` to `Phase 3E1`: keep the current Yoga/query path stable while moving from builder-defined panel layout toward a declarative JSON5 flex-layout schema.
+Current focus is the transition from the first `Phase 3E1` slice to broader authored-layout adoption: keep the current Yoga/query path stable while extending the declarative JSON5 flex-layout approach beyond `Properties`.
 
 Success criteria:
 
@@ -154,6 +154,6 @@ Success criteria:
 
 Next focus after current slice:
 
-- convert `Properties` from builder-defined layout to JSON5-defined flex layout
 - expand authored layout support only after the first minimal vocabulary is stable
+- decide when `Scene Info` should move from builder-defined layout to the same JSON5-defined flex layout path
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

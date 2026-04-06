@@ -30,6 +30,8 @@
 - [x] Add `ui.layout.slot.<panel>.<slot>` queries so Yoga slot rects can be tested independently of widget rects.
 - [x] Move the top `Scene Info` controls onto the same builder-based Yoga layout so the full panel is covered by slot queries.
 - [x] Add minimum size constraints for the Yoga-backed panels so resizing cannot collapse controls into overlap.
+- [x] Add the first declarative JSON5 flex-layout tree for `Properties` and feed it into Yoga instead of relying only on a hand-built panel layout function.
+- [x] Keep `ui.layout`, `ui.layout.slot.*`, and `ui.widget.*` inspection stable while `Properties` moves from builder-only layout to JSON5-authored flex layout.
 
 ## Architecture Notes
 
@@ -371,7 +373,7 @@ Open design notes for this branch:
 - [x] Confirm the current mixed JSON5-plus-builder layout approach is only a transition step.
 - [x] Choose a declarative target closer to web/QML/Slint/Kivy, with Yoga as the engine underneath.
 - [ ] Define the first minimal JSON5 flex-layout vocabulary for real panel conversion.
-- [ ] Convert `Properties` first so the first declarative layout slice stays narrow.
+- [x] Convert `Properties` first so the first declarative layout slice stays narrow.
 
 ## Declarative Layout Direction
 
@@ -385,5 +387,5 @@ Open design notes for this branch:
   - fixed `width` / `height`
   - `flex`
   - leaf `slot`
-- [ ] `Properties` should be the first panel converted from builder-defined layout to JSON5-defined layout.
+- [x] `Properties` should be the first panel converted from builder-defined layout to JSON5-defined layout.
 - [ ] `ui.layout.slot.*` and `ui.widget.*` queries must stay stable through that conversion.

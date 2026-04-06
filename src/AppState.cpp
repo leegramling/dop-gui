@@ -5,6 +5,7 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
+#include <cctype>
 
 namespace
 {
@@ -163,6 +164,97 @@ std::optional<double> parseOptionalDoubleField(const std::string& block, const s
     return std::stod(match[1].str());
 }
 
+std::optional<std::string> parseOptionalStringFieldTopLevel(const std::string& block, const std::string& key)
+{
+    int braceDepth = 0;
+    int bracketDepth = 0;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+
+    for (std::size_t i = 0; i < block.size(); ++i)
+    {
+        const char ch = block[i];
+        if (ch == '\'' && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+        else if (ch == '"' && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+        if (inSingleQuote || inDoubleQuote) continue;
+        if (ch == '{') ++braceDepth;
+        else if (ch == '}') --braceDepth;
+        else if (ch == '[') ++bracketDepth;
+        else if (ch == ']') --bracketDepth;
+
+        if (braceDepth == 1 && bracketDepth == 0 && std::isalpha(static_cast<unsigned char>(ch)))
+        {
+            std::size_t keyStart = i;
+            while (i < block.size() &&
+                   (std::isalnum(static_cast<unsigned char>(block[i])) || block[i] == '_' || block[i] == '-'))
+            {
+                ++i;
+            }
+            const auto parsedKey = block.substr(keyStart, i - keyStart);
+            if (parsedKey != key) continue;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size() || block[i] != ':') continue;
+            ++i;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size()) return std::nullopt;
+            if (block[i] != '"' && block[i] != '\'') return std::nullopt;
+            const char quote = block[i++];
+            const auto valueStart = i;
+            while (i < block.size() && block[i] != quote) ++i;
+            if (i >= block.size()) return std::nullopt;
+            return block.substr(valueStart, i - valueStart);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<double> parseOptionalDoubleFieldTopLevel(const std::string& block, const std::string& key)
+{
+    int braceDepth = 0;
+    int bracketDepth = 0;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+
+    for (std::size_t i = 0; i < block.size(); ++i)
+    {
+        const char ch = block[i];
+        if (ch == '\'' && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+        else if (ch == '"' && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+        if (inSingleQuote || inDoubleQuote) continue;
+        if (ch == '{') ++braceDepth;
+        else if (ch == '}') --braceDepth;
+        else if (ch == '[') ++bracketDepth;
+        else if (ch == ']') --bracketDepth;
+
+        if (braceDepth == 1 && bracketDepth == 0 && std::isalpha(static_cast<unsigned char>(ch)))
+        {
+            std::size_t keyStart = i;
+            while (i < block.size() &&
+                   (std::isalnum(static_cast<unsigned char>(block[i])) || block[i] == '_' || block[i] == '-'))
+            {
+                ++i;
+            }
+            const auto parsedKey = block.substr(keyStart, i - keyStart);
+            if (parsedKey != key) continue;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size() || block[i] != ':') continue;
+            ++i;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            const auto valueStart = i;
+            while (i < block.size() &&
+                   (std::isdigit(static_cast<unsigned char>(block[i])) || block[i] == '.' || block[i] == '-' || block[i] == '+'))
+            {
+                ++i;
+            }
+            if (i == valueStart) return std::nullopt;
+            return std::stod(block.substr(valueStart, i - valueStart));
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<bool> parseOptionalBoolField(const std::string& block, const std::string& key)
 {
     const std::regex pattern(key + R"(\s*:\s*(true|false))");
@@ -312,6 +404,28 @@ UiLayoutRectState parseLayoutRectBlock(const std::string& block)
     return rect;
 }
 
+UiFlexNodeState parseFlexNodeBlock(const std::string& block)
+{
+    UiFlexNodeState node;
+    node.type = parseOptionalStringFieldTopLevel(block, "type").value_or("");
+    node.slot = parseOptionalStringFieldTopLevel(block, "slot").value_or("");
+    if (node.type.empty() && !node.slot.empty()) node.type = "slot";
+    node.gap = parseOptionalDoubleFieldTopLevel(block, "gap").value_or(0.0);
+    node.width = parseOptionalDoubleFieldTopLevel(block, "width");
+    node.height = parseOptionalDoubleFieldTopLevel(block, "height");
+    node.flex = parseOptionalDoubleFieldTopLevel(block, "flex");
+
+    if (block.find("children") != std::string::npos)
+    {
+        for (const auto& childBlock : extractObjectEntriesForKey(block, "children"))
+        {
+            node.children.push_back(parseFlexNodeBlock(childBlock));
+        }
+    }
+
+    return node;
+}
+
 UiPanelState parsePanelBlock(const std::string& block)
 {
     UiPanelState panel{.label = parseStringField(block, "label")};
@@ -319,6 +433,7 @@ UiPanelState parsePanelBlock(const std::string& block)
     panel.closable = parseOptionalBoolField(block, "closable").value_or(true);
     if (block.find("flags") != std::string::npos) panel.flags = parseStringArray(extractArrayBlock(block, "flags"));
     if (auto layoutBlock = extractOptionalObjectBlock(block, "layout")) panel.layout = parseLayoutRectBlock(*layoutBlock);
+    if (auto flexLayoutBlock = extractOptionalObjectBlock(block, "flexLayout")) panel.flexLayout = parseFlexNodeBlock(*flexLayoutBlock);
 
     if (block.find("widgets") != std::string::npos)
     {

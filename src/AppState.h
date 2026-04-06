@@ -125,6 +125,20 @@ struct UiWidgetSpecState
 };
 
 /**
+ * @brief Minimal authored flex-layout node for Yoga-backed panel layout.
+ */
+struct UiFlexNodeState
+{
+    std::string type;
+    std::string slot;
+    double gap = 0.0;
+    std::optional<double> width;
+    std::optional<double> height;
+    std::optional<double> flex;
+    std::vector<UiFlexNodeState> children;
+};
+
+/**
  * @brief Top-level menu from the authored UI layout.
  */
 struct UiMenuState
@@ -143,6 +157,7 @@ struct UiPanelState
     bool closable = true;
     std::vector<std::string> flags;
     UiLayoutRectState layout;
+    std::optional<UiFlexNodeState> flexLayout;
     std::vector<UiWidgetSpecState> widgets;
 };
 

@@ -40,6 +40,93 @@
       closable: true,
       flags: ["NoCollapse"],
       layout: { x: 408, y: 48, w: 360, h: 560 },
+      flexLayout: {
+        type: "column",
+        gap: 8,
+        children: [
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "panel-properties-selected-object-label", width: 116, height: 24 },
+              { slot: "panel-selected-object", flex: 1, height: 24 },
+            ],
+          },
+          { slot: "panel-properties-selected-object", width: 360, height: 20 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-position-x-label", width: 116, height: 24 },
+              { slot: "input-properties-position-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-position-y-label", width: 116, height: 24 },
+              { slot: "input-properties-position-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-position-z-label", width: 116, height: 24 },
+              { slot: "input-properties-position-z", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-rotation-x-label", width: 116, height: 24 },
+              { slot: "input-properties-rotation-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-rotation-y-label", width: 116, height: 24 },
+              { slot: "input-properties-rotation-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-rotation-z-label", width: 116, height: 24 },
+              { slot: "input-properties-rotation-z", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-scale-x-label", width: 116, height: 24 },
+              { slot: "input-properties-scale-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-scale-y-label", width: 116, height: 24 },
+              { slot: "input-properties-scale-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { slot: "input-properties-scale-z-label", width: 116, height: 24 },
+              { slot: "input-properties-scale-z", flex: 1, height: 24 },
+            ],
+          },
+        ],
+      },
       widgets: [
         { id: "panel-selected-object", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object", layout: { x: 132, y: 40, w: 200, h: 24 } },
         { id: "input-properties-position-x", type: "input_double", label: "Location X", bind: "scene.selected.position.x", unit: "m", precision: 2 },

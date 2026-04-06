@@ -174,6 +174,25 @@ QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
     });
 }
 
+QueryValue makeFlexNodeValue(const UiFlexNodeState& node)
+{
+    QueryArray children;
+    for (const auto& child : node.children)
+    {
+        children.elements.push_back(makeValuePtr(makeFlexNodeValue(child)));
+    }
+
+    return makeObjectValue({
+        makeField("type", makeStringValue(node.type)),
+        makeField("slot", makeStringValue(node.slot)),
+        makeField("gap", makeDoubleValue(node.gap)),
+        makeField("width", node.width ? makeDoubleValue(*node.width) : makeNullValue()),
+        makeField("height", node.height ? makeDoubleValue(*node.height) : makeNullValue()),
+        makeField("flex", node.flex ? makeDoubleValue(*node.flex) : makeNullValue()),
+        makeField("children", QueryValue{std::move(children)}),
+    });
+}
+
 QueryValue makePanelSpecValue(const UiPanelState& panel)
 {
     auto layoutValue = makeLayoutRectValue(panel.layout);
@@ -197,6 +216,7 @@ QueryValue makePanelSpecValue(const UiPanelState& panel)
         makeField("closable", makeBoolValue(panel.closable)),
         makeField("flags", QueryValue{std::move(flags)}),
         makeField("layout", layoutValue),
+        makeField("flexLayout", panel.flexLayout ? makeFlexNodeValue(*panel.flexLayout) : makeNullValue()),
         makeField("widgets", QueryValue{std::move(widgets)}),
     });
 }
