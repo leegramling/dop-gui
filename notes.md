@@ -44,6 +44,7 @@
 - [x] Record that declarative JSON5 UI is still the target architecture, but a fallback hand-coded panel path with custom `initialize`/builder layout and `render` methods remains acceptable for special panels until the JSON5 schema is expressive enough.
 - [x] Introduce a reusable built JSON5 panel-tree path and move `Properties` onto it so the panel no longer owns a dedicated `buildLayout()` function.
 - [x] Move `Properties` widget rendering onto panel-tree renderer callbacks so the panel render path now delegates most authored widget dispatch to `root.render(...)`.
+- [x] Replace the remaining `Properties` selected-object numeric bind `if` chain with a table-driven accessor map so the bind resolution path is less panel-specific.
 
 ## Architecture Notes
 

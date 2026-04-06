@@ -5,6 +5,8 @@
 
 #include <vsgImGui/imgui.h>
 
+#include <unordered_map>
+
 namespace
 {
 const UiPanelWidgetNode* findWidget(const UiPanelTree& root, std::string_view widgetId)
@@ -12,22 +14,44 @@ const UiPanelWidgetNode* findWidget(const UiPanelTree& root, std::string_view wi
     return root.findWidget(widgetId);
 }
 
+using DoubleAccessor = double* (*)(SceneObjectState&);
+
+double* positionX(SceneObjectState& object) { return &object.position.x; }
+double* positionY(SceneObjectState& object) { return &object.position.y; }
+double* positionZ(SceneObjectState& object) { return &object.position.z; }
+double* rotationX(SceneObjectState& object) { return &object.rotation.x; }
+double* rotationY(SceneObjectState& object) { return &object.rotation.y; }
+double* rotationZ(SceneObjectState& object) { return &object.rotation.z; }
+double* scaleX(SceneObjectState& object) { return &object.scale.x; }
+double* scaleY(SceneObjectState& object) { return &object.scale.y; }
+double* scaleZ(SceneObjectState& object) { return &object.scale.z; }
+
+const std::unordered_map<std::string_view, DoubleAccessor>& selectedObjectDoubleBindings()
+{
+    static const std::unordered_map<std::string_view, DoubleAccessor> bindings{
+        {"scene.selected.position.x", &positionX},
+        {"scene.selected.position.y", &positionY},
+        {"scene.selected.position.z", &positionZ},
+        {"scene.selected.rotation.x", &rotationX},
+        {"scene.selected.rotation.y", &rotationY},
+        {"scene.selected.rotation.z", &rotationZ},
+        {"scene.selected.scale.x", &scaleX},
+        {"scene.selected.scale.y", &scaleY},
+        {"scene.selected.scale.z", &scaleZ},
+    };
+    return bindings;
+}
+
 double* resolveSelectedObjectDouble(AppState& state, std::string_view bind)
 {
     auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
     if (!selectedObject) return nullptr;
 
-    if (bind == "scene.selected.position.x") return &selectedObject->position.x;
-    if (bind == "scene.selected.position.y") return &selectedObject->position.y;
-    if (bind == "scene.selected.position.z") return &selectedObject->position.z;
-    if (bind == "scene.selected.rotation.x") return &selectedObject->rotation.x;
-    if (bind == "scene.selected.rotation.y") return &selectedObject->rotation.y;
-    if (bind == "scene.selected.rotation.z") return &selectedObject->rotation.z;
-    if (bind == "scene.selected.scale.x") return &selectedObject->scale.x;
-    if (bind == "scene.selected.scale.y") return &selectedObject->scale.y;
-    if (bind == "scene.selected.scale.z") return &selectedObject->scale.z;
+    const auto& bindings = selectedObjectDoubleBindings();
+    const auto it = bindings.find(bind);
+    if (it == bindings.end()) return nullptr;
 
-    return nullptr;
+    return it->second(*selectedObject);
 }
 }
 
