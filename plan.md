@@ -156,6 +156,7 @@ Success criteria:
 - move panel-local layout ownership out of specific panel classes and into a reusable built JSON5 panel-tree path
 - move panel-local widget rendering dispatch into the reusable built panel-tree path so panel classes stop hand-walking widget specs
 - replace remaining per-panel bind `if` chains with table-driven or generic bind resolution as panel-tree rendering takes over
+- extend the built panel-tree render path from `Properties` to `Scene Info` so authored panels share one default render architecture
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
 

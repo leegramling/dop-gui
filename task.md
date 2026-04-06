@@ -29,6 +29,7 @@
 - [x] Introduce a generic JSON5-built panel tree and move `Properties` onto that path so it no longer owns a panel-local `buildLayout()` implementation.
 - [x] Move `Properties` widget rendering dispatch into the built panel tree so the panel render path trends toward `root.render(...)` instead of hand-iterating widget specs.
 - [x] Replace the remaining hard-coded selected-object numeric bind `if` chain in `Properties` with a table-driven binding resolver.
+- [x] Move `Scene Info` onto the same built panel-tree render path and replace its basic text/string/bool bind `if` chains with table-driven binding maps.
 - [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
 - [ ] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
 

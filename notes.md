@@ -45,6 +45,7 @@
 - [x] Introduce a reusable built JSON5 panel-tree path and move `Properties` onto it so the panel no longer owns a dedicated `buildLayout()` function.
 - [x] Move `Properties` widget rendering onto panel-tree renderer callbacks so the panel render path now delegates most authored widget dispatch to `root.render(...)`.
 - [x] Replace the remaining `Properties` selected-object numeric bind `if` chain with a table-driven accessor map so the bind resolution path is less panel-specific.
+- [x] Move `Scene Info` onto the same panel-tree render path and replace its text/string/bool binding `if` chains with small binding tables, so both authored panels now share the same default render architecture.
 
 ## Architecture Notes
 
