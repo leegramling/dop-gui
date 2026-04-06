@@ -57,11 +57,19 @@ public:
     vsg::ref_ptr<vsg::Visitor> eventHandler() const;
 
 private:
+    struct PanelRegistration
+    {
+        std::string id;
+        std::unique_ptr<Panel> controller;
+    };
+
+    void registerPanel(std::unique_ptr<Panel> panel);
+    Panel* findPanel(std::string_view id);
     void render(AppState& state);
 
     AppState* _state = nullptr;
     WindowManager* _windowManager = nullptr;
-    std::vector<std::unique_ptr<Panel>> _panels;
+    std::vector<PanelRegistration> _panels;
     vsg::ref_ptr<vsgImGui::RenderImGui> _renderImGui;
     vsg::ref_ptr<vsg::Visitor> _sendEventsToImGui;
 };

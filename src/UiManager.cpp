@@ -35,25 +35,34 @@ bool menuHasPendingClick(const UiState& uiState, const std::string& menuLabel, c
 
     return false;
 }
-
-Panel* findPanelController(std::vector<std::unique_ptr<Panel>>& panels, std::string_view id)
-{
-    for (auto& panel : panels)
-    {
-        if (panel->id() == id) return panel.get();
-    }
-
-    return nullptr;
-}
 }
 
 UiManager::UiManager()
 {
-    _panels.push_back(std::make_unique<SceneInfoPanel>());
-    _panels.push_back(std::make_unique<PropertiesPanel>());
+    registerPanel(std::make_unique<SceneInfoPanel>());
+    registerPanel(std::make_unique<PropertiesPanel>());
 }
 
 UiManager::~UiManager() = default;
+
+void UiManager::registerPanel(std::unique_ptr<Panel> panel)
+{
+    if (!panel) return;
+    _panels.push_back(PanelRegistration{
+        .id = std::string(panel->id()),
+        .controller = std::move(panel),
+    });
+}
+
+Panel* UiManager::findPanel(std::string_view id)
+{
+    for (auto& panel : _panels)
+    {
+        if (panel.id == id) return panel.controller.get();
+    }
+
+    return nullptr;
+}
 
 void UiManager::initialize(
     vsg::ref_ptr<vsg::Window> window,
@@ -143,7 +152,7 @@ void UiManager::render(AppState& state)
     for (const auto& panelState : state.ui.layout.panels)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
-        auto* panelController = findPanelController(_panels, panelId);
+        auto* panelController = findPanel(panelId);
         if (!panelController) continue;
 
         panelController->ensureInitialized(panelState);
