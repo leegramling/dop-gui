@@ -1,5 +1,6 @@
 #include "PropertiesPanel.h"
 
+#include "UiLayoutUtils.h"
 #include "Widgets.h"
 #include "YogaLayout.h"
 
@@ -7,66 +8,14 @@
 
 namespace
 {
-void queueUiCommand(UiState& uiState, const std::string& commandName, const std::string& value = {})
-{
-    if (commandName.empty()) return;
-    uiState.requestedCommands.push_back(value.empty() ? commandName : (commandName + "=" + value));
-}
-
-void registerLayoutSlot(UiState& uiState, const std::string& panelId, const std::string& slotId, const UiLayoutRectState& layout)
-{
-    for (auto& slot : uiState.layoutSlots)
-    {
-        if (slot.panelId == panelId && slot.slotId == slotId)
-        {
-            slot.layout = layout;
-            return;
-        }
-    }
-
-    uiState.layoutSlots.push_back(UiLayoutSlotState{
-        .panelId = panelId,
-        .slotId = slotId,
-        .layout = layout,
-    });
-}
-
-void registerLayoutSlots(UiState& uiState, const std::string& panelId, const YogaLayout& layout, const std::vector<std::string>& slotIds)
-{
-    for (const auto& slotId : slotIds)
-    {
-        if (layout.has(slotId))
-        {
-            registerLayoutSlot(uiState, panelId, slotId, layout.rect(slotId));
-        }
-    }
-}
-
 std::string labelSlotId(std::string_view widgetId)
 {
     return std::string(widgetId) + "-label";
 }
 
-struct WidgetSlotBinding
-{
-    std::string valueSlotId;
-    std::string labelSlotId;
-};
-
 WidgetSlotBinding binding(std::string_view widgetId)
 {
-    return WidgetSlotBinding{
-        .valueSlotId = std::string(widgetId),
-        .labelSlotId = labelSlotId(widgetId),
-    };
-}
-
-void setNextWidgetLayoutIfPresent(UiState& uiState, const YogaLayout& layout, std::string_view slotId)
-{
-    if (layout.has(slotId))
-    {
-        setNextWidgetLayout(uiState, layout.rect(slotId));
-    }
+    return makeWidgetSlotBinding(widgetId, labelSlotId);
 }
 
 std::vector<std::string> slotIds(const UiPanelState& panelState)

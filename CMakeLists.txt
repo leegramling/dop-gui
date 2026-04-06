@@ -56,6 +56,7 @@ add_executable(dop-gui
     src/SceneInfoPanel.cpp
     src/ScriptRunner.cpp
     src/Theme.cpp
+    src/UiLayoutUtils.cpp
     src/UiManager.cpp
     src/VsgVisualizer.cpp
     src/WindowManager.cpp
