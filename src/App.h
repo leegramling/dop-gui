@@ -14,7 +14,7 @@ namespace vsg
 class InputManager;
 class ScriptRunner;
 struct TimedScriptAction;
-class UiLayer;
+class UiManager;
 class VsgVisualizer;
 class WindowManager;
 
@@ -119,7 +119,7 @@ private:
     std::unique_ptr<InputManager> _inputManager;
     std::unique_ptr<WindowManager> _windowManager;
     std::unique_ptr<VsgVisualizer> _visualizer;
-    std::unique_ptr<UiLayer> _uiLayer;
+    std::unique_ptr<UiManager> _uiManager;
     std::optional<CommandRequest> _startupCommand;
     std::optional<QueryRequest> _startupQuery;
     std::unique_ptr<ScriptRunner> _scriptRunner;

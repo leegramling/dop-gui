@@ -2,7 +2,9 @@
 
 #include "AppState.h"
 
-#include <cstdint>
+#include <string_view>
+
+class WindowManager;
 
 /**
  * @brief Minimum panel size constraint applied through ImGui window sizing.
@@ -15,50 +17,63 @@ struct PanelMinSize
 };
 
 /**
- * @brief Narrow ImGui panel wrapper with test-friendly labeling.
+ * @brief Shared application-facing context passed to panel controllers.
+ */
+struct PanelContext
+{
+    AppState& state;
+    WindowManager* windowManager = nullptr;
+};
+
+/**
+ * @brief Base class for authored UI panels.
  */
 class Panel
 {
 public:
-    /**
-     * @brief Construct a panel wrapper.
-     * @param uiState UI-local state used for registry and test evaluation.
-     * @param id Stable panel identifier used for testing and registry lookups.
-     * @param title Visible ImGui panel title.
-     * @param isOpen Panel open state.
-     * @param closable Whether the panel should expose a close button.
-     * @param flags Authored ImGui window flags.
-     * @param layout Authored panel layout rectangle.
-     * @param minSize Minimum panel size constraint.
-     */
-    Panel(
-        UiState& uiState,
-        const char* id,
-        const char* title,
-        bool& isOpen,
-        bool closable,
-        const std::vector<std::string>& flags,
-        const UiLayoutRectState& layout,
-        const PanelMinSize& minSize = {});
-    /**
-     * @brief Destroy the panel wrapper and close any opened ImGui panel.
-     */
-    ~Panel();
+    virtual ~Panel() = default;
 
     /**
-     * @brief Begin the panel for the current frame.
-     * @return True when the panel contents should be emitted this frame.
+     * @brief Return the stable authored panel identifier.
+     * @return Stable panel id used to match authored panel state.
      */
-    bool begin();
+    virtual std::string_view id() const = 0;
+
+    /**
+     * @brief Return the current minimum size requirement for the panel.
+     * @param panelState Authored panel specification for this panel.
+     * @return Minimum window size constraint for the panel.
+     */
+    virtual PanelMinSize minSize(const UiPanelState& panelState) const = 0;
+
+    /**
+     * @brief Ensure the panel has initialized any long-lived layout/controller state.
+     * @param panelState Authored panel specification for this panel.
+     */
+    void ensureInitialized(const UiPanelState& panelState)
+    {
+        if (_initialized) return;
+        init(panelState);
+        _initialized = true;
+    }
+
+    /**
+     * @brief Render the panel contents for the current frame.
+     * @param context Shared app/UI context.
+     * @param panelState Authored panel specification for this panel.
+     */
+    virtual void render(PanelContext& context, const UiPanelState& panelState) = 0;
+
+protected:
+    /**
+     * @brief Initialize any panel-local state the first time the panel is used.
+     * @param panelState Authored panel specification for this panel.
+     */
+    virtual void init(const UiPanelState& panelState)
+    {
+        (void)panelState;
+    }
 
 private:
-    UiState& _uiState;
-    const char* _id;
-    const char* _title;
-    bool& _isOpen;
-    bool _closable = true;
-    std::uint32_t _flags = 0;
-    UiLayoutRectState _layout;
-    PanelMinSize _minSize;
-    bool _opened = false;
+    bool _initialized = false;
 };

@@ -2,22 +2,31 @@
 
 #include "AppState.h"
 
+#include <memory>
+#include <vector>
 #include <vsg/all.h>
 #include <vsgImGui/RenderImGui.h>
 
+class Panel;
+class WindowManager;
+
 /**
- * @brief Live ImGui overlay integration.
+ * @brief Top-level ImGui manager that owns authored panel controllers.
  */
-class UiLayer
+class UiManager
 {
 public:
     /**
-     * Default construct a UI layer.
+     * @brief Construct a UI manager with its default panel set.
      */
-    UiLayer() = default;
+    UiManager();
+    /**
+     * @brief Destroy the UI manager and owned panel controllers.
+     */
+    ~UiManager();
 
-    UiLayer(const UiLayer&) = delete;
-    UiLayer& operator=(const UiLayer&) = delete;
+    UiManager(const UiManager&) = delete;
+    UiManager& operator=(const UiManager&) = delete;
 
     /**
      * @brief Initialize the live ImGui overlay.
@@ -30,7 +39,7 @@ public:
         vsg::ref_ptr<vsg::Window> window,
         vsg::ref_ptr<vsg::RenderGraph> renderGraph,
         AppState& state,
-        class WindowManager& windowManager);
+        WindowManager& windowManager);
     /**
      * @brief Evaluate the UI in test mode without a live window.
      * @param state Application state to evaluate against.
@@ -51,7 +60,8 @@ private:
     void render(AppState& state);
 
     AppState* _state = nullptr;
-    class WindowManager* _windowManager = nullptr;
+    WindowManager* _windowManager = nullptr;
+    std::vector<std::unique_ptr<Panel>> _panels;
     vsg::ref_ptr<vsgImGui::RenderImGui> _renderImGui;
     vsg::ref_ptr<vsg::Visitor> _sendEventsToImGui;
 };

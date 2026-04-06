@@ -1,4 +1,4 @@
-#include "Panel.h"
+#include "PanelWindow.h"
 
 #include "Widgets.h"
 
@@ -21,7 +21,7 @@ ImGuiWindowFlags decodeFlags(const std::vector<std::string>& flags)
 }
 }
 
-Panel::Panel(
+PanelWindow::PanelWindow(
     UiState& uiState,
     const char* id,
     const char* title,
@@ -41,12 +41,12 @@ Panel::Panel(
 {
 }
 
-Panel::~Panel()
+PanelWindow::~PanelWindow()
 {
     if (_opened && !_uiState.testMode) ImGui::End();
 }
 
-bool Panel::begin()
+bool PanelWindow::begin()
 {
     registerWidget(_uiState, _id, "panel");
     if (_uiState.testMode)

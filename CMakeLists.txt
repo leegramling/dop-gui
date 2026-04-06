@@ -50,11 +50,13 @@ add_executable(dop-gui
     src/AppState.cpp
     src/Command.cpp
     src/InputManager.cpp
-    src/Panel.cpp
+    src/PanelWindow.cpp
+    src/PropertiesPanel.cpp
     src/Query.cpp
+    src/SceneInfoPanel.cpp
     src/ScriptRunner.cpp
     src/Theme.cpp
-    src/UiLayer.cpp
+    src/UiManager.cpp
     src/VsgVisualizer.cpp
     src/WindowManager.cpp
     src/Widgets.cpp

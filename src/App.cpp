@@ -4,7 +4,7 @@
 #include "InputManager.h"
 #include "Query.h"
 #include "ScriptRunner.h"
-#include "UiLayer.h"
+#include "UiManager.h"
 #include "VsgVisualizer.h"
 #include "WindowManager.h"
 
@@ -94,7 +94,7 @@ App::App(int argc, char** argv) :
     _inputManager(std::make_unique<InputManager>()),
     _windowManager(std::make_unique<WindowManager>()),
     _visualizer(std::make_unique<VsgVisualizer>()),
-    _uiLayer(std::make_unique<UiLayer>()),
+    _uiManager(std::make_unique<UiManager>()),
     _scriptRunner(std::make_unique<ScriptRunner>())
 {
 }
@@ -130,7 +130,7 @@ int App::run()
         _startupCommand = parseCommandRequest(commandName);
         _startupQuery = parseQueryRequest(queryName);
         _state.ui.testMode = uiTestMode;
-        if (_state.ui.testMode) _uiLayer->evaluate(_state);
+        if (_state.ui.testMode) _uiManager->evaluate(_state);
 
         if (arguments.errors())
         {
@@ -162,8 +162,8 @@ int App::run()
         _windowManager->registerPrimaryWindow(window);
 
         _visualizer->initialize(_state, window);
-        _uiLayer->initialize(window, _visualizer->renderGraph(), _state, *_windowManager);
-        if (auto uiHandler = _uiLayer->eventHandler()) viewer->addEventHandler(uiHandler);
+        _uiManager->initialize(window, _visualizer->renderGraph(), _state, *_windowManager);
+        if (auto uiHandler = _uiManager->eventHandler()) viewer->addEventHandler(uiHandler);
         _inputManager->attachDefaultHandlers(viewer, _visualizer->camera());
         _visualizer->connect(viewer);
 
@@ -331,10 +331,10 @@ void App::refreshUiState()
 {
     if (_state.ui.testMode)
     {
-        _uiLayer->evaluate(_state);
+        _uiManager->evaluate(_state);
         if (applyStateRequests())
         {
-            _uiLayer->evaluate(_state);
+            _uiManager->evaluate(_state);
         }
     }
 }
