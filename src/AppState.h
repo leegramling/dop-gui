@@ -205,6 +205,11 @@ struct UiState
     bool platformDestroyWindowCallback = false;
     bool rendererCreateWindowCallback = false;
     bool rendererDestroyWindowCallback = false;
+    bool tearOutCallbacksSupported = false;
+    bool primaryWindowRegistered = false;
+    bool hasMainViewport = false;
+    int viewportCount = 0;
+    int monitorCount = 0;
 };
 
 /**

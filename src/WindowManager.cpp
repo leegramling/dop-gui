@@ -9,6 +9,8 @@ void WindowManager::registerPrimaryWindow(vsg::ref_ptr<vsg::Window> window)
 
 void WindowManager::syncImGuiStatus(UiState& uiState) const
 {
+    uiState.primaryWindowRegistered = _primaryWindow.valid();
+
     if (!ImGui::GetCurrentContext())
     {
         uiState.dockingEnabled = false;
@@ -17,6 +19,10 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
         uiState.platformDestroyWindowCallback = false;
         uiState.rendererCreateWindowCallback = false;
         uiState.rendererDestroyWindowCallback = false;
+        uiState.tearOutCallbacksSupported = false;
+        uiState.hasMainViewport = false;
+        uiState.viewportCount = 0;
+        uiState.monitorCount = 0;
         return;
     }
 
@@ -28,6 +34,10 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
     uiState.platformDestroyWindowCallback = platformIo.Platform_DestroyWindow != nullptr;
     uiState.rendererCreateWindowCallback = platformIo.Renderer_CreateWindow != nullptr;
     uiState.rendererDestroyWindowCallback = platformIo.Renderer_DestroyWindow != nullptr;
+    uiState.tearOutCallbacksSupported = canSupportTearOutCallbacks();
+    uiState.hasMainViewport = ImGui::GetMainViewport() != nullptr;
+    uiState.viewportCount = platformIo.Viewports.Size;
+    uiState.monitorCount = platformIo.Monitors.Size;
 }
 
 vsg::ref_ptr<vsg::Window> WindowManager::primaryWindow() const
@@ -43,4 +53,9 @@ bool WindowManager::canSupportTearOutCallbacks() const
            platformIo.Platform_DestroyWindow != nullptr &&
            platformIo.Renderer_CreateWindow != nullptr &&
            platformIo.Renderer_DestroyWindow != nullptr;
+}
+
+bool WindowManager::hasPrimaryWindow() const
+{
+    return _primaryWindow.valid();
 }

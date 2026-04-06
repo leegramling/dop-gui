@@ -60,6 +60,8 @@
 - [x] Recompile newly created scene objects through the viewer compile manager so live shape creation no longer crashes during VSG record traversal.
 - [x] Create feature branch `feature/window-tearout-window-manager`.
 - [x] Record the next feature as tear-out and reattach work centered on `WindowManager`, secondary-window traits, and UI command-graph movement between windows.
+- [x] Add `ui.tearout.status` so `WindowManager` exposes current docking/viewport callback viability, viewport counts, and primary-window registration through the query surface.
+- [x] Confirm the current `vsgImGui` path still reports no ImGui platform/renderer tear-out callbacks, so secondary-window work remains gated behind future callback viability.
 
 ## Architecture Notes
 

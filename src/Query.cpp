@@ -260,6 +260,7 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name == "ui.layout") return name;
     if (name.rfind("ui.layout.slot.", 0) == 0) return name;
     if (name == "ui.docking.status") return name;
+    if (name == "ui.tearout.status") return name;
     if (name == "help") return "runtime.capabilities";
 
     constexpr std::string_view uiWidgetPrefix = "ui.widget.";
@@ -482,6 +483,23 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
             makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
             makeField("rendererDestroyWindowCallback", makeBoolValue(app.state().ui.rendererDestroyWindowCallback)),
+        });
+    }
+
+    if (segments.size() == 2 && segments[0] == "tearout" && segments[1] == "status")
+    {
+        return makeObjectValue({
+            makeField("primaryWindowRegistered", makeBoolValue(app.state().ui.primaryWindowRegistered)),
+            makeField("dockingEnabled", makeBoolValue(app.state().ui.dockingEnabled)),
+            makeField("viewportsEnabled", makeBoolValue(app.state().ui.viewportsEnabled)),
+            makeField("platformCreateWindowCallback", makeBoolValue(app.state().ui.platformCreateWindowCallback)),
+            makeField("platformDestroyWindowCallback", makeBoolValue(app.state().ui.platformDestroyWindowCallback)),
+            makeField("rendererCreateWindowCallback", makeBoolValue(app.state().ui.rendererCreateWindowCallback)),
+            makeField("rendererDestroyWindowCallback", makeBoolValue(app.state().ui.rendererDestroyWindowCallback)),
+            makeField("tearOutCallbacksSupported", makeBoolValue(app.state().ui.tearOutCallbacksSupported)),
+            makeField("hasMainViewport", makeBoolValue(app.state().ui.hasMainViewport)),
+            makeField("viewportCount", makeIntValue(app.state().ui.viewportCount)),
+            makeField("monitorCount", makeIntValue(app.state().ui.monitorCount)),
         });
     }
 
@@ -751,6 +769,7 @@ std::vector<std::string> queryNames()
         "ui.layout",
         "ui.layout.slot.<panel>.<slot>",
         "ui.docking.status",
+        "ui.tearout.status",
         "ui.panel.<id>",
         "ui.panel.<id>.widgets",
         "ui.widgets",

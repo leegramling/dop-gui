@@ -124,6 +124,14 @@ if(BUILD_TESTING)
     )
 
     add_test(
+        NAME dop_gui_ui_tearout_status
+        COMMAND dop-gui --ui-test-mode --query ui.tearout.status
+    )
+    set_tests_properties(dop_gui_ui_tearout_status PROPERTIES
+        PASS_REGULAR_EXPRESSION "\"ok\":true.*\"query\":\"ui.tearout.status\".*\"primaryWindowRegistered\":false.*\"dockingEnabled\":false.*\"viewportsEnabled\":false.*\"tearOutCallbacksSupported\":false.*\"viewportCount\":0.*\"monitorCount\":0"
+    )
+
+    add_test(
         NAME dop_gui_ui_background_input
         COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_background_cli.json5"
     )

@@ -38,6 +38,11 @@ public:
      * @return True when the relevant ImGui platform/renderer callbacks are installed.
      */
     bool canSupportTearOutCallbacks() const;
+    /**
+     * @brief Return whether a primary VSG window is currently registered.
+     * @return True when the primary window is available.
+     */
+    bool hasPrimaryWindow() const;
 
 private:
     vsg::ref_ptr<vsg::Window> _primaryWindow;

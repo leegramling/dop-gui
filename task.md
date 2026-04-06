@@ -2,8 +2,8 @@
 
 ## Active Slice
 
-- [ ] Confirm whether the current docking path exposes panel tear-out or viewport callbacks that `WindowManager` can observe.
-- [ ] Route the first tear-out callback/status reporting through `WindowManager`.
+- [x] Confirm whether the current docking path exposes panel tear-out or viewport callbacks that `WindowManager` can observe.
+- [x] Route the first tear-out callback/status reporting through `WindowManager`.
 - [ ] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
 - [ ] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
 - [ ] Prepare `VsgVisualizer` to create per-window render resources and UI command graphs for a managed secondary window.
@@ -59,7 +59,7 @@
 - [x] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
 - [x] Confirm the first JSON5-authored flex layout produces the same runtime slot/widget query surface as the current builder-based layout.
 - [x] Confirm `Scene Info` and `Properties` both preserve the existing runtime slot/widget query surface after the JSON5 layout transition.
-- [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
+- [x] Confirm the `WindowManager` can observe and report current ImGui platform window callback status before any tear-out implementation starts.
 - [ ] Confirm a detached panel can move into a secondary managed VSG window and then reattach.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 - [x] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless `ui.test.*` flows.
