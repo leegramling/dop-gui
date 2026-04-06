@@ -174,6 +174,7 @@ Success criteria:
 - prove the fallback path with one real hand-coded panel that is still queryable and scriptable through the same UI test infrastructure
 - add `sphere`, `torus`, and `pyramid` as new renderable scene kinds created through that panel
 - keep new-shape creation state flowing through plain application data before render sync
+- keep the hand-coded example narrow and complete so the next branch can return to broader scene-asset or declarative-UI work without carrying partial panel scaffolding
 
 Next focus after current slice:
 

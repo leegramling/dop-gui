@@ -50,6 +50,7 @@ add_executable(dop-gui
     src/AppState.cpp
     src/Command.cpp
     src/InputManager.cpp
+    src/NewShapePanel.cpp
     src/PanelWindow.cpp
     src/PropertiesPanel.cpp
     src/Query.cpp
@@ -198,6 +199,21 @@ if(BUILD_TESTING)
 \"query\":\"ui.panel.panel-properties.widget.rotation-z\".*45.00 deg;\
 \"query\":\"ui.widget.input-properties-scale-z\".*input_double.*0.900000;\
 \"query\":\"data.scene.object.bootstrap_cube.transform\".*1.25.*0.25.*45.*0.9"
+    )
+
+    add_test(
+        NAME dop_gui_ui_new_shape_panel
+        COMMAND dop-gui --ui-test-mode --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/ui_new_shape_cli.json5"
+    )
+    set_tests_properties(dop_gui_ui_new_shape_panel PROPERTIES
+        PASS_REGULAR_EXPRESSION
+        "\"query\":\"data.scene.selection\".*pyramid_1;\
+\"query\":\"data.scene.object.sphere_1\".*\"kind\":\"sphere\".*\"position\":\\[1.5,-0.25,0.75\\].*\"rotation\":\\[0,0,30\\].*\"scale\":\\[1.25,1.25,0.8\\].*\"colorHex\":\"#00FF00\";\
+\"query\":\"data.scene.object.torus_1\".*\"kind\":\"torus\".*\"position\":\\[-1,0,0.2\\].*\"rotation\":\\[0,45,30\\].*\"scale\":\\[0.9,0.9,0.9\\].*\"colorHex\":\"#FF00FF\";\
+\"query\":\"data.scene.object.pyramid_1\".*\"kind\":\"pyramid\".*\"position\":\\[0,1.2,0.3\\].*\"rotation\":\\[0,0,15\\].*\"scale\":\\[1.1,1.1,1.3\\].*\"colorHex\":\"#FFA500\";\
+\"query\":\"ui.panel.panel-new-shape.widget.status\".*Created pyramid_1;\
+\"query\":\"ui.panel.panel-new-shape.widget.shape-kind\".*Pyramid;\
+\"query\":\"ui.panel.panel-new-shape.widget.color\".*#FFA500"
     )
 
     add_test(

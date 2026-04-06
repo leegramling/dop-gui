@@ -52,6 +52,9 @@
 - [x] Move both selected-object controls onto the same generic panel-tree combo binder path, leaving popup and table behavior as the only intentional custom renderers still in this branch.
 - [x] Record the next feature as a hand-coded `New Shape` panel dev example, with layout in `init()`, explicit widget callbacks in `render()`, and full testability through the existing UI command/query seam.
 - [x] Record the required new primitive scene/render support for `sphere`, `torus`, and `pyramid`, created from panel-entered transform and color values.
+- [x] Implement `New Shape` as a hand-coded `Panel`-derived dev example, with Yoga layout built in `init()` and explicit wrapped-widget callbacks in `render()`.
+- [x] Add headless panel-driven shape creation coverage for `Sphere`, proving that the panel can create new scene objects through the existing `ui.test.panel.*` command path.
+- [x] Extend scene object state and renderer support to carry color and render `sphere`, `torus`, and `pyramid` primitives.
 
 ## Architecture Notes
 

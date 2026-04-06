@@ -181,5 +181,12 @@
         { id: "scale-z", slotId: "input-properties-scale-z", type: "input_double", label: "Scale Z", bind: "scene.selected.scale.z", precision: 6 },
       ],
     },
+    {
+      label: "New Shape",
+      open: true,
+      closable: true,
+      flags: ["NoCollapse"],
+      layout: { x: 792, y: 48, w: 360, h: 520 },
+    },
   ],
 }

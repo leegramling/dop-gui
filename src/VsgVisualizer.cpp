@@ -1,5 +1,6 @@
 #include "VsgVisualizer.h"
 
+#include <cmath>
 #include <array>
 #include <stdexcept>
 #include <string>
@@ -20,6 +21,20 @@ vsg::vec4 colorForKind(const std::string& kind)
     return {0.85f, 0.85f, 0.85f, 1.0f};
 }
 
+vsg::ref_ptr<vsg::VertexIndexDraw> createMesh(
+    vsg::ref_ptr<vsg::vec3Array> vertices,
+    vsg::ref_ptr<vsg::uintArray> indices,
+    vsg::ref_ptr<vsg::vec4Array> colors)
+{
+    vsg::DataList vertexArrays{vertices, colors};
+    auto drawCommands = vsg::VertexIndexDraw::create();
+    drawCommands->assignArrays(vertexArrays);
+    drawCommands->assignIndices(indices);
+    drawCommands->indexCount = indices->width();
+    drawCommands->instanceCount = 1;
+    return drawCommands;
+}
+
 vsg::ref_ptr<vsg::Node> createGridGeometry()
 {
     auto vertices = vsg::vec3Array::create({
@@ -30,11 +45,7 @@ vsg::ref_ptr<vsg::Node> createGridGeometry()
     for (std::size_t i = 0; i < 8; ++i) (*colors)[i] = vsg::vec4(0.35f, 0.35f, 0.35f, 1.0f);
 
     auto indices = vsg::uintArray::create({0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7});
-    auto draw = vsg::VertexIndexDraw::create();
-    draw->assignArrays(vsg::DataList{vertices, colors});
-    draw->assignIndices(indices);
-    draw->indexCount = indices->width();
-    draw->instanceCount = 1;
+    auto draw = createMesh(vertices, indices, colors);
 
     auto stateGroup = vsg::StateGroup::create();
     stateGroup->addChild(draw);
@@ -100,7 +111,7 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> VsgVisualizer::createBindGraphicsPipelin
 vsg::ref_ptr<vsg::vec4Array> VsgVisualizer::createColors(const SceneObjectState& object, std::size_t count) const
 {
     auto colors = vsg::vec4Array::create(count);
-    const auto color = colorForKind(object.kind);
+    const auto color = object.colorHex.empty() ? colorForKind(object.kind) : object.color;
     for (std::size_t i = 0; i < count; ++i) (*colors)[i] = color;
     return colors;
 }
@@ -155,26 +166,123 @@ vsg::ref_ptr<vsg::VertexIndexDraw> VsgVisualizer::createDrawCommands(const Scene
             3, 7, 4, 3, 4, 0,
         });
     }
+    else if (object.kind == "pyramid")
+    {
+        vertices = vsg::vec3Array::create({
+            {-0.6f, -0.6f, 0.0f},
+            {0.6f, -0.6f, 0.0f},
+            {0.6f, 0.6f, 0.0f},
+            {-0.6f, 0.6f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
+        });
+        indices = vsg::uintArray::create({
+            0, 1, 2, 0, 2, 3,
+            0, 1, 4,
+            1, 2, 4,
+            2, 3, 4,
+            3, 0, 4,
+        });
+    }
+    else if (object.kind == "sphere")
+    {
+        constexpr int rings = 12;
+        constexpr int sectors = 24;
+        std::vector<vsg::vec3> generatedVertices;
+        std::vector<uint32_t> generatedIndices;
+        generatedVertices.reserve((rings + 1) * (sectors + 1));
+        generatedIndices.reserve(rings * sectors * 6);
+        for (int ring = 0; ring <= rings; ++ring)
+        {
+            const double v = static_cast<double>(ring) / static_cast<double>(rings);
+            const double phi = v * 3.14159265358979323846;
+            const float z = static_cast<float>(std::cos(phi));
+            const float r = static_cast<float>(std::sin(phi));
+            for (int sector = 0; sector <= sectors; ++sector)
+            {
+                const double u = static_cast<double>(sector) / static_cast<double>(sectors);
+                const double theta = u * 2.0 * 3.14159265358979323846;
+                generatedVertices.push_back(vsg::vec3(
+                    r * static_cast<float>(std::cos(theta)),
+                    r * static_cast<float>(std::sin(theta)),
+                    z));
+            }
+        }
+        for (int ring = 0; ring < rings; ++ring)
+        {
+            for (int sector = 0; sector < sectors; ++sector)
+            {
+                const uint32_t a = ring * (sectors + 1) + sector;
+                const uint32_t b = a + sectors + 1;
+                const uint32_t c = a + 1;
+                const uint32_t d = b + 1;
+                generatedIndices.push_back(a); generatedIndices.push_back(b); generatedIndices.push_back(c);
+                generatedIndices.push_back(c); generatedIndices.push_back(b); generatedIndices.push_back(d);
+            }
+        }
+        vertices = vsg::vec3Array::create(generatedVertices.size());
+        for (std::size_t i = 0; i < generatedVertices.size(); ++i) (*vertices)[i] = generatedVertices[i];
+        indices = vsg::uintArray::create(generatedIndices.size());
+        for (std::size_t i = 0; i < generatedIndices.size(); ++i) (*indices)[i] = generatedIndices[i];
+    }
+    else if (object.kind == "torus")
+    {
+        constexpr int majorSegments = 24;
+        constexpr int minorSegments = 16;
+        constexpr float majorRadius = 0.85f;
+        constexpr float minorRadius = 0.28f;
+        std::vector<vsg::vec3> generatedVertices;
+        std::vector<uint32_t> generatedIndices;
+        generatedVertices.reserve((majorSegments + 1) * (minorSegments + 1));
+        generatedIndices.reserve(majorSegments * minorSegments * 6);
+        for (int major = 0; major <= majorSegments; ++major)
+        {
+            const double u = static_cast<double>(major) / static_cast<double>(majorSegments);
+            const double theta = u * 2.0 * 3.14159265358979323846;
+            const float cosTheta = static_cast<float>(std::cos(theta));
+            const float sinTheta = static_cast<float>(std::sin(theta));
+            for (int minor = 0; minor <= minorSegments; ++minor)
+            {
+                const double v = static_cast<double>(minor) / static_cast<double>(minorSegments);
+                const double phi = v * 2.0 * 3.14159265358979323846;
+                const float cosPhi = static_cast<float>(std::cos(phi));
+                const float sinPhi = static_cast<float>(std::sin(phi));
+                const float radius = majorRadius + minorRadius * cosPhi;
+                generatedVertices.push_back(vsg::vec3(
+                    radius * cosTheta,
+                    radius * sinTheta,
+                    minorRadius * sinPhi));
+            }
+        }
+        for (int major = 0; major < majorSegments; ++major)
+        {
+            for (int minor = 0; minor < minorSegments; ++minor)
+            {
+                const uint32_t a = major * (minorSegments + 1) + minor;
+                const uint32_t b = (major + 1) * (minorSegments + 1) + minor;
+                const uint32_t c = a + 1;
+                const uint32_t d = b + 1;
+                generatedIndices.push_back(a); generatedIndices.push_back(b); generatedIndices.push_back(c);
+                generatedIndices.push_back(c); generatedIndices.push_back(b); generatedIndices.push_back(d);
+            }
+        }
+        vertices = vsg::vec3Array::create(generatedVertices.size());
+        for (std::size_t i = 0; i < generatedVertices.size(); ++i) (*vertices)[i] = generatedVertices[i];
+        indices = vsg::uintArray::create(generatedIndices.size());
+        for (std::size_t i = 0; i < generatedIndices.size(); ++i) (*indices)[i] = generatedIndices[i];
+    }
     else
     {
         throw std::runtime_error("Unsupported scene object kind: " + object.kind);
     }
 
     auto colors = createColors(object, vertices->size());
-    vsg::DataList vertexArrays{vertices, colors};
-
-    auto drawCommands = vsg::VertexIndexDraw::create();
-    drawCommands->assignArrays(vertexArrays);
-    drawCommands->assignIndices(indices);
-    drawCommands->indexCount = indices->width();
-    drawCommands->instanceCount = 1;
-    return drawCommands;
+    return createMesh(vertices, indices, colors);
 }
 
-vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
+void VsgVisualizer::populateScene(const AppState& state)
 {
-    auto scene = vsg::Group::create();
-    auto bindPipeline = createBindGraphicsPipeline();
+    if (!_scene) _scene = vsg::Group::create();
+    _scene->children.clear();
     _objectTransforms.clear();
     _objectTransforms.reserve(state.scene.objects.size());
 
@@ -182,25 +290,36 @@ vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
     {
         auto objectTransform = vsg::MatrixTransform::create();
         auto stateGroup = vsg::StateGroup::create();
-        stateGroup->add(bindPipeline);
+        stateGroup->add(_bindPipeline);
         stateGroup->addChild(createDrawCommands(object));
         objectTransform->addChild(stateGroup);
-        scene->addChild(objectTransform);
+        _scene->addChild(objectTransform);
         _objectTransforms.push_back(objectTransform);
     }
 
     _gridTransform = vsg::MatrixTransform::create();
     auto gridStateGroup = vsg::StateGroup::create();
-    gridStateGroup->add(bindPipeline);
+    gridStateGroup->add(_bindPipeline);
     gridStateGroup->addChild(createGridGeometry());
     _gridTransform->addChild(gridStateGroup);
-    scene->addChild(_gridTransform);
+    _scene->addChild(_gridTransform);
+}
 
-    return scene;
+vsg::ref_ptr<vsg::Group> VsgVisualizer::createScene(const AppState& state)
+{
+    _scene = vsg::Group::create();
+    populateScene(state);
+    return _scene;
+}
+
+void VsgVisualizer::rebuildScene(const AppState& state)
+{
+    populateScene(state);
 }
 
 void VsgVisualizer::initialize(const AppState& state, vsg::ref_ptr<vsg::Window> window)
 {
+    _bindPipeline = createBindGraphicsPipeline();
     _scene = createScene(state);
 
     const auto& pose = state.view.cameraPose;
@@ -244,6 +363,15 @@ void VsgVisualizer::syncCameraFromState(const AppState& state)
 
 void VsgVisualizer::syncSceneFromState(const AppState& state)
 {
+    if (_objectTransforms.size() != state.scene.objects.size())
+    {
+        rebuildScene(state);
+        if (_view && _view->children.empty())
+        {
+            _view->addChild(_scene);
+        }
+    }
+
     const auto count = std::min(_objectTransforms.size(), state.scene.objects.size());
     for (std::size_t i = 0; i < count; ++i)
     {

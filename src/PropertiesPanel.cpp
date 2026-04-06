@@ -9,11 +9,6 @@
 
 namespace
 {
-const UiPanelWidgetNode* findWidget(const UiPanelTree& root, std::string_view widgetId)
-{
-    return root.findWidget(widgetId);
-}
-
 using DoubleAccessor = double* (*)(SceneObjectState&);
 
 double* positionX(SceneObjectState& object) { return &object.position.x; }

@@ -20,6 +20,8 @@ struct SceneObjectState
     vsg::dvec3 position{0.0, 0.0, 0.0};
     vsg::dvec3 rotation{0.0, 0.0, 0.0};
     vsg::dvec3 scale{1.0, 1.0, 1.0};
+    std::string colorHex = "#D9D9D9";
+    vsg::vec4 color{0.85f, 0.85f, 0.85f, 1.0f};
 };
 
 /**

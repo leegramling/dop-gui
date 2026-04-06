@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "PanelWindow.h"
+#include "NewShapePanel.h"
 #include "PropertiesPanel.h"
 #include "SceneInfoPanel.h"
 #include "Theme.h"
@@ -41,6 +42,7 @@ UiManager::UiManager()
 {
     registerPanel(std::make_unique<SceneInfoPanel>());
     registerPanel(std::make_unique<PropertiesPanel>());
+    registerPanel(std::make_unique<NewShapePanel>());
 }
 
 UiManager::~UiManager() = default;

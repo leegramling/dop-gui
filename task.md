@@ -2,14 +2,14 @@
 
 ## Active Slice
 
-- [ ] Add a hand-coded `New Shape` panel as the documented fallback-panel development example.
-- [ ] Define the `New Shape` panel Yoga layout in `init()` and widget callbacks in `render()`.
-- [ ] Add shape type selection for `Sphere`, `Torus`, and `Pyramid`.
-- [ ] Add transform inputs for location `x/y/z`, rotation `x/y/z`, and scale `x/y/z`.
-- [ ] Add a color hex input for the created shape.
-- [ ] Make the panel testable through headless and live `ui.test.*` flows.
-- [ ] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
-- [ ] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
+- [x] Add a hand-coded `New Shape` panel as the documented fallback-panel development example.
+- [x] Define the `New Shape` panel Yoga layout in `init()` and widget callbacks in `render()`.
+- [x] Add shape type selection for `Sphere`, `Torus`, and `Pyramid`.
+- [x] Add transform inputs for location `x/y/z`, rotation `x/y/z`, and scale `x/y/z`.
+- [x] Add a color hex input for the created shape.
+- [x] Make the panel testable through the shared `ui.test.*` flow used by both headless and live UI execution.
+- [x] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
+- [x] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
 
 ## Next Tasks
 
@@ -61,7 +61,7 @@
 - [x] Confirm `Scene Info` and `Properties` both preserve the existing runtime slot/widget query surface after the JSON5 layout transition.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
-- [ ] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless and live UI test flows.
+- [x] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless `ui.test.*` flows.
 
 ## Constraints
 
