@@ -2,3 +2,4 @@
 /external/
 /external/*/build/
 /docs/doxygen/
+imgui.ini
