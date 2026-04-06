@@ -38,6 +38,7 @@ We will drive work through four small markdown files in repo root:
 - [`plan.md`](/home/lgramling/dev/dop-gui/plan.md): current phased roadmap
 - [`task.md`](/home/lgramling/dev/dop-gui/task.md): the next small implementation steps
 - [`notes.md`](/home/lgramling/dev/dop-gui/notes.md): architecture notes, dependency findings, and decisions
+- [`HowToAddTestCommands.md`](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md): contributor guide for adding new command/query/UI-test coverage
 
 Recommended loop:
 
@@ -48,6 +49,7 @@ Recommended loop:
 5. Pull only the smallest executable slice into [`task.md`](/home/lgramling/dev/dop-gui/task.md).
 6. Use [`agents.md`](/home/lgramling/dev/dop-gui/agents.md) to keep prompts and implementation behavior aligned.
 7. Implement one slice, verify it, then update the docs before moving on.
+8. Use [`HowToAddTestCommands.md`](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md) when extending the command/query/UI-test surface.
 
 ## Proposed Application Direction
 
@@ -170,6 +172,7 @@ The next milestone is to create a minimal VSG application skeleton that:
 cmake -S . -B build/dop-gui -DCMAKE_BUILD_TYPE=Release
 cmake --build build/dop-gui -j 8
 ctest --test-dir build/dop-gui --output-on-failure
+doxygen Doxyfile
 ```
 
 Binary:
@@ -217,6 +220,8 @@ Why shaders are built ahead of time:
 
 The first test-facing interface is CLI-driven.
 
+For adding new test commands and scripts, start with [HowToAddTestCommands.md](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md).
+
 Direct queries:
 
 ```bash
@@ -232,6 +237,7 @@ Direct queries:
 ./build/dop-gui/dop-gui --query data.scene.object.bootstrap_triangle
 ./build/dop-gui/dop-gui --query runtime.capabilities
 ./build/dop-gui/dop-gui --query help
+./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_popup_table_cli.json5
 ```
 
 Direct commands:
@@ -261,6 +267,7 @@ Batch script mode:
 ./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5
 ./build/dop-gui/dop-gui --ui-test-mode --script tests/regression_cli.json5
 ./build/dop-gui/dop-gui --ui-test-mode --script tests/regression_actions.json5
+./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_extended_widgets_cli.json5
 ```
 
 Current behavior:
@@ -281,6 +288,7 @@ Current behavior:
 - widget labels now use flat test-oriented IDs such as `panel-fps`, `panel-display-grid`, `panel-bgcolor`, and `menuitem-scene-cubes`
 - the first application-bound UI input is `panel-bgcolor`, which defaults from the current render background and can update `view.background.color`
 - `ui.test.*` commands can now simulate labeled menu clicks, checkbox changes, and text input in headless mode
+- the first richer wrapped widgets are `panel-scene-select` as a combo box and `panel-theme-dark` / `panel-theme-light` as radio buttons
 - headless UI smoke coverage now exercises `panel-bgcolor`, `panel-display-grid`, and `menuitem-scene-cubes`
 - `tests/regression_cli.json5` is the first combined CLI regression script and reports the resulting scene load, grid state, background color state, sleep, and exit request in one run
 - `tests/regression_actions.json5` is the object-based equivalent using ordered `actions: [...]` entries with `command`, `query`, and `sleepMs`, and it returns results in the same ordered `actions` list

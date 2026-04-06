@@ -1,0 +1,11 @@
+{
+  queries: [
+    "ui.layout.slot.panel-scene-info.panel-display-grid",
+    "ui.layout.slot.panel-scene-info.panel-bgcolor",
+    "ui.layout.slot.panel-scene-info.panel-scene-select",
+    "ui.layout.slot.panel-scene-info.panel-scene-summary-open",
+    "ui.layout.slot.panel-scene-info.panel-theme-light",
+    "ui.layout.slot.panel-properties.panel-selected-object",
+    "ui.layout.slot.panel-properties.input-properties-rotation-z",
+  ],
+}

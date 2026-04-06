@@ -2,6 +2,7 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/widget-layout-doxygen-gltf`.
 - [x] Create feature branch `feature/imgui-ui-layout-testable`.
 - [x] Create feature branch `feature/app-input-visualizer-command`.
 - [x] Create feature branch `feature/vsgimgui-docking-external`.
@@ -17,6 +18,37 @@
 - [x] Refactor the bootstrap app into `App`, `InputManager`, `VsgVisualizer`, and `Command`.
 - [x] Verify the refactored project still builds.
 - [x] Verify a non-window CLI command path works with `--command help`.
+- [x] Add Doxygen scaffolding with repo-local `.dox` pages and a working `Doxyfile`.
+- [x] Add popup and table wrappers through the existing testable UI seam.
+- [x] Add authored popup/table metadata and runtime-inspectable widget layout rects.
+- [x] Enable in-window ImGui docking and confirm the current `vsgImGui` path does not expose platform window create/destroy callbacks for tear-out viewports.
+- [x] Introduce `WindowManager` as the current boundary for primary-window registration and ImGui platform callback observation.
+- [x] Use the local `../vsgLayt/yoga` source as the first Yoga implementation reference and dependency source instead of cloning a new Yoga repo.
+- [x] Add the first repo-local `YogaLayout` adapter and use it for the `Properties` panel header row.
+- [x] Extend the builder-based Yoga path to the full `Properties` panel so the property rows no longer depend on table placement.
+- [x] Move the lower `Scene Info` controls onto explicit layout slots so theme radios, scene summary, and selected-object controls no longer overlap.
+- [x] Add `ui.layout.slot.<panel>.<slot>` queries so Yoga slot rects can be tested independently of widget rects.
+- [x] Move the top `Scene Info` controls onto the same builder-based Yoga layout so the full panel is covered by slot queries.
+- [x] Add minimum size constraints for the Yoga-backed panels so resizing cannot collapse controls into overlap.
+- [x] Add the first declarative JSON5 flex-layout tree for `Properties` and feed it into Yoga instead of relying only on a hand-built panel layout function.
+- [x] Keep `ui.layout`, `ui.layout.slot.*`, and `ui.widget.*` inspection stable while `Properties` moves from builder-only layout to JSON5-authored flex layout.
+- [x] Move `Scene Info` onto the same JSON5-authored flex-layout path so both main panels now use authored Yoga trees rather than builder-only layout definitions.
+- [x] Extract the flex-tree-to-Yoga conversion into shared UI layout helpers so declarative layout parsing is no longer panel-specific.
+- [x] Let authored flex-layout nodes reference `widget:` and `labelFor:` instead of repeating most slot ids verbatim.
+- [x] Add `labelSlot` to widget specs so exceptional label-slot names like `panel-properties-selected-object-label` can still stay stable while layout becomes less repetitive.
+- [x] Add panel-aware widget registry metadata so runtime queries can resolve widgets by both flat id and panel-scoped id.
+- [x] Add `ui.panel.<panel>.widget.<id>` as the first panel-scoped widget query path, preparing for shorter panel-local widget ids later.
+- [x] Convert the `Properties` panel to shorter panel-local widget ids while preserving stable Yoga slot ids and compatibility aliases for the older flat widget query names.
+- [x] Convert `Scene Info` to shorter panel-local widget ids while preserving the existing Yoga slot ids and keeping older flat widget ids working through panel-aware compatibility aliases.
+- [x] Add panel-scoped UI test commands such as `ui.test.panel.panel-properties.set_text.position-x=...` so local widget ids can be addressed without relying on a single global flat action namespace.
+- [x] Record that declarative JSON5 UI is still the target architecture, but a fallback hand-coded panel path with custom `initialize`/builder layout and `render` methods remains acceptable for special panels until the JSON5 schema is expressive enough.
+- [x] Introduce a reusable built JSON5 panel-tree path and move `Properties` onto it so the panel no longer owns a dedicated `buildLayout()` function.
+- [x] Move `Properties` widget rendering onto panel-tree renderer callbacks so the panel render path now delegates most authored widget dispatch to `root.render(...)`.
+- [x] Replace the remaining `Properties` selected-object numeric bind `if` chain with a table-driven accessor map so the bind resolution path is less panel-specific.
+- [x] Move `Scene Info` onto the same panel-tree render path and replace its text/string/bool binding `if` chains with small binding tables, so both authored panels now share the same default render architecture.
+- [x] Add generic panel-tree binder helpers for the common text/input/checkbox/combo/radio/double widget cases, leaving only selected-object, popup, and table behavior as panel-specific renderers.
+- [x] Switch both current panels to those generic panel-tree binder helpers for the standard widget cases, so the remaining panel-specific code is now concentrated in selected-object, popup, and table behavior.
+- [x] Move both selected-object controls onto the same generic panel-tree combo binder path, leaving popup and table behavior as the only intentional custom renderers still in this branch.
 
 ## Architecture Notes
 
@@ -312,6 +344,9 @@ Implementation status:
 - [x] Add `tests/regression_cli.json5` as the first combined command/UI regression script.
 - [x] Add `tests/live_regression.json5` plus scheduled live script playback for staged desktop validation in one session.
 - [x] Add ordered object-based script actions via `actions: [{ command: ... }, { query: ... }, { sleepMs: ... }]`.
+- [x] Add the first richer wrapped widgets: `ComboBox` and `RadioButton`.
+- [x] Add `panel-scene-select` as the first combo-backed panel widget.
+- [x] Add `panel-theme-dark` and `panel-theme-light` as the first radio-backed panel widgets.
 - [x] Route `Scene -> cubes` and `Scene -> Shapes` through scene-file requests in application state.
 - [x] Route `File -> Exit` through application state so the live loop can honor it.
 - [x] Add `scenes/shapes.json5` as the first dedicated shapes scene for the UI menu.
@@ -324,3 +359,50 @@ Verification notes:
 - [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_scene_click_cli.json5` switches the loaded scene to the cube scene.
 - [x] Add live desktop helper scripts `tests/live_ui_bg_blue.json5`, `tests/live_ui_grid_off.json5`, and `tests/live_ui_scene_cubes.json5` plus matching `test_run.sh` modes.
 - [x] Desktop validation confirmed `live-bg`, `live-grid-off`, `live-scene-cubes`, and `live-regression` behave as expected in the real app session.
+- [x] `./build/dop-gui/dop-gui --ui-test-mode --script tests/ui_extended_widgets_cli.json5` verifies combo/radio widgets through the existing `ui.test.*` path.
+
+## New Branch Scope: Expanded Widgets, Yoga Layout, Docs, And Scene Assets
+
+Requested additions:
+
+- [x] Expand the widget set beyond the current basics.
+- [x] Add richer panel functionality including docking and tear-out expectations.
+- [x] Expand `Theme` to cover more colors and window/panel flags.
+- [x] Add panel callbacks as a first-class part of the UI design.
+- [x] Add Doxygen-style doc comments across the code surface as an explicit requirement.
+- [x] Add a `HowToAddTestCommands` guide.
+- [x] Use the local `../vsgLayt` repo as the first reference point for Yoga integration.
+- [x] Grow the scene toward `.gltf` / `.glb` assets and larger composed scene structures.
+- [x] Add contributor-facing workflow docs for test command/script authoring.
+
+Local reference check:
+
+- [x] `../vsgLayt` exists locally and includes Yoga-related material such as `yoga-layout.md`, `uiStyleAndBiz.md`, and `include/vmap/Layt.h`.
+- [x] `../vsgLayt` documents a `setPos`-style placement model and Yoga-backed layout ideas that are relevant to the next slice.
+
+Open design notes for this branch:
+
+- [ ] Decide how far panel docking and tear-out can be supported with the current `vsgImGui`/ImGui integration.
+- [ ] Decide whether panel callbacks are plain function objects, command dispatch adapters, or both.
+- [ ] Decide how Yoga-computed rects feed into wrapped widget placement without bypassing the current widget wrapper layer.
+- [ ] Decide whether richer widget state should remain under `UiState` or move into a more dedicated UI model record.
+- [ ] Decide how primitive scene objects and loaded asset instances coexist in the scene model.
+- [x] Confirm the current mixed JSON5-plus-builder layout approach is only a transition step.
+- [x] Choose a declarative target closer to web/QML/Slint/Kivy, with Yoga as the engine underneath.
+- [ ] Define the first minimal JSON5 flex-layout vocabulary for real panel conversion.
+- [x] Convert `Properties` first so the first declarative layout slice stays narrow.
+
+## Declarative Layout Direction
+
+- [x] Current widget existence and behavior are JSON5-authored.
+- [x] Current Yoga layout is still builder-defined in C++ panel code.
+- [x] The next architectural target is a declarative JSON5 layout schema rather than expanding builder code indefinitely.
+- [x] The intended first vocabulary is small and flexbox-like:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+- [x] `Properties` should be the first panel converted from builder-defined layout to JSON5-defined layout.
+- [ ] `ui.layout.slot.*` and `ui.widget.*` queries must stay stable through that conversion.

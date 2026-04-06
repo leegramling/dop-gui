@@ -1,29 +1,17 @@
-#include "UiLayer.h"
+#include "UiManager.h"
 
 #include "Panel.h"
+#include "PanelWindow.h"
+#include "PropertiesPanel.h"
+#include "SceneInfoPanel.h"
 #include "Theme.h"
 #include "Widgets.h"
+#include "WindowManager.h"
 
 #include <vsgImGui/SendEventsToImGui.h>
 
-#include <sstream>
-
 namespace
 {
-std::string fpsText(double fps)
-{
-    std::ostringstream out;
-    out.setf(std::ios::fixed);
-    out.precision(1);
-    out << "FPS: " << fps;
-    return out.str();
-}
-
-std::string objectCountText(const AppState& state)
-{
-    return "Objects: " + std::to_string(state.scene.objects.size());
-}
-
 std::string sanitizeLabel(std::string text)
 {
     for (auto& ch : text)
@@ -49,9 +37,41 @@ bool menuHasPendingClick(const UiState& uiState, const std::string& menuLabel, c
 }
 }
 
-void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::RenderGraph> renderGraph, AppState& state)
+UiManager::UiManager()
+{
+    registerPanel(std::make_unique<SceneInfoPanel>());
+    registerPanel(std::make_unique<PropertiesPanel>());
+}
+
+UiManager::~UiManager() = default;
+
+void UiManager::registerPanel(std::unique_ptr<Panel> panel)
+{
+    if (!panel) return;
+    _panels.push_back(PanelRegistration{
+        .id = std::string(panel->id()),
+        .controller = std::move(panel),
+    });
+}
+
+Panel* UiManager::findPanel(std::string_view id)
+{
+    for (auto& panel : _panels)
+    {
+        if (panel.id == id) return panel.controller.get();
+    }
+
+    return nullptr;
+}
+
+void UiManager::initialize(
+    vsg::ref_ptr<vsg::Window> window,
+    vsg::ref_ptr<vsg::RenderGraph> renderGraph,
+    AppState& state,
+    WindowManager& windowManager)
 {
     _state = &state;
+    _windowManager = &windowManager;
 
     _renderImGui = vsgImGui::RenderImGui::create(window, [this]() -> bool
     {
@@ -62,20 +82,32 @@ void UiLayer::initialize(vsg::ref_ptr<vsg::Window> window, vsg::ref_ptr<vsg::Ren
 
     renderGraph->addChild(_renderImGui);
     _sendEventsToImGui = vsgImGui::SendEventsToImGui::create();
+
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
 }
 
-void UiLayer::evaluate(AppState& state)
+void UiManager::evaluate(AppState& state)
 {
     const bool previousTestMode = state.ui.testMode;
     state.ui.testMode = true;
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     render(state);
     state.ui.testMode = previousTestMode;
 }
 
-void UiLayer::render(AppState& state)
+void UiManager::render(AppState& state)
 {
-    if (!state.ui.testMode) Theme::applyDefault();
+    if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
+    if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     state.ui.registry.clear();
+    state.ui.layoutSlots.clear();
+
+    if (!state.ui.testMode && state.ui.dockingEnabled)
+    {
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    }
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())
     {
@@ -100,20 +132,9 @@ void UiLayer::render(AppState& state)
                         action->kind.clear();
                     }
                     if (!state.ui.testMode) clicked = clicked || ImGui::MenuItem(item.label.c_str());
-                    if (clicked)
+                    if (clicked && !item.command.empty())
                     {
-                        if (item.command == "app.exit")
-                        {
-                            state.ui.exitRequested = true;
-                        }
-                        else if (item.command == "scene.load.cubes")
-                        {
-                            state.ui.requestedSceneFile = std::string(DOP_GUI_SOURCE_DIR) + "/scenes/cubes.json5";
-                        }
-                        else if (item.command == "scene.load.shapes")
-                        {
-                            state.ui.requestedSceneFile = std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5";
-                        }
+                        state.ui.requestedCommands.push_back(item.command);
                     }
                 }
                 if (menuOpened) ImGui::EndMenu();
@@ -123,39 +144,43 @@ void UiLayer::render(AppState& state)
         if (!state.ui.testMode) ImGui::EndMainMenuBar();
     }
 
+    PanelContext context{
+        .state = state,
+        .windowManager = _windowManager,
+    };
+
     for (const auto& panelState : state.ui.layout.panels)
     {
         const auto panelId = "panel-" + sanitizeLabel(panelState.label);
-        Panel panel(state.ui, panelId.c_str(), panelState.label.c_str());
-        if (!panel.begin()) continue;
+        auto* panelController = findPanel(panelId);
+        if (!panelController) continue;
 
-        Text(state.ui, "panel-fps", fpsText(state.view.fps));
-        Text(state.ui, "panel-object-count", objectCountText(state));
-        Checkbox(state.ui, "panel-display-grid", "Display Grid", state.ui.displayGrid);
-
-        const auto backgroundValue = Input(
+        panelController->ensureInitialized(panelState);
+        bool panelOpen = panelState.open;
+        PanelWindow panelWindow(
             state.ui,
-            "panel-bgcolor",
-            "Background Color",
-            state.view.backgroundColorHex);
-        state.view.backgroundColorHex = backgroundValue;
-
-        vsg::vec4 parsedColor;
-        if (tryParseHexColor(backgroundValue, parsedColor))
-        {
-            state.view.backgroundColor = parsedColor;
-        }
+            panelId.c_str(),
+            panelState.label.c_str(),
+            panelOpen,
+            panelState.closable,
+            panelState.flags,
+            panelState.layout,
+            panelController->minSize(panelState));
+        if (!panelWindow.begin()) continue;
+        state.ui.currentPanelId = panelId;
+        panelController->render(context, panelState);
+        state.ui.currentPanelId.clear();
     }
 
     state.ui.pendingActions.clear();
 }
 
-bool UiLayer::isInitialized() const
+bool UiManager::isInitialized() const
 {
     return _renderImGui.valid();
 }
 
-vsg::ref_ptr<vsg::Visitor> UiLayer::eventHandler() const
+vsg::ref_ptr<vsg::Visitor> UiManager::eventHandler() const
 {
     return _sendEventsToImGui;
 }

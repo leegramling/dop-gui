@@ -1,0 +1,47 @@
+/** \mainpage dop-gui
+
+\section overview Overview
+
+`dop-gui` is a VulkanSceneGraph application project focused on:
+
+- data oriented programming
+- functional-style C++20
+- spec-driven development
+- small, reviewable implementation slices
+
+The current architecture keeps plain application state separate from rendering,
+input orchestration, and UI test surfaces.
+
+\section architecture Architecture
+
+The main subsystems are:
+
+- `AppState` for plain scene, view, and UI-related state
+- `App` for startup, lifetime, and top-level application flow
+- `InputManager` for window-facing event handling and input normalization
+- `VsgVisualizer` for VSG scene creation and render updates
+- `Theme` for default ImGui styling choices
+- `Panel` for wrapped panel boundaries and docking-related policy
+- wrapped UI widgets for testable `Text`, `Input`, `Button`, `Checkbox`,
+  `RadioButton`, `ComboBox`, `Popup`, and `Table` behavior
+- `Command` and `Query` for CLI, UI-test, and automation-friendly state changes
+  and state inspection
+- `ScriptRunner` for batch and timed playback
+
+\section testing Testing
+
+The project is designed so that the same command/query surface can be driven by:
+
+- direct CLI invocation
+- headless UI test mode
+- live GUI simulation
+- scripted batch playback
+
+The contributor guide for adding new test commands lives in the repository
+root as `HowToAddTestCommands.md`.
+
+For the current workflow, see:
+
+- \ref testing_workflow
+
+*/

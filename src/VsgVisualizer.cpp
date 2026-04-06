@@ -6,6 +6,11 @@
 
 namespace
 {
+double degreesToRadians(double degrees)
+{
+    return degrees * 3.14159265358979323846 / 180.0;
+}
+
 vsg::vec4 colorForKind(const std::string& kind)
 {
     if (kind == "triangle") return {0.95f, 0.30f, 0.25f, 1.0f};
@@ -243,8 +248,13 @@ void VsgVisualizer::syncSceneFromState(const AppState& state)
     for (std::size_t i = 0; i < count; ++i)
     {
         const auto& object = state.scene.objects[i];
+        const auto rotation =
+            vsg::rotate(degreesToRadians(object.rotation.x), 1.0, 0.0, 0.0) *
+            vsg::rotate(degreesToRadians(object.rotation.y), 0.0, 1.0, 0.0) *
+            vsg::rotate(degreesToRadians(object.rotation.z), 0.0, 0.0, 1.0);
         _objectTransforms[i]->matrix =
             vsg::translate(object.position) *
+            rotation *
             vsg::scale(object.scale.x, object.scale.y, object.scale.z);
     }
     for (std::size_t i = count; i < _objectTransforms.size(); ++i)

@@ -5,6 +5,7 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
+#include <cctype>
 
 namespace
 {
@@ -100,6 +101,15 @@ std::string extractObjectBlock(const std::string& text, const std::string& key)
     return extractBalanced(text, openPos, '{', '}');
 }
 
+std::optional<std::string> extractOptionalObjectBlock(const std::string& text, const std::string& key)
+{
+    const auto keyPos = text.find(key);
+    if (keyPos == std::string::npos) return std::nullopt;
+    const auto openPos = text.find('{', keyPos);
+    if (openPos == std::string::npos) return std::nullopt;
+    return extractBalanced(text, openPos, '{', '}');
+}
+
 std::string extractArrayBlock(const std::string& text, const std::string& key)
 {
     const auto keyPos = findKey(text, key);
@@ -119,6 +129,14 @@ std::string parseStringField(const std::string& block, const std::string& key)
     return match[1].matched ? match[1].str() : match[2].str();
 }
 
+std::optional<std::string> parseOptionalStringField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"__JSON5__(\s*:\s*(?:"([^"]*)"|'([^']*)'))__JSON5__");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return match[1].matched ? match[1].str() : match[2].str();
+}
+
 uint32_t parseUIntField(const std::string& block, const std::string& key)
 {
     const std::regex pattern(key + R"(\s*:\s*([0-9]+))");
@@ -128,6 +146,136 @@ uint32_t parseUIntField(const std::string& block, const std::string& key)
         throw std::runtime_error("Missing unsigned integer field: " + key);
     }
     return static_cast<uint32_t>(std::stoul(match[1].str()));
+}
+
+std::optional<int> parseOptionalIntField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*([-+]?[0-9]+))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return std::stoi(match[1].str());
+}
+
+std::optional<double> parseOptionalDoubleField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*([-+]?[0-9]*\.?[0-9]+))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return std::stod(match[1].str());
+}
+
+std::optional<std::string> parseOptionalStringFieldTopLevel(const std::string& block, const std::string& key)
+{
+    int braceDepth = 0;
+    int bracketDepth = 0;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+
+    for (std::size_t i = 0; i < block.size(); ++i)
+    {
+        const char ch = block[i];
+        if (ch == '\'' && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+        else if (ch == '"' && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+        if (inSingleQuote || inDoubleQuote) continue;
+        if (ch == '{') ++braceDepth;
+        else if (ch == '}') --braceDepth;
+        else if (ch == '[') ++bracketDepth;
+        else if (ch == ']') --bracketDepth;
+
+        if (braceDepth == 1 && bracketDepth == 0 && std::isalpha(static_cast<unsigned char>(ch)))
+        {
+            std::size_t keyStart = i;
+            while (i < block.size() &&
+                   (std::isalnum(static_cast<unsigned char>(block[i])) || block[i] == '_' || block[i] == '-'))
+            {
+                ++i;
+            }
+            const auto parsedKey = block.substr(keyStart, i - keyStart);
+            if (parsedKey != key) continue;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size() || block[i] != ':') continue;
+            ++i;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size()) return std::nullopt;
+            if (block[i] != '"' && block[i] != '\'') return std::nullopt;
+            const char quote = block[i++];
+            const auto valueStart = i;
+            while (i < block.size() && block[i] != quote) ++i;
+            if (i >= block.size()) return std::nullopt;
+            return block.substr(valueStart, i - valueStart);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<double> parseOptionalDoubleFieldTopLevel(const std::string& block, const std::string& key)
+{
+    int braceDepth = 0;
+    int bracketDepth = 0;
+    bool inSingleQuote = false;
+    bool inDoubleQuote = false;
+
+    for (std::size_t i = 0; i < block.size(); ++i)
+    {
+        const char ch = block[i];
+        if (ch == '\'' && !inDoubleQuote) inSingleQuote = !inSingleQuote;
+        else if (ch == '"' && !inSingleQuote) inDoubleQuote = !inDoubleQuote;
+        if (inSingleQuote || inDoubleQuote) continue;
+        if (ch == '{') ++braceDepth;
+        else if (ch == '}') --braceDepth;
+        else if (ch == '[') ++bracketDepth;
+        else if (ch == ']') --bracketDepth;
+
+        if (braceDepth == 1 && bracketDepth == 0 && std::isalpha(static_cast<unsigned char>(ch)))
+        {
+            std::size_t keyStart = i;
+            while (i < block.size() &&
+                   (std::isalnum(static_cast<unsigned char>(block[i])) || block[i] == '_' || block[i] == '-'))
+            {
+                ++i;
+            }
+            const auto parsedKey = block.substr(keyStart, i - keyStart);
+            if (parsedKey != key) continue;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            if (i >= block.size() || block[i] != ':') continue;
+            ++i;
+            while (i < block.size() && std::isspace(static_cast<unsigned char>(block[i]))) ++i;
+            const auto valueStart = i;
+            while (i < block.size() &&
+                   (std::isdigit(static_cast<unsigned char>(block[i])) || block[i] == '.' || block[i] == '-' || block[i] == '+'))
+            {
+                ++i;
+            }
+            if (i == valueStart) return std::nullopt;
+            return std::stod(block.substr(valueStart, i - valueStart));
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<bool> parseOptionalBoolField(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(key + R"(\s*:\s*(true|false))");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+    return match[1].str() == "true";
+}
+
+std::optional<vsg::dvec3> parseOptionalVec3Field(const std::string& block, const std::string& key)
+{
+    const std::regex pattern(
+        key +
+        R"(\s*:\s*\[\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\])");
+    std::smatch match;
+    if (!std::regex_search(block, match, pattern)) return std::nullopt;
+
+    return vsg::dvec3{
+        std::stod(match[1].str()),
+        std::stod(match[2].str()),
+        std::stod(match[3].str()),
+    };
 }
 
 vsg::dvec3 parseVec3Field(const std::string& block, const std::string& key)
@@ -189,6 +337,9 @@ AppState loadSceneStateFromFile(const std::string& filename)
     const auto objectsBlock = extractArrayBlock(text, "objects");
 
     AppState state;
+    if (filename.find("cubes") != std::string::npos) state.scene.name = "cubes";
+    else if (filename.find("shapes") != std::string::npos) state.scene.name = "shapes";
+    else state.scene.name = "bootstrap";
     state.view.cameraPose.eye = parseVec3Field(cameraBlock, "eye");
     state.view.cameraPose.center = parseVec3Field(cameraBlock, "center");
     state.view.cameraPose.up = parseVec3Field(cameraBlock, "up");
@@ -200,9 +351,12 @@ AppState loadSceneStateFromFile(const std::string& filename)
             .kind = parseStringField(objectBlock, "kind"),
             .vertexCount = parseUIntField(objectBlock, "vertexCount"),
             .position = parseVec3Field(objectBlock, "position"),
+            .rotation = parseOptionalVec3Field(objectBlock, "rotation").value_or(vsg::dvec3{0.0, 0.0, 0.0}),
             .scale = parseVec3Field(objectBlock, "scale"),
         });
     }
+
+    if (!state.scene.objects.empty()) state.scene.selectedObjectId = state.scene.objects.front().id;
 
     return state;
 }
@@ -239,9 +393,74 @@ UiMenuState parseMenuBlock(const std::string& block)
     return menu;
 }
 
+UiLayoutRectState parseLayoutRectBlock(const std::string& block)
+{
+    UiLayoutRectState rect;
+    rect.x = parseOptionalDoubleField(block, "x").value_or(0.0);
+    rect.y = parseOptionalDoubleField(block, "y").value_or(0.0);
+    rect.width = parseOptionalDoubleField(block, "w").value_or(0.0);
+    rect.height = parseOptionalDoubleField(block, "h").value_or(0.0);
+    rect.enabled = true;
+    return rect;
+}
+
+UiFlexNodeState parseFlexNodeBlock(const std::string& block)
+{
+    UiFlexNodeState node;
+    node.type = parseOptionalStringFieldTopLevel(block, "type").value_or("");
+    node.slot = parseOptionalStringFieldTopLevel(block, "slot").value_or("");
+    node.widget = parseOptionalStringFieldTopLevel(block, "widget").value_or("");
+    node.labelFor = parseOptionalStringFieldTopLevel(block, "labelFor").value_or("");
+    if (node.type.empty() && (!node.slot.empty() || !node.widget.empty() || !node.labelFor.empty())) node.type = "slot";
+    node.gap = parseOptionalDoubleFieldTopLevel(block, "gap").value_or(0.0);
+    node.width = parseOptionalDoubleFieldTopLevel(block, "width");
+    node.height = parseOptionalDoubleFieldTopLevel(block, "height");
+    node.flex = parseOptionalDoubleFieldTopLevel(block, "flex");
+
+    if (block.find("children") != std::string::npos)
+    {
+        for (const auto& childBlock : extractObjectEntriesForKey(block, "children"))
+        {
+            node.children.push_back(parseFlexNodeBlock(childBlock));
+        }
+    }
+
+    return node;
+}
+
 UiPanelState parsePanelBlock(const std::string& block)
 {
-    return UiPanelState{.label = parseStringField(block, "label")};
+    UiPanelState panel{.label = parseStringField(block, "label")};
+    panel.open = parseOptionalBoolField(block, "open").value_or(true);
+    panel.closable = parseOptionalBoolField(block, "closable").value_or(true);
+    if (block.find("flags") != std::string::npos) panel.flags = parseStringArray(extractArrayBlock(block, "flags"));
+    if (auto layoutBlock = extractOptionalObjectBlock(block, "layout")) panel.layout = parseLayoutRectBlock(*layoutBlock);
+    if (auto flexLayoutBlock = extractOptionalObjectBlock(block, "flexLayout")) panel.flexLayout = parseFlexNodeBlock(*flexLayoutBlock);
+
+    if (block.find("widgets") != std::string::npos)
+    {
+        for (const auto& widgetBlock : extractObjectEntriesForKey(block, "widgets"))
+        {
+            UiWidgetSpecState widget;
+            widget.id = parseStringField(widgetBlock, "id");
+            widget.slotId = parseOptionalStringField(widgetBlock, "slotId").value_or("");
+            widget.labelSlot = parseOptionalStringField(widgetBlock, "labelSlot").value_or("");
+            widget.type = parseStringField(widgetBlock, "type");
+            widget.label = parseStringField(widgetBlock, "label");
+            widget.bind = parseOptionalStringField(widgetBlock, "bind").value_or("");
+            widget.arg = parseOptionalStringField(widgetBlock, "arg").value_or("");
+            widget.onClick = parseOptionalStringField(widgetBlock, "onClick").value_or("");
+            widget.onChange = parseOptionalStringField(widgetBlock, "onChange").value_or("");
+            widget.unit = parseOptionalStringField(widgetBlock, "unit").value_or("");
+            widget.precision = parseOptionalIntField(widgetBlock, "precision").value_or(3);
+            if (widgetBlock.find("options") != std::string::npos) widget.options = parseStringArray(extractArrayBlock(widgetBlock, "options"));
+            if (widgetBlock.find("columns") != std::string::npos) widget.columns = parseStringArray(extractArrayBlock(widgetBlock, "columns"));
+            if (auto layoutBlock = extractOptionalObjectBlock(widgetBlock, "layout")) widget.layout = parseLayoutRectBlock(*layoutBlock);
+            panel.widgets.push_back(std::move(widget));
+        }
+    }
+
+    return panel;
 }
 
 int hexDigitValue(char ch)
@@ -329,11 +548,93 @@ const WidgetState* findWidget(const UiState& ui, const std::string& label)
     return nullptr;
 }
 
+WidgetState* findWidget(UiState& ui, const std::string& panelId, const std::string& widgetId)
+{
+    for (auto& widget : ui.registry)
+    {
+        if (widget.panelId == panelId && widget.widgetId == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
+const WidgetState* findWidget(const UiState& ui, const std::string& panelId, const std::string& widgetId)
+{
+    for (const auto& widget : ui.registry)
+    {
+        if (widget.panelId == panelId && widget.widgetId == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
+std::optional<std::pair<std::string, std::string>> resolveLegacyWidgetAlias(std::string_view label)
+{
+    if (label == "panel-fps") return std::pair<std::string, std::string>{"panel-scene-info", "fps"};
+    if (label == "panel-object-count") return std::pair<std::string, std::string>{"panel-scene-info", "object-count"};
+    if (label == "panel-display-grid") return std::pair<std::string, std::string>{"panel-scene-info", "display-grid"};
+    if (label == "panel-bgcolor") return std::pair<std::string, std::string>{"panel-scene-info", "background-color"};
+    if (label == "panel-scene-select") return std::pair<std::string, std::string>{"panel-scene-info", "scene-select"};
+    if (label == "panel-theme-dark") return std::pair<std::string, std::string>{"panel-scene-info", "theme-dark"};
+    if (label == "panel-theme-light") return std::pair<std::string, std::string>{"panel-scene-info", "theme-light"};
+    if (label == "panel-scene-summary-open") return std::pair<std::string, std::string>{"panel-scene-info", "scene-summary-open"};
+    if (label == "panel-scene-selected-object") return std::pair<std::string, std::string>{"panel-scene-info", "selected-object"};
+    if (label == "panel-scene-table") return std::pair<std::string, std::string>{"panel-scene-info", "scene-table"};
+
+    if (label == "panel-selected-object") return std::pair<std::string, std::string>{"panel-properties", "selected-object"};
+    if (label == "input-properties-position-x") return std::pair<std::string, std::string>{"panel-properties", "position-x"};
+    if (label == "input-properties-position-y") return std::pair<std::string, std::string>{"panel-properties", "position-y"};
+    if (label == "input-properties-position-z") return std::pair<std::string, std::string>{"panel-properties", "position-z"};
+    if (label == "input-properties-rotation-x") return std::pair<std::string, std::string>{"panel-properties", "rotation-x"};
+    if (label == "input-properties-rotation-y") return std::pair<std::string, std::string>{"panel-properties", "rotation-y"};
+    if (label == "input-properties-rotation-z") return std::pair<std::string, std::string>{"panel-properties", "rotation-z"};
+    if (label == "input-properties-scale-x") return std::pair<std::string, std::string>{"panel-properties", "scale-x"};
+    if (label == "input-properties-scale-y") return std::pair<std::string, std::string>{"panel-properties", "scale-y"};
+    if (label == "input-properties-scale-z") return std::pair<std::string, std::string>{"panel-properties", "scale-z"};
+
+    return std::nullopt;
+}
+
+bool matchesWidgetReference(std::string_view panelId, std::string_view widgetId, std::string_view reference)
+{
+    if (reference == widgetId) return true;
+    if (auto alias = resolveLegacyWidgetAlias(reference))
+    {
+        return alias->first == panelId && alias->second == widgetId;
+    }
+    return false;
+}
+
+const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& panelId, const std::string& slotId)
+{
+    for (const auto& slot : ui.layoutSlots)
+    {
+        if (slot.panelId == panelId && slot.slotId == slotId) return &slot;
+    }
+    return nullptr;
+}
+
 UiTestAction* findPendingUiAction(UiState& ui, const std::string& label, const std::string& kind)
 {
     for (auto& action : ui.pendingActions)
     {
         if (action.label == label && action.kind == kind) return &action;
+    }
+    return nullptr;
+}
+
+UiTestAction* findPendingUiAction(UiState& ui, std::string_view panelId, std::string_view widgetId, const std::string& kind)
+{
+    for (auto& action : ui.pendingActions)
+    {
+        if (action.kind != kind) continue;
+        if (!action.panelId.empty() || !action.widgetId.empty())
+        {
+            if (action.panelId == panelId && action.widgetId == widgetId) return &action;
+            continue;
+        }
+        if (matchesWidgetReference(panelId, widgetId, action.label))
+        {
+            return &action;
+        }
     }
     return nullptr;
 }

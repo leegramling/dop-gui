@@ -34,6 +34,12 @@ Those belong in:
 
 The application should remain small, testable, and modular while growing toward a richer interactive tool.
 
+Documentation requirement:
+
+- public classes, structs, enums, methods, and free functions should carry Doxygen-style doc comments as they are introduced or refactored
+- the repo should include a contributor-facing `HowToAddTestCommands` guide for extending the command/query and UI test surfaces safely
+- contributor-facing workflow docs should explain how to add, serialize, and verify new command/query/UI-test actions
+
 ## Core Architectural Goals
 
 - keep domain state separate from VSG node ownership
@@ -43,6 +49,13 @@ The application should remain small, testable, and modular while growing toward 
 - allow GUI actions, CLI actions, and tests to converge on the same command surface
 - prefer explicit command/query data over ad hoc callback-driven test hooks
 - keep `data.*` queries backed by plain application state rather than renderer-owned metadata
+- make declarative JSON5 UI the primary authored path while preserving a fallback hand-coded panel path when the JSON5 schema is not yet sufficient
+- build runtime UI/layout trees from authored JSON5 specs so panel classes do not normally own their own layout-construction code
+- let built runtime UI trees own the default widget render dispatch path so panel classes trend toward high-level orchestration rather than per-widget rendering code
+- prefer table-driven or generic bind resolution inside built panel-tree renderers over panel-local `if` chains when widget bindings come from authored JSON5
+- centralize common widget binding and render patterns in reusable panel-tree helpers so authored panels only retain exceptional behavior that the generic JSON5 path cannot yet express
+- keep the goal that standard authored widgets should need no panel-specific renderer code once the generic panel-tree binders cover their behavior
+- treat popup and table behaviors as the current acceptable custom-renderer exceptions for this feature branch, with standard authored controls such as selected-object combos expected to flow through the generic panel-tree binders
 
 ## Top-Level Components
 
@@ -92,6 +105,22 @@ Non-responsibilities:
 - VSG scene construction
 - rendering policy
 - domain visualization updates
+- long-lived ownership of ImGui platform-window callback state
+
+### `WindowManager`
+
+Responsibilities:
+
+- own window lifecycle metadata for the primary window and future tear-out windows
+- observe and eventually own ImGui platform/renderer window callbacks
+- provide a stable boundary where ImGui tear-out requests can be translated into VSG window creation and destruction
+- keep window creation policy separate from `UiLayer` and from scene/render synchronization
+
+Non-responsibilities:
+
+- direct scene graph construction
+- per-frame UI content rendering
+- replacing `InputManager` as the source of raw input events
 
 ### `VsgVisualizer`
 
@@ -102,6 +131,7 @@ Responsibilities:
 - translate application state into VSG structures
 - expose a narrow API to update the visualization
 - own optional scene helpers such as a display grid when requested by state
+- prepare to own per-window render resources, command graphs, and scene/UI presentation for future managed windows
 
 Non-responsibilities:
 
@@ -117,6 +147,7 @@ Responsibilities:
 - define default ImGui look-and-feel choices for the application
 - provide a stable styling boundary for wrapped UI widgets
 - allow later extension or overload without coupling callers to raw ImGui styling setup
+- own named theme colors, widget variants, and panel/window flag defaults
 
 Non-responsibilities:
 
@@ -127,25 +158,40 @@ Non-responsibilities:
 
 Responsibilities:
 
-- represent a testable wrapped ImGui panel boundary
-- own unique labeling and panel-level layout concerns
-- provide a narrow wrapper over raw ImGui panel/window calls
+- represent a testable authored UI panel controller
+- own panel-local widget binding and layout interpretation
+- expose panel callbacks, docking policy, and future tear-out behavior through explicit state and options
+- support a fallback hand-coded panel path for early prototypes or exceptional panels that still need an `initialize` builder phase and a custom `render` method
 
 Non-responsibilities:
 
-- low-level renderer ownership
+- low-level ImGui window begin/end calls
 - application-global theme policy
+
+### `PanelWindow`
+
+Responsibilities:
+
+- provide a narrow wrapper over raw ImGui panel/window calls
+- apply authored window flags and minimum size constraints
+- register stable panel labels for test/query inspection
+
+Non-responsibilities:
+
+- panel-local business logic
+- authored layout interpretation
 
 ### `UI Widget Wrappers`
 
 Responsibilities:
 
-- provide wrapped `Text`, `Input`, `Button`, and `Checkbox` functions over raw ImGui widgets
+- provide wrapped `Text`, `Input`, `Button`, `Checkbox`, `RadioButton`, `ComboBox`, `Popup`, `Table`, and additional input variants over raw ImGui widgets
 - default to basic styling while allowing overloads or richer options later
 - use unique labels so widgets can be registered, queried, and tested consistently
 - support headless or test-mode evaluation against explicit state where practical
 - accept explicit test input so headless tests and GUI-driven simulation can control widget behavior deliberately
 - return enough widget result/state so tests can verify button presses, checkbox changes, input edits, and displayed text
+- support explicit callbacks or callback adapters so panel/widget behavior can remain testable rather than being buried in ad hoc ImGui code
 
 Non-responsibilities:
 
@@ -232,8 +278,33 @@ Initial ImGui surface should include:
 - panels
 - wrapped text widgets
 - wrapped input widgets
+
+Declarative UI direction:
+
+- widget existence, binding, callbacks, and layout should converge into a JSON5-authored UI description
+- layout should move toward a small flexbox-like schema rather than remaining permanently hard-coded in C++ builder code
+- Yoga should remain the layout engine underneath that schema
+- C++ panel controllers should interpret authored layout data rather than duplicating widget ids and slot structure long-term
+- the intended authored vocabulary should stay intentionally small at first:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+
+Transition rule:
+
+- builder-style Yoga layout in panel init code is acceptable as a temporary adapter
+- new work should bias toward making layout declarative rather than expanding hand-written builder trees indefinitely
 - wrapped button widgets
 - wrapped checkbox widgets
+- radio buttons
+- combo boxes
+- popups
+- tables
+- theme colors and window flags
+- docking and tear-out aware panel behavior
 
 Required direction:
 
@@ -245,6 +316,7 @@ Required direction:
 - wrapped widgets should be able to consume explicit test input such as "clicked", "checked", or "input text"
 - in live GUI mode, tests should still be able to simulate those UI interactions against the same wrapped widgets
 - UI layout and properties should be authorable in JSON5 rather than hard-coded everywhere
+- panel layout should be able to use a Yoga-based rect computation path, informed by the local `../vsgLayt` examples and `setPos`-style placement model
 
 State ownership guidance:
 
@@ -258,6 +330,19 @@ Initial UI target:
 - a menubar with `File -> Exit`
 - a menubar with `Scene -> cubes`
 - a menubar with `Scene -> Shapes`
+
+Next UI expansion target:
+
+- richer widget coverage including radio groups, combos, popups, and tables
+- panel callbacks that trigger explicit commands or state updates
+- docking and tear-out capable panels where supported by the local ImGui integration
+- Yoga-backed layout definitions in panel init code, using the local `../vsgLayt` examples as the first reference point
+
+## Scene Growth Direction
+
+- bootstrap scenes should grow from simple generated primitives toward authored mixed scenes
+- scene data should support `.gltf` and `.glb` assets in addition to current primitive records
+- scene structures should be able to represent larger composed scenes rather than only a flat bootstrap object list
 - a panel showing FPS
 - a panel showing object count
 - a panel input for background color expressed as a hex string such as `#0000FF`

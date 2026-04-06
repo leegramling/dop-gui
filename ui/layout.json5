@@ -15,6 +15,171 @@
     },
   ],
   panels: [
-    { label: "Scene Info" },
+    {
+      label: "Scene Info",
+      open: true,
+      closable: false,
+      flags: ["NoCollapse"],
+      layout: { x: 24, y: 48, w: 360, h: 520 },
+      flexLayout: {
+        type: "column",
+        gap: 8,
+        children: [
+          { widget: "fps", width: 360, height: 20 },
+          { widget: "object-count", width: 360, height: 20 },
+          { widget: "display-grid", width: 144, height: 24 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { widget: "background-color", flex: 1, height: 24 },
+              { labelFor: "background-color", width: 116, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { widget: "scene-select", flex: 1, height: 24 },
+              { labelFor: "scene-select", width: 116, height: 24 },
+            ],
+          },
+          { slot: "panel-theme-label", width: 360, height: 20 },
+          { widget: "theme-dark", width: 120, height: 24 },
+          { widget: "theme-light", width: 120, height: 24 },
+          { widget: "scene-summary-open", width: 144, height: 24 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "selected-object", width: 116, height: 24 },
+              { widget: "selected-object", flex: 1, height: 24 },
+            ],
+          },
+          { slot: "panel-scene-table-label", width: 360, height: 20 },
+          { widget: "scene-table", width: 360, height: 180 },
+        ],
+      },
+      widgets: [
+        { id: "fps", slotId: "panel-fps", type: "text", label: "FPS", bind: "view.fps.text" },
+        { id: "object-count", slotId: "panel-object-count", type: "text", label: "Objects", bind: "scene.objectCount.text" },
+        { id: "display-grid", slotId: "panel-display-grid", type: "checkbox", label: "Display Grid", bind: "ui.displayGrid", onChange: "ui.grid.set_visible", layout: { x: 16, y: 64, w: 160, h: 24 } },
+        { id: "background-color", slotId: "panel-bgcolor", labelSlot: "panel-bgcolor-label", type: "input", label: "Background Color", bind: "view.backgroundColorHex", onChange: "view.background.set_hex", layout: { x: 16, y: 96, w: 220, h: 24 } },
+        { id: "scene-select", slotId: "panel-scene-select", labelSlot: "panel-scene-select-label", type: "combo", label: "Scene", bind: "scene.name", onChange: "scene.load", options: ["bootstrap", "cubes", "shapes"], layout: { x: 16, y: 128, w: 220, h: 24 } },
+        { id: "theme-dark", slotId: "panel-theme-dark", type: "radio", label: "Dark", bind: "ui.themeMode", arg: "dark", onClick: "ui.theme.set" },
+        { id: "theme-light", slotId: "panel-theme-light", type: "radio", label: "Light", bind: "ui.themeMode", arg: "light", onClick: "ui.theme.set" },
+        { id: "scene-summary-open", slotId: "panel-scene-summary-open", type: "button", label: "Scene Summary", layout: { x: 16, y: 184, w: 144, h: 24 } },
+        { id: "popup-scene-summary", type: "popup", label: "Scene Summary" },
+        { id: "selected-object", slotId: "panel-scene-selected-object", labelSlot: "panel-scene-selected-object-label", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object" },
+        { id: "scene-table", slotId: "panel-scene-table", labelSlot: "panel-scene-table-label", type: "table", label: "Scene Objects", bind: "scene.objects", columns: ["Select", "Id", "Kind", "Position"], layout: { x: 16, y: 232, w: 328, h: 180 } },
+      ],
+    },
+    {
+      label: "Properties",
+      open: true,
+      closable: true,
+      flags: ["NoCollapse"],
+      layout: { x: 408, y: 48, w: 360, h: 560 },
+      flexLayout: {
+        type: "column",
+        gap: 8,
+        children: [
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "selected-object", width: 116, height: 24 },
+              { widget: "selected-object", flex: 1, height: 24 },
+            ],
+          },
+          { widget: "selected-object-summary", width: 360, height: 20 },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "position-x", width: 116, height: 24 },
+              { widget: "position-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "position-y", width: 116, height: 24 },
+              { widget: "position-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "position-z", width: 116, height: 24 },
+              { widget: "position-z", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "rotation-x", width: 116, height: 24 },
+              { widget: "rotation-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "rotation-y", width: 116, height: 24 },
+              { widget: "rotation-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "rotation-z", width: 116, height: 24 },
+              { widget: "rotation-z", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "scale-x", width: 116, height: 24 },
+              { widget: "scale-x", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "scale-y", width: 116, height: 24 },
+              { widget: "scale-y", flex: 1, height: 24 },
+            ],
+          },
+          {
+            type: "row",
+            gap: 8,
+            children: [
+              { labelFor: "scale-z", width: 116, height: 24 },
+              { widget: "scale-z", flex: 1, height: 24 },
+            ],
+          },
+        ],
+      },
+      widgets: [
+        { id: "selected-object", slotId: "panel-selected-object", labelSlot: "panel-properties-selected-object-label", type: "combo", label: "Selected Object", bind: "scene.selectedObjectId", onChange: "scene.select_object", layout: { x: 132, y: 40, w: 200, h: 24 } },
+        { id: "selected-object-summary", slotId: "panel-properties-selected-object", type: "text", label: "Selected Summary", bind: "scene.selectedObjectSummary" },
+        { id: "position-x", slotId: "input-properties-position-x", type: "input_double", label: "Location X", bind: "scene.selected.position.x", unit: "m", precision: 2 },
+        { id: "position-y", slotId: "input-properties-position-y", type: "input_double", label: "Location Y", bind: "scene.selected.position.y", unit: "m", precision: 2 },
+        { id: "position-z", slotId: "input-properties-position-z", type: "input_double", label: "Location Z", bind: "scene.selected.position.z", unit: "m", precision: 2 },
+        { id: "rotation-x", slotId: "input-properties-rotation-x", type: "input_double", label: "Rotation X", bind: "scene.selected.rotation.x", unit: "deg", precision: 2 },
+        { id: "rotation-y", slotId: "input-properties-rotation-y", type: "input_double", label: "Rotation Y", bind: "scene.selected.rotation.y", unit: "deg", precision: 2 },
+        { id: "rotation-z", slotId: "input-properties-rotation-z", type: "input_double", label: "Rotation Z", bind: "scene.selected.rotation.z", unit: "deg", precision: 2 },
+        { id: "scale-x", slotId: "input-properties-scale-x", type: "input_double", label: "Scale X", bind: "scene.selected.scale.x", precision: 6 },
+        { id: "scale-y", slotId: "input-properties-scale-y", type: "input_double", label: "Scale Y", bind: "scene.selected.scale.y", precision: 6 },
+        { id: "scale-z", slotId: "input-properties-scale-z", type: "input_double", label: "Scale Z", bind: "scene.selected.scale.z", precision: 6 },
+      ],
+    },
   ],
 }

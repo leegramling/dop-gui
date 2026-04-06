@@ -77,6 +77,43 @@
 - map authored UI descriptions into wrapped ImGui elements
 - expose enough UI state for test queries such as labels, checkbox state, and panel visibility/geometry
 
+## Phase 3D: Expanded Widget And Panel System
+
+- add more wrapped widget types including radio buttons, combo boxes, popups, tables, and richer input variants
+- add explicit panel callbacks and panel/window flag support
+- expand `Theme` to include named colors and reusable widget/window variants
+- introduce docking and tear-out aware panel options where the local ImGui/vsgImGui path supports them
+
+## Phase 3E: Yoga Layout Integration
+
+- evaluate the local `../vsgLayt` examples and notes as the first implementation reference
+- add a Yoga-backed layout adapter for panel-local widget placement
+- support `setPos`-style widget placement driven by Yoga-computed rects in panel init code
+- keep the layout computation testable and separate from widget rendering where possible
+
+## Phase 3E1: Declarative JSON5 Flex Layout
+
+- define a minimal JSON5 layout schema that is closer to flexbox than to ad hoc widget coordinates
+- keep Yoga as the layout engine, but generate Yoga trees from authored JSON5 layout data
+- start with a small vocabulary:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+- convert one real panel first, with `Properties` as the first target
+- preserve existing `ui.layout.slot.*` and `ui.widget.*` query behavior while the layout source changes
+- avoid exposing the entire Yoga API in JSON5 until the smaller layout vocabulary stabilizes
+- preserve a fallback hand-coded panel path for cases where a panel still needs a custom `initialize` builder flow and explicit `render` logic before the JSON5 UI schema is expressive enough
+
+## Phase 3F: Window Management And Tear-Out Preparation
+
+- introduce `WindowManager` as the lifecycle boundary for the primary window and future tear-out windows
+- route ImGui docking/platform callback observation through `WindowManager`
+- prepare `VsgVisualizer` ownership boundaries for per-window render resources and command graphs
+- defer actual tear-out window creation until the callback path and VSG window policy are explicit
+
 ## Phase 3C: First Tool UI
 
 - add a menubar with `File -> Exit`
@@ -93,18 +130,44 @@
 - add task-oriented examples
 - add tests for pure data transforms and serialization paths
 
+## Phase 4A: Documentation Quality
+
+- add Doxygen-style doc comments to public classes, structs, enums, methods, and free functions
+- add a `HowToAddTestCommands` guide for extending the command/query and UI test surfaces
+- expand the repository docs so command/query/UI-test additions have a documented workflow and verification path
+
+## Phase 4B: Scene Asset Growth
+
+- add scene support for `.gltf` and `.glb` assets
+- grow the scene model so larger composed scenes can be constructed and queried cleanly
+- keep primitive-generated objects available for tests and lightweight bootstrap scenes
+
 ## Current Focus
 
-Current focus is `Phase 3B`.
+Current focus is broader authored-layout adoption after the first `Phase 3E1` conversions: keep the current Yoga/query path stable while reducing the remaining builder-only layout assumptions and moving from long flat widget ids toward panel-local declarative ids.
 
 Success criteria:
 
-- expand the authored JSON5 UI format beyond the current first menu/panel slice
-- add richer `ui.*`, `model.*`, `view.*`, and `data.*` inspection paths where needed
-- keep the tested command/query and live playback seams stable while the authored UI grows
+- keep the tested command/query and live playback seams stable while layout becomes more declarative
+- prove the main panels can load their flex-layout structures from JSON5 and still drive Yoga layout rects
+- preserve `ui.layout.slot.*` inspection while changing the authored layout source
+- preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
+- shift UI test command usage toward panel-scoped widget ids so shorter local names no longer depend on one global flat action namespace
+- move panel-local layout ownership out of specific panel classes and into a reusable built JSON5 panel-tree path
+- move panel-local widget rendering dispatch into the reusable built panel-tree path so panel classes stop hand-walking widget specs
+- replace remaining per-panel bind `if` chains with table-driven or generic bind resolution as panel-tree rendering takes over
+- extend the built panel-tree render path from `Properties` to `Scene Info` so authored panels share one default render architecture
+- move common widget binding/render patterns into reusable panel-tree helpers so panel classes keep only exceptional UI behavior
+- migrate both current panels onto those generic panel-tree helpers so the remaining custom code is isolated to genuinely exceptional widgets
+- finish the current feature by moving selected-object controls onto the same generic panel-tree binder path, leaving popup and table behavior as the last intentional custom renderers to defer
+- keep deeper window/tear-out work documented but deferred until the callback path is viable
+- keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
 
 Next focus after current slice:
 
-- add more authored widget properties and panel structure to `ui/layout.json5`
-- introduce more application-bound inputs and outputs through the wrapper layer
-- decide whether widget registry metadata should become a dedicated UI subsystem record rather than staying under `UiState`
+- expand authored layout support only after the first minimal vocabulary is stable
+- finish shortening authored widget ids panel by panel once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
+- shift more command/query and test usage toward scoped widget paths as shorter local ids become normal
+- extend the reusable JSON5 panel-tree path beyond `Properties` so panel classes stop owning custom layout builders by default
+- extend the reusable JSON5 panel-tree render path beyond `Properties` so panel classes stop owning custom widget dispatch by default
+- add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

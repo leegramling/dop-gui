@@ -1,0 +1,17 @@
+{
+  queries: [
+    "ui.layout",
+    "ui.panel.panel-scene-info",
+    "ui.panel.panel-scene-info.widgets",
+    "ui.panel.panel-scene-info.widget.background-color",
+    "ui.panel.panel-scene-info.widget.scene-summary-open",
+    "ui.panel.panel-scene-info.widget.scene-table",
+    "ui.widget.panel-bgcolor",
+    "ui.widget.panel-scene-summary-open",
+    "ui.widget.panel-scene-table",
+    "ui.panel.panel-properties",
+    "ui.panel.panel-properties.widgets",
+    "ui.panel.panel-properties.widget.selected-object",
+    "ui.widget.panel-selected-object",
+  ],
+}

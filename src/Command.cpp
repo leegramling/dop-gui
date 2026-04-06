@@ -121,8 +121,13 @@ std::string canonicalizeCommandPath(const std::string& name)
     if (path == "help") return path;
     if (path == "app.exit") return path;
     if (path == "state.reset.bootstrap") return path;
+    if (path == "ui.theme.set") return path;
+    if (path == "scene.load") return path;
     if (path == "scene.load.cubes") return path;
     if (path == "scene.load.shapes") return path;
+    if (path == "scene.select_object") return path;
+    if (path == "ui.grid.set_visible") return path;
+    if (path == "view.background.set_hex") return path;
     if (path == "sleep.ms") return path;
 
     constexpr std::string_view translatePrefix = "data.scene.object.";
@@ -141,12 +146,46 @@ std::string canonicalizeCommandPath(const std::string& name)
     constexpr std::string_view uiClickPrefix = "ui.test.click.";
     constexpr std::string_view uiSetBoolPrefix = "ui.test.set_bool.";
     constexpr std::string_view uiSetTextPrefix = "ui.test.set_text.";
+    constexpr std::string_view uiPanelPrefix = "ui.test.panel.";
 
     if (path.rfind(uiClickPrefix.data(), 0) == 0 && path.size() > uiClickPrefix.size()) return path;
     if (path.rfind(uiSetBoolPrefix.data(), 0) == 0 && path.size() > uiSetBoolPrefix.size()) return path;
     if (path.rfind(uiSetTextPrefix.data(), 0) == 0 && path.size() > uiSetTextPrefix.size()) return path;
+    if (path.rfind(uiPanelPrefix.data(), 0) == 0 && path.size() > uiPanelPrefix.size()) return path;
 
     throw std::runtime_error("Unknown command: " + name);
+}
+
+struct PanelScopedUiAction
+{
+    std::string panelId;
+    std::string widgetId;
+    std::string kind;
+};
+
+PanelScopedUiAction parsePanelScopedUiAction(std::string_view canonicalPath)
+{
+    constexpr std::string_view prefix = "ui.test.panel.";
+    const auto suffix = canonicalPath.substr(prefix.size());
+
+    auto clickPos = suffix.find(".click.");
+    auto setBoolPos = suffix.find(".set_bool.");
+    auto setTextPos = suffix.find(".set_text.");
+
+    auto build = [&](std::size_t splitPos, std::string_view separator, std::string_view kind) -> PanelScopedUiAction
+    {
+        PanelScopedUiAction action;
+        action.panelId = std::string(suffix.substr(0, splitPos));
+        action.widgetId = std::string(suffix.substr(splitPos + separator.size()));
+        action.kind = std::string(kind);
+        return action;
+    };
+
+    if (clickPos != std::string_view::npos) return build(clickPos, ".click.", "click");
+    if (setBoolPos != std::string_view::npos) return build(setBoolPos, ".set_bool.", "set_bool");
+    if (setTextPos != std::string_view::npos) return build(setTextPos, ".set_text.", "set_text");
+
+    throw std::runtime_error("Invalid panel-scoped ui.test command: " + std::string(canonicalPath));
 }
 
 std::string executeHelp(App&, const CommandByPath&)
@@ -182,6 +221,17 @@ std::string executeResetBootstrap(App& app, const CommandByPath&)
     return "{\"state\":\"bootstrap_reset\"}";
 }
 
+std::string executeSetTheme(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("ui.theme.set requires a theme mode argument.");
+    if (command.rawArg != "dark" && command.rawArg != "light")
+    {
+        throw std::runtime_error("ui.theme.set supports only dark or light.");
+    }
+    app.state().ui.themeMode = command.rawArg;
+    return "{\"themeMode\":\"" + escapeJson(command.rawArg) + "\"}";
+}
+
 std::string sceneLoadResult(const App& app, const std::string& sceneName)
 {
     std::ostringstream json;
@@ -208,6 +258,60 @@ std::string executeLoadShapes(App& app, const CommandByPath&)
 {
     app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5");
     return sceneLoadResult(app, "shapes");
+}
+
+std::string executeLoadScene(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("scene.load requires a scene name argument.");
+    if (command.rawArg == "bootstrap")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/bootstrap_scene.json5");
+        return sceneLoadResult(app, "bootstrap");
+    }
+    if (command.rawArg == "cubes")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/cubes.json5");
+        return sceneLoadResult(app, "cubes");
+    }
+    if (command.rawArg == "shapes")
+    {
+        app.loadSceneFile(std::string(DOP_GUI_SOURCE_DIR) + "/scenes/shapes.json5");
+        return sceneLoadResult(app, "shapes");
+    }
+
+    throw std::runtime_error("Unknown scene.load target: " + command.rawArg);
+}
+
+std::string executeSelectObject(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("scene.select_object requires an object id argument.");
+    auto* object = findSceneObject(app.state().scene, command.rawArg);
+    if (!object) throw std::runtime_error("Unknown scene object: " + command.rawArg);
+    app.state().scene.selectedObjectId = object->id;
+    return "{\"selectedObjectId\":\"" + escapeJson(object->id) + "\"}";
+}
+
+std::string executeSetGridVisible(App& app, const CommandByPath& command)
+{
+    bool visible = false;
+    if (command.rawArg == "1" || command.rawArg == "true") visible = true;
+    else if (command.rawArg == "0" || command.rawArg == "false") visible = false;
+    else throw std::runtime_error("ui.grid.set_visible requires true/false or 1/0.");
+    app.state().ui.displayGrid = visible;
+    return std::string("{\"displayGrid\":") + (visible ? "true}" : "false}");
+}
+
+std::string executeSetBackgroundHex(App& app, const CommandByPath& command)
+{
+    if (command.rawArg.empty()) throw std::runtime_error("view.background.set_hex requires a hex string.");
+    vsg::vec4 parsed{};
+    if (!tryParseHexColor(command.rawArg, parsed))
+    {
+        throw std::runtime_error("view.background.set_hex requires a valid hex color.");
+    }
+    app.state().view.backgroundColorHex = command.rawArg;
+    app.state().view.backgroundColor = parsed;
+    return "{\"hex\":\"" + escapeJson(command.rawArg) + "\"}";
 }
 
 std::string executeSceneTranslate(App& app, const CommandByPath& command)
@@ -284,6 +388,19 @@ std::string executeUiClick(App& app, const CommandByPath& command)
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"click\"}";
 }
 
+std::string executePanelScopedUiClick(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"click\"}";
+}
+
 std::string executeUiSetBool(App& app, const CommandByPath& command)
 {
     constexpr std::string_view prefix = "ui.test.set_bool.";
@@ -303,6 +420,26 @@ std::string executeUiSetBool(App& app, const CommandByPath& command)
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_bool\",\"value\":" + (boolValue ? "true" : "false") + "}";
 }
 
+std::string executePanelScopedUiSetBool(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+
+    bool boolValue = false;
+    if (command.rawArg == "1" || command.rawArg == "true") boolValue = true;
+    else if (command.rawArg == "0" || command.rawArg == "false") boolValue = false;
+    else throw std::runtime_error("ui.test.panel.<panel>.set_bool.<widget> requires true/false or 1/0.");
+
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+        .boolValue = boolValue,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"set_bool\",\"value\":" + (boolValue ? "true" : "false") + "}";
+}
+
 std::string executeUiSetText(App& app, const CommandByPath& command)
 {
     constexpr std::string_view prefix = "ui.test.set_text.";
@@ -316,6 +453,20 @@ std::string executeUiSetText(App& app, const CommandByPath& command)
     return "{\"label\":\"" + escapeJson(label) + "\",\"kind\":\"set_text\",\"value\":\"" + escapeJson(command.rawArg) + "\"}";
 }
 
+std::string executePanelScopedUiSetText(App& app, const CommandByPath& command)
+{
+    const auto action = parsePanelScopedUiAction(command.canonicalPath);
+    app.state().ui.pendingActions.push_back(UiTestAction{
+        .label = action.widgetId,
+        .panelId = action.panelId,
+        .widgetId = action.widgetId,
+        .kind = action.kind,
+        .textValue = command.rawArg,
+    });
+
+    return "{\"panelId\":\"" + escapeJson(action.panelId) + "\",\"widgetId\":\"" + escapeJson(action.widgetId) + "\",\"kind\":\"set_text\",\"value\":\"" + escapeJson(command.rawArg) + "\"}";
+}
+
 const std::vector<CommandRoute>& commandRoutes()
 {
     static const std::vector<CommandRoute> routes{
@@ -323,11 +474,23 @@ const std::vector<CommandRoute>& commandRoutes()
         CommandRoute{.prefix = "noop", .execute = executeNoOp},
         CommandRoute{.prefix = "app.exit", .execute = executeAppExit},
         CommandRoute{.prefix = "state.reset.bootstrap", .execute = executeResetBootstrap},
+        CommandRoute{.prefix = "ui.theme.set", .execute = executeSetTheme},
         CommandRoute{.prefix = "scene.load.cubes", .execute = executeLoadCubes},
         CommandRoute{.prefix = "scene.load.shapes", .execute = executeLoadShapes},
+        CommandRoute{.prefix = "scene.load", .execute = executeLoadScene},
+        CommandRoute{.prefix = "scene.select_object", .execute = executeSelectObject},
+        CommandRoute{.prefix = "ui.grid.set_visible", .execute = executeSetGridVisible},
+        CommandRoute{.prefix = "view.background.set_hex", .execute = executeSetBackgroundHex},
         CommandRoute{.prefix = "data.scene.object.", .execute = executeSceneTranslate},
         CommandRoute{.prefix = "view.camera.set_pose", .execute = executeSetCameraPose},
         CommandRoute{.prefix = "sleep.ms", .execute = executeSleep},
+        CommandRoute{.prefix = "ui.test.panel.", .execute = [](App& app, const CommandByPath& command) -> std::string
+        {
+            if (command.canonicalPath.find(".click.") != std::string::npos) return executePanelScopedUiClick(app, command);
+            if (command.canonicalPath.find(".set_bool.") != std::string::npos) return executePanelScopedUiSetBool(app, command);
+            if (command.canonicalPath.find(".set_text.") != std::string::npos) return executePanelScopedUiSetText(app, command);
+            throw std::runtime_error("Invalid panel-scoped ui.test command: " + command.canonicalPath);
+        }},
         CommandRoute{.prefix = "ui.test.click.", .execute = executeUiClick},
         CommandRoute{.prefix = "ui.test.set_bool.", .execute = executeUiSetBool},
         CommandRoute{.prefix = "ui.test.set_text.", .execute = executeUiSetText},
@@ -418,11 +581,19 @@ std::vector<std::string> commandNames()
         "help",
         "app.exit",
         "state.reset.bootstrap",
+        "ui.theme.set=<mode>",
+        "scene.load=<name>",
         "scene.load.cubes",
         "scene.load.shapes",
+        "scene.select_object=<id>",
+        "ui.grid.set_visible=<true|false>",
+        "view.background.set_hex=<hex>",
         "data.scene.object.<id>.translate=<dx>,<dy>,<dz>",
         "view.camera.set_pose=<eyeX>,<eyeY>,<eyeZ>,<centerX>,<centerY>,<centerZ>,<upX>,<upY>,<upZ>",
         "sleep.ms=<milliseconds>",
+        "ui.test.panel.<panel>.click.<widget>",
+        "ui.test.panel.<panel>.set_bool.<widget>=<true|false>",
+        "ui.test.panel.<panel>.set_text.<widget>=<value>",
         "ui.test.click.<label>",
         "ui.test.set_bool.<label>=<true|false>",
         "ui.test.set_text.<label>=<value>",

@@ -4,8 +4,9 @@
 #include "InputManager.h"
 #include "Query.h"
 #include "ScriptRunner.h"
-#include "UiLayer.h"
+#include "UiManager.h"
 #include "VsgVisualizer.h"
+#include "WindowManager.h"
 
 #include <vsg/all.h>
 
@@ -91,8 +92,9 @@ App::App(int argc, char** argv) :
     _argv(argv),
     _state(),
     _inputManager(std::make_unique<InputManager>()),
+    _windowManager(std::make_unique<WindowManager>()),
     _visualizer(std::make_unique<VsgVisualizer>()),
-    _uiLayer(std::make_unique<UiLayer>()),
+    _uiManager(std::make_unique<UiManager>()),
     _scriptRunner(std::make_unique<ScriptRunner>())
 {
 }
@@ -128,7 +130,7 @@ int App::run()
         _startupCommand = parseCommandRequest(commandName);
         _startupQuery = parseQueryRequest(queryName);
         _state.ui.testMode = uiTestMode;
-        if (_state.ui.testMode) _uiLayer->evaluate(_state);
+        if (_state.ui.testMode) _uiManager->evaluate(_state);
 
         if (arguments.errors())
         {
@@ -157,10 +159,11 @@ int App::run()
         }
 
         viewer->addWindow(window);
+        _windowManager->registerPrimaryWindow(window);
 
         _visualizer->initialize(_state, window);
-        _uiLayer->initialize(window, _visualizer->renderGraph(), _state);
-        if (auto uiHandler = _uiLayer->eventHandler()) viewer->addEventHandler(uiHandler);
+        _uiManager->initialize(window, _visualizer->renderGraph(), _state, *_windowManager);
+        if (auto uiHandler = _uiManager->eventHandler()) viewer->addEventHandler(uiHandler);
         _inputManager->attachDefaultHandlers(viewer, _visualizer->camera());
         _visualizer->connect(viewer);
 
@@ -304,6 +307,16 @@ const InputManager& App::inputManager() const
     return *_inputManager;
 }
 
+WindowManager& App::windowManager()
+{
+    return *_windowManager;
+}
+
+const WindowManager& App::windowManager() const
+{
+    return *_windowManager;
+}
+
 AppState& App::state()
 {
     return _state;
@@ -318,21 +331,43 @@ void App::refreshUiState()
 {
     if (_state.ui.testMode)
     {
-        _uiLayer->evaluate(_state);
+        _uiManager->evaluate(_state);
         if (applyStateRequests())
         {
-            _uiLayer->evaluate(_state);
+            _uiManager->evaluate(_state);
         }
     }
 }
 
 bool App::applyStateRequests()
 {
-    if (!_state.ui.requestedSceneFile) return false;
+    bool changed = false;
 
-    loadSceneFile(*_state.ui.requestedSceneFile);
-    _state.ui.requestedSceneFile.reset();
-    return true;
+    if (!_state.ui.requestedCommands.empty())
+    {
+        auto commands = _state.ui.requestedCommands;
+        _state.ui.requestedCommands.clear();
+        for (const auto& commandText : commands)
+        {
+            auto command = parseCommandRequest(commandText);
+            if (!command) continue;
+            auto result = ::executeCommand(*this, *command);
+            if (const auto* error = std::get_if<CommandError>(&result))
+            {
+                throw std::runtime_error(error->message);
+            }
+            changed = true;
+        }
+    }
+
+    if (_state.ui.requestedSceneFile)
+    {
+        loadSceneFile(*_state.ui.requestedSceneFile);
+        _state.ui.requestedSceneFile.reset();
+        changed = true;
+    }
+
+    return changed;
 }
 
 void App::loadSceneFile(const std::string& filename)
