@@ -1,9 +1,10 @@
 {
   commands: [
-    "ui.test.click.panel-scene-summary-open",
+    "ui.test.click.scene-summary-open",
   ],
   queries: [
     "ui.widget.popup-scene-summary",
+    "ui.panel.panel-scene-info.widget.scene-table",
     "ui.widget.popup-scene-summary-name",
     "ui.widget.panel-scene-table",
     "ui.widget.table-scene-objects-row-bootstrap_triangle-kind",

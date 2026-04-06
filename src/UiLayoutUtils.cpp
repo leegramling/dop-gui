@@ -176,7 +176,7 @@ std::string renderSelectedObjectControl(
 
     setNextWidgetLayoutIfPresent(uiState, layout, slots.valueSlotId);
     const auto selectedValue = ComboBox(uiState, widgetId, "", selectedObjectId, objectIds);
-    if (auto* widget = findWidget(uiState, widgetId))
+    if (auto* widget = findWidget(uiState, uiState.currentPanelId, widgetId))
     {
         widget->textValue = selectedValue;
     }

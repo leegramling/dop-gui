@@ -12,6 +12,26 @@ namespace
 {
 WidgetState& ensureWidget(UiState& uiState, std::string_view label, std::string_view type)
 {
+    if (!uiState.currentPanelId.empty())
+    {
+        if (auto* existing = findWidget(uiState, uiState.currentPanelId, std::string(label)))
+        {
+            existing->label = std::string(label);
+            existing->panelId = uiState.currentPanelId;
+            existing->widgetId = std::string(label);
+            existing->type = std::string(type);
+            return *existing;
+        }
+
+        uiState.registry.push_back(WidgetState{
+            .label = std::string(label),
+            .panelId = uiState.currentPanelId,
+            .widgetId = std::string(label),
+            .type = std::string(type),
+        });
+        return uiState.registry.back();
+    }
+
     if (auto* existing = findWidget(uiState, std::string(label)))
     {
         existing->panelId = uiState.currentPanelId;
@@ -31,7 +51,7 @@ WidgetState& ensureWidget(UiState& uiState, std::string_view label, std::string_
 
 bool consumeClick(UiState& uiState, std::string_view label)
 {
-    if (auto* action = findPendingUiAction(uiState, std::string(label), "click"))
+    if (auto* action = findPendingUiAction(uiState, uiState.currentPanelId, label, "click"))
     {
         action->kind.clear();
         return true;
@@ -41,7 +61,7 @@ bool consumeClick(UiState& uiState, std::string_view label)
 
 bool consumeBool(UiState& uiState, std::string_view label, bool& value)
 {
-    if (auto* action = findPendingUiAction(uiState, std::string(label), "set_bool"))
+    if (auto* action = findPendingUiAction(uiState, uiState.currentPanelId, label, "set_bool"))
     {
         value = action->boolValue;
         action->kind.clear();
@@ -52,7 +72,7 @@ bool consumeBool(UiState& uiState, std::string_view label, bool& value)
 
 bool consumeText(UiState& uiState, std::string_view label, std::string& value)
 {
-    if (auto* action = findPendingUiAction(uiState, std::string(label), "set_text"))
+    if (auto* action = findPendingUiAction(uiState, uiState.currentPanelId, label, "set_text"))
     {
         value = action->textValue;
         action->kind.clear();

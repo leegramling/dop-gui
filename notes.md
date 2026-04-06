@@ -39,6 +39,7 @@
 - [x] Add panel-aware widget registry metadata so runtime queries can resolve widgets by both flat id and panel-scoped id.
 - [x] Add `ui.panel.<panel>.widget.<id>` as the first panel-scoped widget query path, preparing for shorter panel-local widget ids later.
 - [x] Convert the `Properties` panel to shorter panel-local widget ids while preserving stable Yoga slot ids and compatibility aliases for the older flat widget query names.
+- [x] Convert `Scene Info` to shorter panel-local widget ids while preserving the existing Yoga slot ids and keeping older flat widget ids working through panel-aware compatibility aliases.
 
 ## Architecture Notes
 

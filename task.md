@@ -24,7 +24,8 @@
 - [x] Preserve `ui.layout.slot.*` and `ui.widget.*` query behavior during the layout-source transition.
 - [x] Move `Scene Info` from builder code to authored JSON5 flex layout.
 - [x] Add widget-aware slot references so authored flex layout no longer has to repeat most value and label slot ids verbatim.
-- [ ] Convert `Scene Info` widget ids to shorter panel-local ids while preserving panel-scoped queries and legacy flat widget-query aliases during the transition.
+- [x] Convert `Scene Info` widget ids to shorter panel-local ids while preserving panel-scoped queries and legacy flat widget-query aliases during the transition.
+- [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
 
 ## Next Slice Candidates
 

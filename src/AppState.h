@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 /**
@@ -261,9 +263,31 @@ const WidgetState* findWidget(const UiState& ui, const std::string& label);
  * @param ui UI state to search.
  * @param panelId Stable panel identifier.
  * @param widgetId Stable widget identifier within the panel.
+ * @return Mutable widget pointer, or null when not found.
+ */
+WidgetState* findWidget(UiState& ui, const std::string& panelId, const std::string& widgetId);
+/**
+ * @brief Find an immutable registered widget by panel id and widget id.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @param widgetId Stable widget identifier within the panel.
  * @return Immutable widget pointer, or null when not found.
  */
 const WidgetState* findWidget(const UiState& ui, const std::string& panelId, const std::string& widgetId);
+/**
+ * @brief Resolve a legacy flat widget label to a panel-scoped widget id pair.
+ * @param label Legacy widget label or flat id.
+ * @return Panel id and widget id when the label is recognized as a compatibility alias.
+ */
+std::optional<std::pair<std::string, std::string>> resolveLegacyWidgetAlias(std::string_view label);
+/**
+ * @brief Check whether a widget reference matches a panel-scoped widget.
+ * @param panelId Stable panel identifier.
+ * @param widgetId Stable widget identifier within the panel.
+ * @param reference Flat or legacy widget reference to compare.
+ * @return True when the reference resolves to the panel-scoped widget.
+ */
+bool matchesWidgetReference(std::string_view panelId, std::string_view widgetId, std::string_view reference);
 /**
  * @brief Find an immutable registered layout slot by panel id and slot id.
  * @param ui UI state to search.
@@ -280,6 +304,15 @@ const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& pa
  * @return Mutable pending action pointer, or null when not found.
  */
 UiTestAction* findPendingUiAction(UiState& ui, const std::string& label, const std::string& kind);
+/**
+ * @brief Find a pending simulated UI action by panel-scoped widget id and kind.
+ * @param ui UI state to search.
+ * @param panelId Stable panel identifier.
+ * @param widgetId Stable widget identifier within the panel.
+ * @param kind Pending action kind.
+ * @return Mutable pending action pointer, or null when not found.
+ */
+UiTestAction* findPendingUiAction(UiState& ui, std::string_view panelId, std::string_view widgetId, const std::string& kind);
 /**
  * @brief Format a linear color as a hex string.
  * @param color Linear RGBA color.

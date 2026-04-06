@@ -548,6 +548,15 @@ const WidgetState* findWidget(const UiState& ui, const std::string& label)
     return nullptr;
 }
 
+WidgetState* findWidget(UiState& ui, const std::string& panelId, const std::string& widgetId)
+{
+    for (auto& widget : ui.registry)
+    {
+        if (widget.panelId == panelId && widget.widgetId == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
 const WidgetState* findWidget(const UiState& ui, const std::string& panelId, const std::string& widgetId)
 {
     for (const auto& widget : ui.registry)
@@ -555,6 +564,43 @@ const WidgetState* findWidget(const UiState& ui, const std::string& panelId, con
         if (widget.panelId == panelId && widget.widgetId == widgetId) return &widget;
     }
     return nullptr;
+}
+
+std::optional<std::pair<std::string, std::string>> resolveLegacyWidgetAlias(std::string_view label)
+{
+    if (label == "panel-fps") return std::pair<std::string, std::string>{"panel-scene-info", "fps"};
+    if (label == "panel-object-count") return std::pair<std::string, std::string>{"panel-scene-info", "object-count"};
+    if (label == "panel-display-grid") return std::pair<std::string, std::string>{"panel-scene-info", "display-grid"};
+    if (label == "panel-bgcolor") return std::pair<std::string, std::string>{"panel-scene-info", "background-color"};
+    if (label == "panel-scene-select") return std::pair<std::string, std::string>{"panel-scene-info", "scene-select"};
+    if (label == "panel-theme-dark") return std::pair<std::string, std::string>{"panel-scene-info", "theme-dark"};
+    if (label == "panel-theme-light") return std::pair<std::string, std::string>{"panel-scene-info", "theme-light"};
+    if (label == "panel-scene-summary-open") return std::pair<std::string, std::string>{"panel-scene-info", "scene-summary-open"};
+    if (label == "panel-scene-selected-object") return std::pair<std::string, std::string>{"panel-scene-info", "selected-object"};
+    if (label == "panel-scene-table") return std::pair<std::string, std::string>{"panel-scene-info", "scene-table"};
+
+    if (label == "panel-selected-object") return std::pair<std::string, std::string>{"panel-properties", "selected-object"};
+    if (label == "input-properties-position-x") return std::pair<std::string, std::string>{"panel-properties", "position-x"};
+    if (label == "input-properties-position-y") return std::pair<std::string, std::string>{"panel-properties", "position-y"};
+    if (label == "input-properties-position-z") return std::pair<std::string, std::string>{"panel-properties", "position-z"};
+    if (label == "input-properties-rotation-x") return std::pair<std::string, std::string>{"panel-properties", "rotation-x"};
+    if (label == "input-properties-rotation-y") return std::pair<std::string, std::string>{"panel-properties", "rotation-y"};
+    if (label == "input-properties-rotation-z") return std::pair<std::string, std::string>{"panel-properties", "rotation-z"};
+    if (label == "input-properties-scale-x") return std::pair<std::string, std::string>{"panel-properties", "scale-x"};
+    if (label == "input-properties-scale-y") return std::pair<std::string, std::string>{"panel-properties", "scale-y"};
+    if (label == "input-properties-scale-z") return std::pair<std::string, std::string>{"panel-properties", "scale-z"};
+
+    return std::nullopt;
+}
+
+bool matchesWidgetReference(std::string_view panelId, std::string_view widgetId, std::string_view reference)
+{
+    if (reference == widgetId) return true;
+    if (auto alias = resolveLegacyWidgetAlias(reference))
+    {
+        return alias->first == panelId && alias->second == widgetId;
+    }
+    return false;
 }
 
 const UiLayoutSlotState* findLayoutSlot(const UiState& ui, const std::string& panelId, const std::string& slotId)
@@ -571,6 +617,18 @@ UiTestAction* findPendingUiAction(UiState& ui, const std::string& label, const s
     for (auto& action : ui.pendingActions)
     {
         if (action.label == label && action.kind == kind) return &action;
+    }
+    return nullptr;
+}
+
+UiTestAction* findPendingUiAction(UiState& ui, std::string_view panelId, std::string_view widgetId, const std::string& kind)
+{
+    for (auto& action : ui.pendingActions)
+    {
+        if (action.kind == kind && matchesWidgetReference(panelId, widgetId, action.label))
+        {
+            return &action;
+        }
     }
     return nullptr;
 }

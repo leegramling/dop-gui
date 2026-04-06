@@ -157,4 +157,5 @@ Next focus after current slice:
 
 - expand authored layout support only after the first minimal vocabulary is stable
 - finish shortening authored widget ids panel by panel once the panel-scoped widget query path is established enough to avoid relying on one flat widget namespace
+- shift more command/query and test usage toward scoped widget paths as shorter local ids become normal
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

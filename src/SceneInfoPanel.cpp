@@ -34,14 +34,30 @@ std::string objectCountText(const AppState& state)
 
 std::string labelSlotId(std::string_view widgetId)
 {
-    if (widgetId == "panel-bgcolor") return "panel-bgcolor-label";
-    if (widgetId == "panel-scene-select") return "panel-scene-select-label";
-    if (widgetId == "panel-scene-selected-object") return "panel-scene-selected-object-label";
+    if (widgetId == "background-color") return "panel-bgcolor-label";
+    if (widgetId == "scene-select") return "panel-scene-select-label";
+    if (widgetId == "selected-object") return "panel-scene-selected-object-label";
     return std::string(widgetId) + "-label";
 }
 
-WidgetSlotBinding binding(std::string_view widgetId)
+const UiWidgetSpecState* findWidgetSpec(const UiPanelState& panelState, std::string_view widgetId)
 {
+    for (const auto& widget : panelState.widgets)
+    {
+        if (widget.id == widgetId) return &widget;
+    }
+    return nullptr;
+}
+
+WidgetSlotBinding binding(const UiPanelState& panelState, std::string_view widgetId)
+{
+    if (const auto* widget = findWidgetSpec(panelState, widgetId))
+    {
+        return WidgetSlotBinding{
+            .valueSlotId = valueSlotForWidget(*widget),
+            .labelSlotId = labelSlotForWidget(*widget),
+        };
+    }
     return makeWidgetSlotBinding(widgetId, labelSlotId);
 }
 
@@ -243,7 +259,7 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
     {
         if (widgetSpec.type == "text")
         {
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             if (widgetSpec.bind == "view.fps.text")
             {
                 setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
@@ -258,7 +274,7 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         else if (widgetSpec.type == "checkbox" && widgetSpec.bind == "ui.displayGrid")
         {
             bool value = state.ui.displayGrid;
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
             const bool changed = Checkbox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), value);
             state.ui.displayGrid = value;
@@ -270,7 +286,7 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         else if (widgetSpec.type == "input" && widgetSpec.bind == "view.backgroundColorHex")
         {
             const auto previousValue = state.view.backgroundColorHex;
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
             const auto value = Input(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.view.backgroundColorHex);
             state.view.backgroundColorHex = value;
@@ -280,7 +296,7 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         }
         else if (widgetSpec.type == "combo" && widgetSpec.bind == "scene.name")
         {
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
             const auto value = ComboBox(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), state.scene.name, widgetSpec.options);
             if (value != state.scene.name && !widgetSpec.onChange.empty())
@@ -293,13 +309,13 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         else if (widgetSpec.type == "radio" && widgetSpec.bind == "ui.themeMode")
         {
             const bool selected = state.ui.themeMode == widgetSpec.arg;
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
             if (RadioButton(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str(), selected) && !widgetSpec.onClick.empty())
             {
                 queueUiCommand(state.ui, widgetSpec.onClick, widgetSpec.arg);
             }
-            if (auto* widget = findWidget(state.ui, widgetSpec.id))
+            if (auto* widget = findWidget(state.ui, std::string(id()), widgetSpec.id))
             {
                 widget->boolValue = selected;
             }
@@ -307,12 +323,12 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
     }
 
     const auto objectIds = collectSceneObjectIds(state.scene);
-    const auto selectedObjectSlots = binding("panel-scene-selected-object");
+    const auto selectedObjectSlots = binding(panelState, "selected-object");
     const auto selectedObject = renderSelectedObjectControl(
         state.ui,
         sceneInfoLayout,
         selectedObjectSlots,
-        "panel-scene-selected-object",
+        "selected-object",
         "panel-scene-selected-object-label",
         "Selected Object",
         state.scene.selectedObjectId,
@@ -328,9 +344,9 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
     bool openSceneSummary = false;
     for (const auto& widgetSpec : panelState.widgets)
     {
-        if (widgetSpec.type == "button" && widgetSpec.id == "panel-scene-summary-open")
+        if (widgetSpec.type == "button" && widgetSpec.id == "scene-summary-open")
         {
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.valueSlotId);
             openSceneSummary = Button(state.ui, widgetSpec.id.c_str(), widgetSpec.label.c_str());
         }
@@ -345,7 +361,7 @@ void SceneInfoPanel::render(PanelContext& context, const UiPanelState& panelStat
         }
         else if (widgetSpec.type == "table" && widgetSpec.bind == "scene.objects")
         {
-            const auto slots = binding(widgetSpec.id);
+            const auto slots = binding(panelState, widgetSpec.id);
             setNextWidgetLayoutIfPresent(state.ui, sceneInfoLayout, slots.labelSlotId);
             Text(state.ui, "panel-scene-table-label", widgetSpec.label);
             const int columnCount = widgetSpec.columns.empty() ? 4 : static_cast<int>(widgetSpec.columns.size());
