@@ -91,6 +91,21 @@
 - support `setPos`-style widget placement driven by Yoga-computed rects in panel init code
 - keep the layout computation testable and separate from widget rendering where possible
 
+## Phase 3E1: Declarative JSON5 Flex Layout
+
+- define a minimal JSON5 layout schema that is closer to flexbox than to ad hoc widget coordinates
+- keep Yoga as the layout engine, but generate Yoga trees from authored JSON5 layout data
+- start with a small vocabulary:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+- convert one real panel first, with `Properties` as the first target
+- preserve existing `ui.layout.slot.*` and `ui.widget.*` query behavior while the layout source changes
+- avoid exposing the entire Yoga API in JSON5 until the smaller layout vocabulary stabilizes
+
 ## Phase 3F: Window Management And Tear-Out Preparation
 
 - introduce `WindowManager` as the lifecycle boundary for the primary window and future tear-out windows
@@ -128,15 +143,17 @@
 
 ## Current Focus
 
-Current focus is the first implemented slice of `Phase 3E`, while `Phase 3F` remains a deferred architectural seam for later tear-out work.
+Current focus is the transition from `Phase 3E` to `Phase 3E1`: keep the current Yoga/query path stable while moving from builder-defined panel layout toward a declarative JSON5 flex-layout schema.
 
 Success criteria:
 
-- keep the tested command/query and live playback seams stable while Yoga-backed placement starts
-- prove one real panel can use a Yoga-backed builder/resize/rect path
+- keep the tested command/query and live playback seams stable while layout becomes more declarative
+- prove one real panel can load its flex-layout structure from JSON5 and still drive Yoga layout rects
+- preserve `ui.layout.slot.*` inspection while changing the authored layout source
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 
 Next focus after current slice:
 
-- expand Yoga-backed placement from the first panel slice to more authored widgets
+- convert `Properties` from builder-defined layout to JSON5-defined flex layout
+- expand authored layout support only after the first minimal vocabulary is stable
 - add richer panel/window options and later `.glb` scene growth without breaking the layout/query seams

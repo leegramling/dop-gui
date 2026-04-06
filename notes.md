@@ -368,3 +368,22 @@ Open design notes for this branch:
 - [ ] Decide how Yoga-computed rects feed into wrapped widget placement without bypassing the current widget wrapper layer.
 - [ ] Decide whether richer widget state should remain under `UiState` or move into a more dedicated UI model record.
 - [ ] Decide how primitive scene objects and loaded asset instances coexist in the scene model.
+- [x] Confirm the current mixed JSON5-plus-builder layout approach is only a transition step.
+- [x] Choose a declarative target closer to web/QML/Slint/Kivy, with Yoga as the engine underneath.
+- [ ] Define the first minimal JSON5 flex-layout vocabulary for real panel conversion.
+- [ ] Convert `Properties` first so the first declarative layout slice stays narrow.
+
+## Declarative Layout Direction
+
+- [x] Current widget existence and behavior are JSON5-authored.
+- [x] Current Yoga layout is still builder-defined in C++ panel code.
+- [x] The next architectural target is a declarative JSON5 layout schema rather than expanding builder code indefinitely.
+- [x] The intended first vocabulary is small and flexbox-like:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+- [ ] `Properties` should be the first panel converted from builder-defined layout to JSON5-defined layout.
+- [ ] `ui.layout.slot.*` and `ui.widget.*` queries must stay stable through that conversion.

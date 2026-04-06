@@ -151,15 +151,27 @@ Non-responsibilities:
 
 Responsibilities:
 
-- represent a testable wrapped ImGui panel boundary
-- own unique labeling and panel-level layout concerns
-- provide a narrow wrapper over raw ImGui panel/window calls
+- represent a testable authored UI panel controller
+- own panel-local widget binding and layout interpretation
 - expose panel callbacks, docking policy, and future tear-out behavior through explicit state and options
 
 Non-responsibilities:
 
-- low-level renderer ownership
+- low-level ImGui window begin/end calls
 - application-global theme policy
+
+### `PanelWindow`
+
+Responsibilities:
+
+- provide a narrow wrapper over raw ImGui panel/window calls
+- apply authored window flags and minimum size constraints
+- register stable panel labels for test/query inspection
+
+Non-responsibilities:
+
+- panel-local business logic
+- authored layout interpretation
 
 ### `UI Widget Wrappers`
 
@@ -258,6 +270,25 @@ Initial ImGui surface should include:
 - panels
 - wrapped text widgets
 - wrapped input widgets
+
+Declarative UI direction:
+
+- widget existence, binding, callbacks, and layout should converge into a JSON5-authored UI description
+- layout should move toward a small flexbox-like schema rather than remaining permanently hard-coded in C++ builder code
+- Yoga should remain the layout engine underneath that schema
+- C++ panel controllers should interpret authored layout data rather than duplicating widget ids and slot structure long-term
+- the intended authored vocabulary should stay intentionally small at first:
+  - `column`
+  - `row`
+  - `gap`
+  - fixed `width` / `height`
+  - `flex`
+  - leaf `slot`
+
+Transition rule:
+
+- builder-style Yoga layout in panel init code is acceptable as a temporary adapter
+- new work should bias toward making layout declarative rather than expanding hand-written builder trees indefinitely
 - wrapped button widgets
 - wrapped checkbox widgets
 - radio buttons

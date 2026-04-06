@@ -2,7 +2,7 @@
 
 ## Active Slice
 
-- [x] Add the first Yoga-backed panel-local layout path.
+- [ ] Define the first declarative JSON5 flex-layout slice for `Properties`.
 
 ## Next Tasks
 
@@ -15,6 +15,9 @@
 - [x] Evaluate the local `../vsgLayt` Yoga examples and choose the first adapter approach.
 - [x] Define how Yoga `setPos`-style placement will integrate with panel init code.
 - [x] Define the first `.gltf` / `.glb` scene-loading slice and the required scene-model growth.
+- [ ] Define a minimal JSON5 flex-layout vocabulary for authored panels.
+- [ ] Convert the `Properties` panel layout from builder code to authored JSON5 layout.
+- [ ] Preserve `ui.layout.slot.*` and `ui.widget.*` query behavior during the layout-source transition.
 
 ## Next Slice Candidates
 
@@ -22,7 +25,7 @@
 - [x] Add `ui.*` query namespaces for panels, menu items, widgets, and theme-facing state.
 - [x] Add richer command argument and script-object formats beyond simple numeric path commands.
 - [ ] Add more authored widget properties and panel/window options to the JSON5 UI format.
-- [ ] Add Yoga-backed layout state and queries where layout rects become inspectable.
+- [x] Add Yoga-backed layout state and queries where layout rects become inspectable.
 - [x] Add a `WindowManager` boundary for primary-window ownership and future tear-out callbacks/windows.
 - [x] Add test commands and queries for the first richer widgets such as radio groups and combos.
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
@@ -33,6 +36,7 @@
 - [x] Confirm Doxygen coverage is applied consistently to the currently public code surface.
 - [x] Confirm the widget expansion still preserves headless/live simulation symmetry.
 - [x] Confirm Yoga-based placement can be inspected and tested without relying on ad hoc cursor positioning.
+- [ ] Confirm the first JSON5-authored flex layout produces the same runtime slot/widget query surface as the current builder-based layout.
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 
