@@ -39,6 +39,7 @@ We will drive work through four small markdown files in repo root:
 - [`task.md`](/home/lgramling/dev/dop-gui/task.md): the next small implementation steps
 - [`notes.md`](/home/lgramling/dev/dop-gui/notes.md): architecture notes, dependency findings, and decisions
 - [`HowToAddTestCommands.md`](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md): contributor guide for adding new command/query/UI-test coverage
+- [`testing.md`](/home/lgramling/dev/dop-gui/testing.md): current build/demo walkthrough for headless and live test flows
 
 Recommended loop:
 
@@ -80,6 +81,11 @@ Dependencies available in `../vsg_deps`:
 - `install` tree with built headers and libraries
 
 These local paths should be treated as the source of truth for initial integration work on this machine.
+
+Repo-local third-party dependencies:
+
+- [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui) for the docking-capable ImGui/VSG bridge used by this project
+- [`external/yoga`](/home/lgramling/dev/dop-gui/external/yoga) for layout computation used by authored and hand-coded panels
 
 ## Local External vsgImGui
 
@@ -168,6 +174,14 @@ The next milestone is to create a minimal VSG application skeleton that:
 
 ## Build
 
+Windows:
+
+```bat
+build.bat
+```
+
+Linux/macOS:
+
 ```bash
 cmake -S . -B build/dop-gui -DCMAKE_BUILD_TYPE=Release
 cmake --build build/dop-gui -j 8
@@ -179,6 +193,7 @@ Binary:
 
 - `build/dop-gui/dop-gui`
 - `./test_run.sh` helper for startup script or startup command desktop runs
+- [`testing.md`](/home/lgramling/dev/dop-gui/testing.md) has the current demo/test walkthrough and expected outcomes
 
 Quick probe:
 
@@ -209,6 +224,12 @@ Current result in this session:
 - `--startup-delay-ms <ms>` can delay startup commands or scripts so the default scene is visible before automation applies
 - the first positional argument can be a scene file, for example `./build/dop-gui/dop-gui scenes/bootstrap_scene.json5`
 - example alternate scene: `./build/dop-gui/dop-gui scenes/cubes.json5`
+
+For the current demo path:
+
+- use `build.bat` on Windows
+- use `ctest` for the authoritative headless regression pass
+- use [`testing.md`](/home/lgramling/dev/dop-gui/testing.md) for the focused live demo flows such as `live-regression` and `live-scene-create`
 
 Why shaders are built ahead of time:
 
