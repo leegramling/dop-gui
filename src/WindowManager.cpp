@@ -747,6 +747,31 @@ void WindowManager::emitStatusToStderrIfChanged(const UiState& uiState)
         << " last_event=" << (uiState.lastTearOutEvent.empty() ? "none" : uiState.lastTearOutEvent)
         << " last_viewport=" << uiState.lastTearOutViewportId;
 
+    if (ImGui::GetCurrentContext())
+    {
+        if (const auto* mainViewport = ImGui::GetMainViewport())
+        {
+            out << " main_pos=(" << mainViewport->Pos.x << "," << mainViewport->Pos.y << ")"
+                << " main_size=(" << mainViewport->Size.x << "," << mainViewport->Size.y << ")";
+        }
+
+        if (!_managedWindows.empty())
+        {
+            out << " tearouts=[";
+            for (std::size_t i = 0; i < _managedWindows.size(); ++i)
+            {
+                const auto& record = _managedWindows[i];
+                if (i > 0) out << ";";
+                out << record.viewportId
+                    << "@(" << record.x << "," << record.y << "," << record.width << "," << record.height << ")"
+                    << ":platform=" << (record.platformWindowCreated ? "1" : "0")
+                    << ":renderer=" << (record.rendererWindowCreated ? "1" : "0")
+                    << ":destroyed=" << (record.destroyed ? "1" : "0");
+            }
+            out << "]";
+        }
+    }
+
     const auto message = out.str();
     if (message == _lastStatusLog) return;
     _lastStatusLog = message;
