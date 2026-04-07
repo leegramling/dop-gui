@@ -155,10 +155,23 @@ void focusNativeWindow(vsg::Window* window)
 void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
 {
     if (!window || !viewport) return;
+    ImVec2 screenPos = viewport->Pos;
+    if (const auto* mainViewport = ImGui::GetMainViewport();
+        mainViewport && viewport->ID != mainViewport->ID)
+    {
+        const bool looksLocalToMain =
+            screenPos.x >= 0.0f && screenPos.y >= 0.0f &&
+            screenPos.x < mainViewport->Size.x && screenPos.y < mainViewport->Size.y;
+        if (looksLocalToMain)
+        {
+            screenPos.x += mainViewport->Pos.x;
+            screenPos.y += mainViewport->Pos.y;
+        }
+    }
     configureNativeWindow(
         window,
-        static_cast<int32_t>(viewport->Pos.x),
-        static_cast<int32_t>(viewport->Pos.y),
+        static_cast<int32_t>(screenPos.x),
+        static_cast<int32_t>(screenPos.y),
         std::max(1u, static_cast<unsigned int>(viewport->Size.x)),
         std::max(1u, static_cast<unsigned int>(viewport->Size.y)));
 }
@@ -583,6 +596,11 @@ void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
 {
     if (viewport) viewport->Pos = pos;
+    if (auto* owner = callbackOwner(); owner)
+    {
+        owner->_callbackState.lastEvent = "platform_set_window_pos";
+        owner->_callbackState.lastViewportId = viewport ? viewport->ID : 0;
+    }
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
@@ -591,7 +609,7 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
             record.traits->x = static_cast<int32_t>(pos.x);
             record.traits->y = static_cast<int32_t>(pos.y);
         }
-        configureNativeWindow(record.window.get(), static_cast<int32_t>(pos.x), static_cast<int32_t>(pos.y), std::nullopt, std::nullopt);
+        syncNativeWindowToViewport(record.window.get(), viewport);
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
