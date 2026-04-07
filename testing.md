@@ -416,3 +416,53 @@ Expected `live-scene-create` behavior:
 - Live GUI scripts require a real desktop session; they are not expected to pass in a headless sandbox.
 - `imgui.ini` is intentionally local-only state and should not be used as a demo artifact.
 - For adding new command/query/UI-test surfaces, use [HowToAddTestCommands.md](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md).
+
+## QA
+
+### How does headless testing work without opening a window or calling Vulkan?
+
+Headless mode exits before the app creates a real viewer, a real window, or any VSG/Vulkan rendering objects.
+
+In [App.cpp](/home/lgramling/dev/dop-gui/src/App.cpp), `--ui-test-mode` sets `ui.testMode` and immediately evaluates the UI tree before the normal desktop startup path runs. If the request is only a script or query, the process returns before it reaches:
+
+- `vsg::Viewer::create()`
+- `_inputManager->createWindow()`
+- `_visualizer->initialize(...)`
+
+The wrapped widgets in [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp) check `uiState.testMode`. In that path they:
+
+- consume scripted actions such as `click`, `set_bool`, or `set_text`
+- update `UiState.registry`
+- return values back to panel code
+- skip the real ImGui calls
+
+So headless testing is still evaluating real panel code, but it is doing it as a state machine instead of a rendered desktop UI.
+
+### Are we actually testing widgets in a panel, and how do we catch missing widget calls?
+
+Yes, but headless mode tests the panel logic and widget contract, not the real rendered desktop window.
+
+A widget only appears in the query surface if its wrapper actually ran. The wrapper registers the widget in `UiState.registry` through `ensureWidget(...)` in [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp). If panel logic accidentally stops calling `Input(...)`, `Button(...)`, or `Checkbox(...)`, that widget never gets registered.
+
+That means headless scripts can catch missing widgets by asserting presence before driving behavior.
+
+Good test pattern:
+
+1. query the panel
+2. query the expected widget
+3. send the scripted action
+4. query the resulting widget or app state
+
+Example queries:
+
+- `ui.panel.panel-new-shape`
+- `ui.panel.panel-new-shape.widget.shape-kind`
+- `ui.panel.panel-new-shape.widgets`
+
+If the panel logic skips the widget call, the widget query fails immediately. So headless testing can catch:
+
+- widget ids changing unexpectedly
+- widgets not being emitted by the panel
+- wrappers no longer being called
+
+What it does not catch is real desktop rendering behavior such as focus, docking, OS input, or Vulkan integration. That is what the desktop tests are for.
