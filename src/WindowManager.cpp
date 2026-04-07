@@ -309,8 +309,14 @@ void WindowManager::retireManagedWindows()
     auto it = _managedWindows.begin();
     while (it != _managedWindows.end())
     {
-        if (it->pendingDestroy && !it->addedToViewer)
+        if (it->pendingDestroy &&
+            !it->platformWindowCreated &&
+            !it->rendererWindowCreated &&
+            !it->addedToViewer)
         {
+            it->hasVsgWindow = false;
+            it->window = {};
+            it->traits = {};
             it = _managedWindows.erase(it);
             continue;
         }
@@ -401,9 +407,6 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
             record->focused = false;
             record->destroyed = true;
             record->pendingDestroy = true;
-            record->hasVsgWindow = false;
-            record->window = {};
-            record->traits = {};
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
