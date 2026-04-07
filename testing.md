@@ -378,7 +378,7 @@ You can also run individual scripted headless flows directly:
 
 ## Live GUI Demo
 
-Desktop helper flows are provided through `test_run.sh`:
+Desktop helper flows are provided through `test_run.sh` on Linux/macOS and `test_run.bat` on Windows.
 
 ```bash
 ./test_run.sh live-bg
@@ -386,6 +386,14 @@ Desktop helper flows are provided through `test_run.sh`:
 ./test_run.sh live-scene-cubes
 ./test_run.sh live-scene-create
 ./test_run.sh live-regression
+```
+
+```bat
+test_run.bat live-bg
+test_run.bat live-grid-off
+test_run.bat live-scene-cubes
+test_run.bat live-scene-create
+test_run.bat live-regression
 ```
 
 The most useful end-to-end demo checks are:
