@@ -1,8 +1,8 @@
 @echo off
 setlocal
 
-set "ROOT_DIR=%~dp0"
-if "%BUILD_DIR%"=="" set "BUILD_DIR=%ROOT_DIR%build\dop-gui"
+for %%I in ("%~dp0.") do set "ROOT_DIR=%%~fI"
+if "%BUILD_DIR%"=="" set "BUILD_DIR=%ROOT_DIR%\build\dop-gui"
 if "%BUILD_TYPE%"=="" set "BUILD_TYPE=Release"
 if "%BUILD_JOBS%"=="" set "BUILD_JOBS=8"
 
