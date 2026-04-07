@@ -29,6 +29,11 @@ void WindowManager::registerPrimaryWindow(vsg::ref_ptr<vsg::Window> window)
     _primaryWindow = window;
 }
 
+void WindowManager::registerViewer(vsg::ref_ptr<vsg::Viewer> viewer)
+{
+    _viewer = viewer;
+}
+
 void WindowManager::installImGuiPlatformCallbacks()
 {
     if (!ImGui::GetCurrentContext()) return;
@@ -167,6 +172,27 @@ void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
         record.platformWindowCreated = true;
         record.destroyed = false;
         syncManagedWindowFromViewport(record, viewport);
+        const auto* mainViewport = ImGui::GetMainViewport();
+        if (!record.window && (!mainViewport || viewport->ID != mainViewport->ID))
+        {
+            record.traits = createSecondaryWindowTraits(viewport);
+            if (record.traits)
+            {
+                record.window = vsg::Window::create(record.traits);
+                record.hasVsgWindow = record.window.valid();
+                if (record.window.valid())
+                {
+                    viewport->PlatformUserData = record.window.get();
+                    viewport->PlatformHandle = record.window.get();
+                    viewport->PlatformHandleRaw = record.window.get();
+                    if (_viewer)
+                    {
+                        _viewer->addWindow(record.window);
+                        record.addedToViewer = true;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -179,6 +205,14 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
     {
         if (auto* record = findManagedWindow(viewport->ID))
         {
+            if (record->window && _viewer && record->addedToViewer)
+            {
+                _viewer->removeWindow(record->window);
+                record->addedToViewer = false;
+            }
+            record->window = {};
+            record->traits = {};
+            record->hasVsgWindow = false;
             record->platformWindowCreated = false;
             record->visible = false;
             record->focused = false;
@@ -198,6 +232,8 @@ void WindowManager::recordRendererCreateWindow(ImGuiViewport* viewport)
         auto& record = upsertManagedWindow(viewport);
         record.rendererWindowCreated = true;
         record.destroyed = false;
+        record.hasVsgWindow = record.window.valid();
+        viewport->RendererUserData = record.window.get();
         syncManagedWindowFromViewport(record, viewport);
     }
 }
@@ -213,6 +249,7 @@ void WindowManager::recordRendererDestroyWindow(ImGuiViewport* viewport)
         {
             record->rendererWindowCreated = false;
             record->destroyed = true;
+            viewport->RendererUserData = nullptr;
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
@@ -279,6 +316,7 @@ void WindowManager::syncManagedWindowFromViewport(ManagedWindowRecord& record, I
     record.minimized = (viewport->Flags & ImGuiViewportFlags_IsMinimized) != 0;
     record.visible = record.platformWindowCreated && !record.minimized;
     record.ownedByApp = (viewport->Flags & ImGuiViewportFlags_OwnedByApp) != 0;
+    record.hasVsgWindow = record.window.valid();
     if (record.title.empty())
     {
         record.title = "Viewport " + std::to_string(static_cast<std::uint64_t>(viewport->ID));
@@ -286,6 +324,7 @@ void WindowManager::syncManagedWindowFromViewport(ManagedWindowRecord& record, I
 
     if (auto traits = createSecondaryWindowTraits(viewport))
     {
+        record.traits = traits;
         record.traitsWindowTitle = traits->windowTitle;
         record.traitsX = traits->x;
         record.traitsY = traits->y;
@@ -314,6 +353,9 @@ vsg::ref_ptr<vsg::WindowTraits> WindowManager::createSecondaryWindowTraits(ImGui
         traits->height = std::max(1u, static_cast<unsigned int>(viewport->Size.y));
         traits->windowTitle = "TearOut " + std::to_string(static_cast<std::uint64_t>(viewport->ID));
     }
+    traits->nativeWindow.reset();
+    traits->systemConnection.reset();
+    traits->device = _primaryWindow->getDevice();
     return traits;
 }
 
@@ -337,6 +379,11 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
+        if (record.traits)
+        {
+            record.traits->x = static_cast<int32_t>(pos.x);
+            record.traits->y = static_cast<int32_t>(pos.y);
+        }
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
@@ -352,6 +399,11 @@ void WindowManager::platformSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
+        if (record.traits)
+        {
+            record.traits->width = std::max(1u, static_cast<unsigned int>(size.x));
+            record.traits->height = std::max(1u, static_cast<unsigned int>(size.y));
+        }
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
@@ -389,6 +441,7 @@ void WindowManager::platformSetWindowTitle(ImGuiViewport* viewport, const char* 
         {
             auto& record = owner->upsertManagedWindow(viewport);
             record.title = title;
+            if (record.traits) record.traits->windowTitle = title;
             owner->syncManagedWindowFromViewport(record, viewport);
         }
     }

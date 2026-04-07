@@ -178,6 +178,8 @@ QueryValue makeManagedWindowValue(const WindowManager::ManagedWindowRecord& wind
         makeField("platformWindowCreated", makeBoolValue(window.platformWindowCreated)),
         makeField("rendererWindowCreated", makeBoolValue(window.rendererWindowCreated)),
         makeField("ownedByApp", makeBoolValue(window.ownedByApp)),
+        makeField("hasVsgWindow", makeBoolValue(window.hasVsgWindow)),
+        makeField("addedToViewer", makeBoolValue(window.addedToViewer)),
         makeField("traits", makeObjectValue({
             makeField("windowTitle", makeStringValue(window.traitsWindowTitle)),
             makeField("x", makeIntValue(window.traitsX)),

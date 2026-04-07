@@ -66,6 +66,7 @@
 - [x] Install `WindowManager`-owned ImGui platform/renderer callback trampolines and status counters without yet advertising full backend viewport support, so live GUI runs can report callback traffic without tripping the full multi-viewport contract.
 - [x] Confirm in a real desktop run that `ViewportsEnable` stays active, backend platform/renderer viewport flags stay enabled, and `WindowManager` receives real create/destroy callback traffic while panels are dragged out.
 - [x] Add managed-window records keyed by viewport id, with derived secondary-window trait snapshots exposed through `ui.windows` and `ui.window.<viewportId>` before creating real secondary VSG windows.
+- [x] Create the first real managed secondary `vsg::Window` objects from those derived traits, attach them to ImGui viewport handles, and remove them from the viewer on viewport destroy without yet moving render resources or panel command graphs.
 
 ## Architecture Notes
 
@@ -75,6 +76,7 @@
 - [x] Keep the first app self-contained by generating its scene in code.
 - [x] Keep tear-out work incremental: observe/detect drag-out first, then create a managed secondary window, then move panel UI command graphs.
 - [x] Keep one explicit state-only step between callback detection and real secondary-window creation, where `WindowManager` only tracks managed windows and derived traits without yet creating VSG windows.
+- [x] Keep the first real secondary-window slice focused on lifecycle only: create/destroy VSG windows and attach viewport handles before adding per-window rendering or panel migration.
 - [x] Keep `WindowManager` responsible for callback observation and window lifecycle policy, while `VsgVisualizer` stays responsible for per-window render resources and command graphs.
 
 ## Local Dependency Inventory

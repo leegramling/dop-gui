@@ -7,8 +7,8 @@
 - [x] Enable the ImGui `ViewportsEnable` experiment and confirm whether backend viewport support and create/destroy callbacks appear.
 - [x] Install a `WindowManager`-owned ImGui platform/renderer callback seam without yet advertising full backend viewport support.
 - [x] Add managed-window records keyed by viewport id and expose them through tear-out queries before creating real secondary VSG windows.
-- [ ] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
-- [ ] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
+- [x] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
+- [x] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
 - [ ] Prepare `VsgVisualizer` to create per-window render resources and UI command graphs for a managed secondary window.
 - [ ] Move detached panel UI command-graph ownership into the new window when tear-out is detected.
 - [ ] Support reattaching a torn-out panel back into the primary dockspace and main UI command graph.

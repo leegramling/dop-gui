@@ -33,6 +33,8 @@ public:
         bool platformWindowCreated = false;
         bool rendererWindowCreated = false;
         bool ownedByApp = false;
+        bool hasVsgWindow = false;
+        bool addedToViewer = false;
         std::string traitsWindowTitle;
         int traitsX = 0;
         int traitsY = 0;
@@ -43,6 +45,8 @@ public:
         bool traitsDebugLayer = false;
         bool traitsApiDumpLayer = false;
         unsigned int traitsSamples = 0;
+        vsg::ref_ptr<vsg::WindowTraits> traits;
+        vsg::ref_ptr<vsg::Window> window;
     };
 
     /**
@@ -86,6 +90,11 @@ public:
      * @return True when the primary window is available.
      */
     bool hasPrimaryWindow() const;
+    /**
+     * @brief Register the active viewer used to manage windows.
+     * @param viewer Viewer that should own any created secondary windows.
+     */
+    void registerViewer(vsg::ref_ptr<vsg::Viewer> viewer);
     /**
      * @brief Return the currently tracked secondary viewport windows.
      * @return Immutable managed-window records.
@@ -141,6 +150,7 @@ private:
     static void rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size);
 
     vsg::ref_ptr<vsg::Window> _primaryWindow;
+    vsg::ref_ptr<vsg::Viewer> _viewer;
     CallbackState _callbackState;
     std::vector<ManagedWindowRecord> _managedWindows;
     std::string _lastStatusLog;

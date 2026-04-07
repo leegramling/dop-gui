@@ -160,6 +160,7 @@ int App::run()
 
         viewer->addWindow(window);
         _windowManager->registerPrimaryWindow(window);
+        _windowManager->registerViewer(viewer);
 
         _visualizer->initialize(_state, window);
         _uiManager->initialize(window, _visualizer->renderGraph(), _state, *_windowManager);
