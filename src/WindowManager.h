@@ -35,6 +35,8 @@ public:
         bool ownedByApp = false;
         bool hasVsgWindow = false;
         bool addedToViewer = false;
+        bool pendingCreate = false;
+        bool pendingDestroy = false;
         std::string traitsWindowTitle;
         int traitsX = 0;
         int traitsY = 0;
@@ -75,6 +77,14 @@ public:
      * @param uiState UI state that mirrors the current callback availability.
      */
     void syncImGuiStatus(UiState& uiState) const;
+    /**
+     * @brief Realize any pending secondary VSG windows after ImGui callbacks have marked them.
+     */
+    void realizeManagedWindows();
+    /**
+     * @brief Retire destroyed secondary windows after the main loop has stopped using them.
+     */
+    void retireManagedWindows();
     /**
      * @brief Return the registered primary window.
      * @return Primary VSG window, if any.
@@ -118,6 +128,11 @@ private:
         int rendererDestroyRequestCount = 0;
         std::string lastEvent;
         ImGuiID lastViewportId = 0;
+        void (*previousRendererCreateWindow)(ImGuiViewport*) = nullptr;
+        void (*previousRendererDestroyWindow)(ImGuiViewport*) = nullptr;
+        void (*previousRendererSetWindowSize)(ImGuiViewport*, ImVec2) = nullptr;
+        void (*previousRendererRenderWindow)(ImGuiViewport*, void*) = nullptr;
+        void (*previousRendererSwapBuffers)(ImGuiViewport*, void*) = nullptr;
     };
 
     void recordPlatformCreateWindow(ImGuiViewport* viewport);
@@ -131,6 +146,7 @@ private:
     ManagedWindowRecord* findManagedWindow(ImGuiID viewportId);
     void syncManagedWindowFromViewport(ManagedWindowRecord& record, ImGuiViewport* viewport);
     vsg::ref_ptr<vsg::WindowTraits> createSecondaryWindowTraits(ImGuiViewport* viewport) const;
+    vsg::Window* resolveWindowForViewport(ImGuiViewport* viewport) const;
 
     static WindowManager* callbackOwner();
     static void setCallbackOwner(WindowManager* owner);
@@ -145,6 +161,7 @@ private:
     static bool platformGetWindowFocus(ImGuiViewport* viewport);
     static bool platformGetWindowMinimized(ImGuiViewport* viewport);
     static void platformSetWindowTitle(ImGuiViewport* viewport, const char* title);
+    static int platformCreateVkSurface(ImGuiViewport* viewport, ImU64 vkInstance, const void* vkAllocators, ImU64* outVkSurface);
     static void rendererCreateWindow(ImGuiViewport* viewport);
     static void rendererDestroyWindow(ImGuiViewport* viewport);
     static void rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size);

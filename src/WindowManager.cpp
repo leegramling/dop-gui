@@ -458,6 +458,20 @@ WindowManager::ManagedWindowRecord* WindowManager::findManagedWindow(ImGuiID vie
     return nullptr;
 }
 
+vsg::Window* WindowManager::resolveWindowForViewport(ImGuiViewport* viewport) const
+{
+    if (!viewport) return nullptr;
+    if (const auto* mainViewport = ImGui::GetMainViewport(); mainViewport && viewport->ID == mainViewport->ID)
+    {
+        return _primaryWindow.get();
+    }
+    if (const auto* record = findManagedWindow(static_cast<std::uint64_t>(viewport->ID)))
+    {
+        return record->window.get();
+    }
+    return nullptr;
+}
+
 void WindowManager::syncManagedWindowFromViewport(ManagedWindowRecord& record, ImGuiViewport* viewport)
 {
     if (!viewport) return;
@@ -528,13 +542,7 @@ void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner)
     {
-        if (viewport)
-        {
-            if (auto* record = owner->findManagedWindow(viewport->ID))
-            {
-                mapNativeWindow(record->window.get());
-            }
-        }
+        mapNativeWindow(owner->resolveWindowForViewport(viewport));
     }
 }
 
@@ -558,10 +566,7 @@ ImVec2 WindowManager::platformGetWindowPos(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner && viewport)
     {
-        if (auto* record = owner->findManagedWindow(viewport->ID))
-        {
-            return queryNativeWindowPos(record->window.get(), viewport->Pos);
-        }
+        return queryNativeWindowPos(owner->resolveWindowForViewport(viewport), viewport->Pos);
     }
     return viewport ? viewport->Pos : ImVec2(0.0f, 0.0f);
 }
@@ -588,10 +593,7 @@ ImVec2 WindowManager::platformGetWindowSize(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner && viewport)
     {
-        if (auto* record = owner->findManagedWindow(viewport->ID))
-        {
-            return queryNativeWindowSize(record->window.get(), viewport->Size);
-        }
+        return queryNativeWindowSize(owner->resolveWindowForViewport(viewport), viewport->Size);
     }
     return viewport ? viewport->Size : ImVec2(0.0f, 0.0f);
 }
@@ -602,7 +604,7 @@ void WindowManager::platformSetWindowFocus(ImGuiViewport* viewport)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
-        focusNativeWindow(record.window.get());
+        focusNativeWindow(owner->resolveWindowForViewport(viewport));
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
