@@ -608,10 +608,6 @@ void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 
 void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
 {
-    if (viewport)
-    {
-        viewport->Pos = pos;
-    }
     if (auto* owner = callbackOwner(); owner)
     {
         owner->_callbackState.lastEvent = "platform_set_window_pos";
@@ -620,6 +616,20 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
+        ImVec2 resolvedPos = pos;
+        if (record.screenSpaceEstablished)
+        {
+            const auto* mainViewport = ImGui::GetMainViewport();
+            const bool looksLocalToMain =
+                mainViewport &&
+                resolvedPos.x >= 0.0f && resolvedPos.y >= 0.0f &&
+                resolvedPos.x < mainViewport->Size.x && resolvedPos.y < mainViewport->Size.y;
+            if (looksLocalToMain)
+            {
+                resolvedPos = queryNativeWindowPos(record.window.get(), ImVec2(static_cast<float>(record.x), static_cast<float>(record.y)));
+            }
+        }
+        viewport->Pos = resolvedPos;
         record.screenSpaceEstablished = true;
         if (record.traits)
         {
