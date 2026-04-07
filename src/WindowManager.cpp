@@ -645,6 +645,13 @@ ImVec2 WindowManager::platformGetWindowPos(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner && viewport)
     {
+        if (const auto* mainViewport = ImGui::GetMainViewport(); mainViewport && viewport->ID != mainViewport->ID)
+        {
+            if (const auto* record = owner->findManagedWindow(viewport->ID))
+            {
+                return ImVec2(static_cast<float>(record->x), static_cast<float>(record->y));
+            }
+        }
         return queryNativeWindowPos(owner->resolveWindowForViewport(viewport), viewport->Pos);
     }
     return viewport ? viewport->Pos : ImVec2(0.0f, 0.0f);
@@ -672,6 +679,13 @@ ImVec2 WindowManager::platformGetWindowSize(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner && viewport)
     {
+        if (const auto* mainViewport = ImGui::GetMainViewport(); mainViewport && viewport->ID != mainViewport->ID)
+        {
+            if (const auto* record = owner->findManagedWindow(viewport->ID))
+            {
+                return ImVec2(static_cast<float>(record->width), static_cast<float>(record->height));
+            }
+        }
         return queryNativeWindowSize(owner->resolveWindowForViewport(viewport), viewport->Size);
     }
     return viewport ? viewport->Size : ImVec2(0.0f, 0.0f);
