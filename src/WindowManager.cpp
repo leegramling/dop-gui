@@ -151,6 +151,17 @@ void focusNativeWindow(vsg::Window* window)
     xcb_set_input_focus(connection, XCB_INPUT_FOCUS_POINTER_ROOT, *native, XCB_CURRENT_TIME);
     xcb_flush(connection);
 }
+
+void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
+{
+    if (!window || !viewport) return;
+    configureNativeWindow(
+        window,
+        static_cast<int32_t>(viewport->Pos.x),
+        static_cast<int32_t>(viewport->Pos.y),
+        std::max(1u, static_cast<unsigned int>(viewport->Size.x)),
+        std::max(1u, static_cast<unsigned int>(viewport->Size.y)));
+}
 }
 
 WindowManager* WindowManager::callbackOwner()
@@ -286,6 +297,7 @@ void WindowManager::realizeManagedWindows()
         if (auto* viewport = ImGui::FindViewportByID(static_cast<ImGuiID>(record.viewportId)))
         {
             applyPlatformHandles(viewport, record.window.get(), record.window.get());
+            syncNativeWindowToViewport(record.window.get(), viewport);
         }
 
         record.pendingCreate = false;
@@ -367,6 +379,7 @@ void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
                 if (record.window.valid())
                 {
                     applyPlatformHandles(viewport, record.window.get(), record.window.get());
+                    syncNativeWindowToViewport(record.window.get(), viewport);
                 }
             }
         }
@@ -555,7 +568,9 @@ void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 {
     if (auto* owner = callbackOwner(); owner)
     {
-        mapNativeWindow(owner->resolveWindowForViewport(viewport));
+        auto* window = owner->resolveWindowForViewport(viewport);
+        syncNativeWindowToViewport(window, viewport);
+        mapNativeWindow(window);
     }
 }
 
