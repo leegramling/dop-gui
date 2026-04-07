@@ -10,6 +10,7 @@
 #include "WindowManager.h"
 
 #include <vsgImGui/SendEventsToImGui.h>
+#include <imgui_internal.h>
 
 namespace
 {
@@ -105,6 +106,12 @@ void UiManager::initialize(
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    for (const auto& panel : state.ui.layout.panels)
+    {
+        ImGui::ClearWindowSettings(panel.label.c_str());
+    }
+
     if (_windowManager)
     {
         _windowManager->installImGuiPlatformCallbacks();
