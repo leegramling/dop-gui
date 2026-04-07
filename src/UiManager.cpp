@@ -91,6 +91,12 @@ void UiManager::initialize(
     _state = &state;
     _windowManager = &windowManager;
 
+    // A fresh app run should always start with authored panels in the main window.
+    for (auto& panel : state.ui.layout.panels)
+    {
+        panel.hostViewportId = 0;
+    }
+
     if (!ImGui::GetCurrentContext())
     {
         ImGui::CreateContext();
