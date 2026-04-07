@@ -152,9 +152,10 @@ void focusNativeWindow(vsg::Window* window)
     xcb_flush(connection);
 }
 
-void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
+ImVec2 normalizeViewportScreenPos(ImGuiViewport* viewport)
 {
-    if (!window || !viewport) return;
+    if (!viewport) return ImVec2(0.0f, 0.0f);
+
     ImVec2 screenPos = viewport->Pos;
     if (const auto* mainViewport = ImGui::GetMainViewport();
         mainViewport && viewport->ID != mainViewport->ID)
@@ -168,6 +169,13 @@ void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
             screenPos.y += mainViewport->Pos.y;
         }
     }
+    return screenPos;
+}
+
+void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
+{
+    if (!window || !viewport) return;
+    ImVec2 screenPos = normalizeViewportScreenPos(viewport);
     configureNativeWindow(
         window,
         static_cast<int32_t>(screenPos.x),
@@ -382,6 +390,7 @@ void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
     _callbackState.lastViewportId = viewport ? viewport->ID : 0;
     if (viewport)
     {
+        viewport->Pos = normalizeViewportScreenPos(viewport);
         auto& record = upsertManagedWindow(viewport);
         record.platformWindowCreated = true;
         record.destroyed = false;
@@ -595,7 +604,11 @@ void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 
 void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
 {
-    if (viewport) viewport->Pos = pos;
+    if (viewport)
+    {
+        viewport->Pos = pos;
+        viewport->Pos = normalizeViewportScreenPos(viewport);
+    }
     if (auto* owner = callbackOwner(); owner)
     {
         owner->_callbackState.lastEvent = "platform_set_window_pos";
@@ -606,8 +619,8 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
         auto& record = owner->upsertManagedWindow(viewport);
         if (record.traits)
         {
-            record.traits->x = static_cast<int32_t>(pos.x);
-            record.traits->y = static_cast<int32_t>(pos.y);
+            record.traits->x = static_cast<int32_t>(viewport->Pos.x);
+            record.traits->y = static_cast<int32_t>(viewport->Pos.y);
         }
         syncNativeWindowToViewport(record.window.get(), viewport);
         owner->syncManagedWindowFromViewport(record, viewport);
