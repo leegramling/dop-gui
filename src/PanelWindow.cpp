@@ -45,7 +45,7 @@ PanelWindow::PanelWindow(
 
 PanelWindow::~PanelWindow()
 {
-    if (_opened && !_uiState.testMode) ImGui::End();
+    if (_began && !_uiState.testMode) ImGui::End();
 }
 
 bool PanelWindow::begin()
@@ -53,6 +53,7 @@ bool PanelWindow::begin()
     registerWidget(_uiState, _id, "panel");
     if (_uiState.testMode)
     {
+        _began = false;
         _opened = _isOpen;
         return _opened;
     }
@@ -91,6 +92,7 @@ bool PanelWindow::begin()
     }
 
     bool* openPtr = _closable ? &_isOpen : nullptr;
+    _began = _isOpen;
     _opened = _isOpen && ImGui::Begin(_title, openPtr, static_cast<ImGuiWindowFlags>(_flags));
     return _opened;
 }

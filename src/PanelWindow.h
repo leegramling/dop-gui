@@ -52,5 +52,6 @@ private:
     std::uint32_t _flags = 0;
     UiLayoutRectState _layout;
     PanelMinSize _minSize;
+    bool _began = false;
     bool _opened = false;
 };
