@@ -87,18 +87,11 @@ Repo-local third-party dependencies:
 - [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui) for the docking-capable ImGui/VSG bridge used by this project
 - [`external/yoga`](/home/lgramling/dev/dop-gui/external/yoga) for layout computation used by authored and hand-coded panels
 
-## Local External vsgImGui
+## Vendored vsgImGui
 
-This project currently expects a local external `vsgImGui` checkout at [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui), but that directory is intentionally not committed to this repository.
+This project vendors `vsgImGui` under [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui).
 
-Current dependency state:
-
-- parent repo cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui`
-- `imgui` cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui/src/imgui`
-- `implot` cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui/src/implot`
-- `imgui` checked out at tag `v1.91.6-docking`
-
-This gives us a project-local docking-capable ImGui integration without depending on a network fetch during bootstrap.
+The vendored tree includes the `imgui` and `implot` sources needed by the current build, so a fresh checkout does not need a separate local `vsgImGui` clone just to configure the project.
 
 Build validation performed:
 
