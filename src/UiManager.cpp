@@ -75,6 +75,19 @@ void UiManager::initialize(
     _state = &state;
     _windowManager = &windowManager;
 
+    if (!ImGui::GetCurrentContext())
+    {
+        ImGui::CreateContext();
+    }
+
+    auto& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    if (_windowManager)
+    {
+        _windowManager->installImGuiPlatformCallbacks();
+    }
+
     _renderImGui = vsgImGui::RenderImGui::create(window, [this]() -> bool
     {
         if (!_state) return true;
@@ -84,10 +97,6 @@ void UiManager::initialize(
 
     renderGraph->addChild(_renderImGui);
     _sendEventsToImGui = vsgImGui::SendEventsToImGui::create();
-
-    auto& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     if (_windowManager)
     {
         _windowManager->installImGuiPlatformCallbacks();
@@ -193,4 +202,11 @@ bool UiManager::isInitialized() const
 vsg::ref_ptr<vsg::Visitor> UiManager::eventHandler() const
 {
     return _sendEventsToImGui;
+}
+
+void UiManager::updatePlatformWindows()
+{
+    if (!_renderImGui || !ImGui::GetCurrentContext()) return;
+    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0) return;
+    ImGui::UpdatePlatformWindows();
 }
