@@ -57,12 +57,21 @@ bool PanelWindow::begin()
         return _opened;
     }
 
+    const auto* mainViewport = ImGui::GetMainViewport();
     if (_layout.enabled)
     {
-        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(_layout.x), static_cast<float>(_layout.y)), ImGuiCond_Once);
+        ImVec2 windowPos(static_cast<float>(_layout.x), static_cast<float>(_layout.y));
+        if (_hostViewportId == 0 && mainViewport)
+        {
+            windowPos.x += mainViewport->Pos.x;
+            windowPos.y += mainViewport->Pos.y;
+        }
+        ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
         if (_layout.width > 0.0 && _layout.height > 0.0)
         {
-            ImGui::SetNextWindowSize(ImVec2(static_cast<float>(_layout.width), static_cast<float>(_layout.height)), ImGuiCond_Once);
+            ImGui::SetNextWindowSize(
+                ImVec2(static_cast<float>(_layout.width), static_cast<float>(_layout.height)),
+                ImGuiCond_Always);
         }
     }
 
@@ -73,7 +82,7 @@ bool PanelWindow::begin()
             ImVec2(FLT_MAX, FLT_MAX));
     }
 
-    if (const auto* mainViewport = ImGui::GetMainViewport())
+    if (mainViewport)
     {
         const auto viewportId = _hostViewportId != 0
             ? static_cast<ImGuiID>(_hostViewportId)
