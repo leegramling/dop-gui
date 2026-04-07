@@ -111,7 +111,20 @@ ImVec2 queryNativeWindowPos(vsg::Window* window, ImVec2 fallback)
     auto cookie = xcb_get_geometry(connection, *native);
     auto geometry = xcb_get_geometry_reply(connection, cookie, nullptr);
     if (!geometry) return fallback;
-    const ImVec2 value(static_cast<float>(geometry->x), static_cast<float>(geometry->y));
+
+    ImVec2 value(static_cast<float>(geometry->x), static_cast<float>(geometry->y));
+    if (geometry->root != XCB_NONE)
+    {
+        auto translateCookie = xcb_translate_coordinates(connection, *native, geometry->root, 0, 0);
+        auto translateReply = xcb_translate_coordinates_reply(connection, translateCookie, nullptr);
+        if (translateReply)
+        {
+            value.x = static_cast<float>(translateReply->dst_x);
+            value.y = static_cast<float>(translateReply->dst_y);
+            free(translateReply);
+        }
+    }
+
     free(geometry);
     return value;
 }
