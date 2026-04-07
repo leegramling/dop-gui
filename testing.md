@@ -466,3 +466,71 @@ If the panel logic skips the widget call, the widget query fails immediately. So
 - wrappers no longer being called
 
 What it does not catch is real desktop rendering behavior such as focus, docking, OS input, or Vulkan integration. That is what the desktop tests are for.
+
+### Could we use Lavapipe or another offline renderer to capture real desktop tests, and what would we need for panel snapshot images?
+
+Yes, probably, but that would be a different test layer than the current headless widget tests.
+
+Lavapipe can provide a software Vulkan implementation, which means we could run the real rendering path without requiring a physical GPU. That would let us test more of the real desktop stack:
+
+- VSG window creation
+- Vulkan-backed ImGui rendering
+- panel layout and docking behavior
+- actual rendered pixels
+
+But it would still require us to build a screenshot-based test harness. Right now the project does not have that harness.
+
+To support panel snapshot images in desktop tests, we would need to add at least these pieces:
+
+1. a deterministic desktop test mode
+   - fixed window size
+   - fixed font scale
+   - fixed theme/colors
+   - fixed startup layout
+   - disabled animations or timing-sensitive behavior
+
+2. a software-render-capable CI/runtime path
+   - Lavapipe or another software Vulkan driver
+   - environment setup so the test run selects that driver reliably
+
+3. a capture mechanism
+   - render a frame
+   - read back the framebuffer or swapchain image
+   - write a PNG artifact for the test
+
+4. a way to isolate a panel or crop panel regions
+   - either crop by known panel rectangle from the dock layout
+   - or render the target panel in a dedicated test window/layout
+
+5. golden image comparison
+   - store approved reference images
+   - compare new output with a small tolerance
+   - report diffs as test artifacts
+
+6. scriptable desktop test scenes
+   - open a panel
+   - set known widget values
+   - wait for a stable frame
+   - capture the image
+
+7. a stable font and asset story
+   - packaged fonts
+   - predictable DPI/scaling
+   - no machine-local theme differences
+
+The important tradeoff is:
+
+- headless widget tests are fast, stable, and good for behavior and data flow
+- screenshot-based desktop tests are slower, more fragile, but good for visual regressions and real rendering verification
+
+So the likely best setup is both:
+
+- keep the current headless tests as the main safety net
+- add a small number of screenshot-based desktop tests for critical panels
+
+If we wanted to start small, the first useful slice would be:
+
+1. run one scripted desktop test on Lavapipe
+2. capture one known panel image
+3. save it as an artifact
+4. only later add golden-image comparison
