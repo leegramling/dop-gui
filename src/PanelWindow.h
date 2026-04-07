@@ -26,6 +26,7 @@ public:
         const char* id,
         const char* title,
         bool& isOpen,
+        std::uint64_t hostViewportId,
         bool closable,
         const std::vector<std::string>& flags,
         const UiLayoutRectState& layout,
@@ -46,6 +47,7 @@ private:
     const char* _id;
     const char* _title;
     bool& _isOpen;
+    std::uint64_t _hostViewportId = 0;
     bool _closable = true;
     std::uint32_t _flags = 0;
     UiLayoutRectState _layout;

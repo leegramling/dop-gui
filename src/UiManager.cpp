@@ -36,6 +36,22 @@ bool menuHasPendingClick(const UiState& uiState, const std::string& menuLabel, c
 
     return false;
 }
+
+bool viewportIdExists(std::uint64_t viewportId)
+{
+    if (viewportId == 0) return true;
+    if (!ImGui::GetCurrentContext()) return false;
+
+    auto& platformIo = ImGui::GetPlatformIO();
+    for (int i = 0; i < platformIo.Viewports.Size; ++i)
+    {
+        auto* viewport = platformIo.Viewports[i];
+        if (!viewport) continue;
+        if (static_cast<std::uint64_t>(viewport->ID) == viewportId) return true;
+    }
+
+    return false;
+}
 }
 
 UiManager::UiManager()
@@ -171,12 +187,18 @@ void UiManager::render(AppState& state)
         auto* panelController = findPanel(panelId);
         if (!panelController) continue;
 
+        if (!state.ui.testMode && !viewportIdExists(panelState.hostViewportId))
+        {
+            panelState.hostViewportId = 0;
+        }
+
         panelController->ensureInitialized(panelState);
         PanelWindow panelWindow(
             state.ui,
             panelId.c_str(),
             panelState.label.c_str(),
             panelState.open,
+            panelState.hostViewportId,
             panelState.closable,
             panelState.flags,
             panelState.layout,
@@ -186,6 +208,21 @@ void UiManager::render(AppState& state)
             state.ui.currentPanelId.clear();
             continue;
         }
+
+        if (!state.ui.testMode)
+        {
+            const auto* currentViewport = ImGui::GetWindowViewport();
+            const auto* mainViewport = ImGui::GetMainViewport();
+            if (currentViewport && (!mainViewport || currentViewport->ID != mainViewport->ID))
+            {
+                panelState.hostViewportId = static_cast<std::uint64_t>(currentViewport->ID);
+            }
+            else
+            {
+                panelState.hostViewportId = 0;
+            }
+        }
+
         state.ui.currentPanelId = panelId;
         panelController->render(context, panelState);
         state.ui.currentPanelId.clear();

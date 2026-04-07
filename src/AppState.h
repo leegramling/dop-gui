@@ -167,6 +167,7 @@ struct UiPanelState
     std::string label;
     bool open = true;
     bool closable = true;
+    std::uint64_t hostViewportId = 0;
     std::vector<std::string> flags;
     UiLayoutRectState layout;
     std::optional<UiFlexNodeState> flexLayout;

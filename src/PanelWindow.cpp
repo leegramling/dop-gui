@@ -26,6 +26,7 @@ PanelWindow::PanelWindow(
     const char* id,
     const char* title,
     bool& isOpen,
+    std::uint64_t hostViewportId,
     bool closable,
     const std::vector<std::string>& flags,
     const UiLayoutRectState& layout,
@@ -34,6 +35,7 @@ PanelWindow::PanelWindow(
     _id(id),
     _title(title),
     _isOpen(isOpen),
+    _hostViewportId(hostViewportId),
     _closable(closable),
     _flags(decodeFlags(flags)),
     _layout(layout),
@@ -69,6 +71,11 @@ bool PanelWindow::begin()
         ImGui::SetNextWindowSizeConstraints(
             ImVec2(_minSize.width, _minSize.height),
             ImVec2(FLT_MAX, FLT_MAX));
+    }
+
+    if (_hostViewportId != 0)
+    {
+        ImGui::SetNextWindowViewport(static_cast<ImGuiID>(_hostViewportId));
     }
 
     bool* openPtr = _closable ? &_isOpen : nullptr;
