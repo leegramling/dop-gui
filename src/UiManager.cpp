@@ -237,11 +237,6 @@ void UiManager::render(AppState& state)
             panelState.hostViewportId = 0;
         }
 
-        if (!state.ui.testMode && state.ui.dockingEnabled && panelState.hostViewportId == 0)
-        {
-            ImGui::SetNextWindowDockID(mainDockspaceId(), ImGuiCond_Always);
-        }
-
         panelController->ensureInitialized(panelState);
         PanelWindow panelWindow(
             state.ui,
