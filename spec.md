@@ -118,6 +118,8 @@ Responsibilities:
 - keep window creation policy separate from `UiLayer` and from scene/render synchronization
 - own the first secondary-window `vsg::WindowTraits` policy for tear-out windows
 - detect whether the current docking path actually produces panel tear-out events before full secondary-window orchestration is attempted
+- track managed tear-out viewport windows by ImGui viewport id, including derived secondary-window trait snapshots before real VSG windows are created
+- expose tear-out diagnostics and managed-window snapshots through the query surface so callback traffic and future window policy stay testable
 - prepare the handoff where UI presentation command graphs can move into a tear-out window and later reattach to the primary dockspace
 
 Non-responsibilities:

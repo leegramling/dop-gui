@@ -6,6 +6,7 @@
 - [x] Route the first tear-out callback/status reporting through `WindowManager`.
 - [x] Enable the ImGui `ViewportsEnable` experiment and confirm whether backend viewport support and create/destroy callbacks appear.
 - [x] Install a `WindowManager`-owned ImGui platform/renderer callback seam without yet advertising full backend viewport support.
+- [x] Add managed-window records keyed by viewport id and expose them through tear-out queries before creating real secondary VSG windows.
 - [ ] Add the first secondary-window `vsg::WindowTraits` policy for a future tear-out window.
 - [ ] Add the first managed secondary-window creation path without yet requiring full tear-out/reattach success.
 - [ ] Prepare `VsgVisualizer` to create per-window render resources and UI command graphs for a managed secondary window.
@@ -52,7 +53,7 @@
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
 - [x] Add test commands and queries for hand-coded panel-driven scene creation.
-- [ ] Add queries and diagnostics for managed windows, tear-out callback status, and detached panel placement.
+- [x] Add queries and diagnostics for managed windows, tear-out callback status, and detached panel placement.
 
 ## Follow-Up Validation
 

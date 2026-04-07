@@ -2,7 +2,10 @@
 
 #include "AppState.h"
 
+#include <cstdint>
+#include <optional>
 #include <string>
+#include <vector>
 #include <vsg/all.h>
 #include <vsgImGui/imgui.h>
 
@@ -12,6 +15,36 @@
 class WindowManager
 {
 public:
+    /**
+     * @brief Snapshot of a managed tear-out viewport and its derived secondary window traits.
+     */
+    struct ManagedWindowRecord
+    {
+        std::uint64_t viewportId = 0;
+        std::string title;
+        double x = 0.0;
+        double y = 0.0;
+        double width = 0.0;
+        double height = 0.0;
+        bool visible = false;
+        bool focused = false;
+        bool minimized = false;
+        bool destroyed = false;
+        bool platformWindowCreated = false;
+        bool rendererWindowCreated = false;
+        bool ownedByApp = false;
+        std::string traitsWindowTitle;
+        int traitsX = 0;
+        int traitsY = 0;
+        unsigned int traitsWidth = 0;
+        unsigned int traitsHeight = 0;
+        bool traitsDecoration = true;
+        bool traitsHdpi = true;
+        bool traitsDebugLayer = false;
+        bool traitsApiDumpLayer = false;
+        unsigned int traitsSamples = 0;
+    };
+
     /**
      * @brief Default construct a window manager.
      */
@@ -53,6 +86,17 @@ public:
      * @return True when the primary window is available.
      */
     bool hasPrimaryWindow() const;
+    /**
+     * @brief Return the currently tracked secondary viewport windows.
+     * @return Immutable managed-window records.
+     */
+    const std::vector<ManagedWindowRecord>& managedWindows() const;
+    /**
+     * @brief Find a managed window by viewport id.
+     * @param viewportId ImGui viewport identifier.
+     * @return Managed window snapshot when known.
+     */
+    const ManagedWindowRecord* findManagedWindow(std::uint64_t viewportId) const;
 
 private:
     struct CallbackState
@@ -74,6 +118,10 @@ private:
     void installPlatformMonitorSnapshot();
     void installMainViewportHandles();
     void emitStatusToStderrIfChanged(const UiState& uiState);
+    ManagedWindowRecord& upsertManagedWindow(ImGuiViewport* viewport);
+    ManagedWindowRecord* findManagedWindow(ImGuiID viewportId);
+    void syncManagedWindowFromViewport(ManagedWindowRecord& record, ImGuiViewport* viewport);
+    vsg::ref_ptr<vsg::WindowTraits> createSecondaryWindowTraits(ImGuiViewport* viewport) const;
 
     static WindowManager* callbackOwner();
     static void setCallbackOwner(WindowManager* owner);
@@ -94,5 +142,6 @@ private:
 
     vsg::ref_ptr<vsg::Window> _primaryWindow;
     CallbackState _callbackState;
+    std::vector<ManagedWindowRecord> _managedWindows;
     std::string _lastStatusLog;
 };

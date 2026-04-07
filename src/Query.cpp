@@ -4,6 +4,7 @@
 #include "Command.h"
 #include "InputManager.h"
 #include "VsgVisualizer.h"
+#include "WindowManager.h"
 
 #include <functional>
 #include <sstream>
@@ -161,6 +162,37 @@ QueryValue makeLayoutRectValue(const UiLayoutRectState& layout)
     });
 }
 
+QueryValue makeManagedWindowValue(const WindowManager::ManagedWindowRecord& window)
+{
+    return makeObjectValue({
+        makeField("viewportId", makeUIntValue(window.viewportId)),
+        makeField("title", makeStringValue(window.title)),
+        makeField("x", makeDoubleValue(window.x)),
+        makeField("y", makeDoubleValue(window.y)),
+        makeField("width", makeDoubleValue(window.width)),
+        makeField("height", makeDoubleValue(window.height)),
+        makeField("visible", makeBoolValue(window.visible)),
+        makeField("focused", makeBoolValue(window.focused)),
+        makeField("minimized", makeBoolValue(window.minimized)),
+        makeField("destroyed", makeBoolValue(window.destroyed)),
+        makeField("platformWindowCreated", makeBoolValue(window.platformWindowCreated)),
+        makeField("rendererWindowCreated", makeBoolValue(window.rendererWindowCreated)),
+        makeField("ownedByApp", makeBoolValue(window.ownedByApp)),
+        makeField("traits", makeObjectValue({
+            makeField("windowTitle", makeStringValue(window.traitsWindowTitle)),
+            makeField("x", makeIntValue(window.traitsX)),
+            makeField("y", makeIntValue(window.traitsY)),
+            makeField("width", makeUIntValue(window.traitsWidth)),
+            makeField("height", makeUIntValue(window.traitsHeight)),
+            makeField("decoration", makeBoolValue(window.traitsDecoration)),
+            makeField("hdpi", makeBoolValue(window.traitsHdpi)),
+            makeField("debugLayer", makeBoolValue(window.traitsDebugLayer)),
+            makeField("apiDumpLayer", makeBoolValue(window.traitsApiDumpLayer)),
+            makeField("samples", makeUIntValue(window.traitsSamples)),
+        })),
+    });
+}
+
 QueryValue makeWidgetSpecValue(const UiWidgetSpecState& widget)
 {
     auto layoutValue = makeLayoutRectValue(widget.layout);
@@ -261,6 +293,8 @@ std::string canonicalizeQueryPath(const std::string& name)
     if (name.rfind("ui.layout.slot.", 0) == 0) return name;
     if (name == "ui.docking.status") return name;
     if (name == "ui.tearout.status") return name;
+    if (name == "ui.windows") return name;
+    if (name.rfind("ui.window.", 0) == 0) return name;
     if (name == "help") return "runtime.capabilities";
 
     constexpr std::string_view uiWidgetPrefix = "ui.widget.";
@@ -512,9 +546,30 @@ QueryValue readUiQuery(const App& app, const Segments& segments)
             makeField("platformDestroyRequestCount", makeIntValue(app.state().ui.platformDestroyRequestCount)),
             makeField("rendererCreateRequestCount", makeIntValue(app.state().ui.rendererCreateRequestCount)),
             makeField("rendererDestroyRequestCount", makeIntValue(app.state().ui.rendererDestroyRequestCount)),
+            makeField("managedWindowCount", makeIntValue(static_cast<int>(app.windowManager().managedWindows().size()))),
             makeField("lastTearOutEvent", makeStringValue(app.state().ui.lastTearOutEvent)),
             makeField("lastTearOutViewportId", makeUIntValue(app.state().ui.lastTearOutViewportId)),
         });
+    }
+
+    if (segments.size() == 1 && segments[0] == "windows")
+    {
+        QueryArray array;
+        for (const auto& window : app.windowManager().managedWindows())
+        {
+            array.elements.push_back(makeValuePtr(makeManagedWindowValue(window)));
+        }
+        return QueryValue{std::move(array)};
+    }
+
+    if (segments.size() >= 2 && segments[0] == "window")
+    {
+        std::string joined = segments[1];
+        for (std::size_t i = 2; i < segments.size(); ++i) joined += "." + segments[i];
+        const auto viewportId = static_cast<std::uint64_t>(std::stoull(joined));
+        const auto* window = app.windowManager().findManagedWindow(viewportId);
+        if (!window) throw std::runtime_error("Unknown UI managed window: " + joined);
+        return makeManagedWindowValue(*window);
     }
 
     if (segments.size() == 1 && segments[0] == "widgets")
@@ -784,6 +839,8 @@ std::vector<std::string> queryNames()
         "ui.layout.slot.<panel>.<slot>",
         "ui.docking.status",
         "ui.tearout.status",
+        "ui.windows",
+        "ui.window.<viewportId>",
         "ui.panel.<id>",
         "ui.panel.<id>.widgets",
         "ui.widgets",

@@ -123,6 +123,8 @@
 ## Phase 3F2: Secondary Window Creation
 
 - define the first `vsg::WindowTraits` policy for tear-out windows
+- capture managed-window records keyed by viewport id before real VSG secondary-window creation starts
+- expose managed-window snapshots and derived trait data through queries so secondary-window policy can be tested headlessly
 - let `WindowManager` create and destroy a managed secondary VSG window when tear-out is requested
 - prepare `VsgVisualizer` to create per-window render resources and command graphs for that window
 
@@ -192,6 +194,7 @@ Success criteria:
 - confirm whether the current docking path exposes enough tear-out events or callbacks to support managed windows at all
 - keep the first tear-out slice observational before adding any secondary VSG window implementation
 - add the first `WindowTraits` policy only after callback viability is demonstrated
+- keep a managed-window snapshot/query slice ahead of real secondary-window creation so viewport lifecycle and trait derivation can be verified independently
 - prepare `VsgVisualizer` for future per-window command-graph ownership without collapsing window lifecycle into render code
 - move detached panel UI command graphs into a secondary window only after both callback detection and secondary-window creation exist
 - support reattaching detached panels back into the main dockspace after the detach path is working
