@@ -45,10 +45,7 @@ UiManager::UiManager()
     registerPanel(std::make_unique<NewShapePanel>());
 }
 
-UiManager::~UiManager()
-{
-    shutdownPlatformWindows();
-}
+UiManager::~UiManager() = default;
 
 void UiManager::registerPanel(std::unique_ptr<Panel> panel)
 {

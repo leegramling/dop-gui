@@ -391,6 +391,7 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
     ++_callbackState.platformDestroyRequestCount;
     _callbackState.lastEvent = "platform_destroy_window";
     _callbackState.lastViewportId = viewport ? viewport->ID : 0;
+    clearPlatformHandles(viewport);
     if (viewport)
     {
         if (auto* record = findManagedWindow(viewport->ID))
@@ -400,7 +401,9 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
             record->focused = false;
             record->destroyed = true;
             record->pendingDestroy = true;
-            clearPlatformHandles(viewport);
+            record->hasVsgWindow = false;
+            record->window = {};
+            record->traits = {};
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
@@ -461,7 +464,7 @@ void WindowManager::installMainViewportHandles()
     auto* mainViewport = ImGui::GetMainViewport();
     if (!mainViewport) return;
 
-    applyPlatformHandles(mainViewport, _primaryWindow.get(), this);
+    applyPlatformHandles(mainViewport, _primaryWindow.get(), _primaryWindow.get());
 }
 
 WindowManager::ManagedWindowRecord& WindowManager::upsertManagedWindow(ImGuiViewport* viewport)
