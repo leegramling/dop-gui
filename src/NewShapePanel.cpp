@@ -143,16 +143,16 @@ void NewShapePanel::render(PanelContext& context, const UiPanelState& panelState
     const std::vector<std::string> shapeOptions{"Sphere", "Torus", "Pyramid"};
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "shape-kind-label");
-    Text(state.ui, "shape-kind-label", "Shape");
+    DisplayText(state.ui, "shape-kind-label", "Shape");
     setNextWidgetLayoutIfPresent(state.ui, layout, "shape-kind");
-    _shapeKind = ComboBox(state.ui, "shape-kind", "", _shapeKind, shapeOptions);
+    _shapeKind = SelectField(state.ui, "shape-kind", "", _shapeKind, shapeOptions);
 
     const auto renderDoubleField = [&](const char* labelSlot, const char* valueId, const char* labelText, double& value, const char* unit = nullptr, int precision = 2)
     {
         setNextWidgetLayoutIfPresent(state.ui, layout, labelSlot);
-        Text(state.ui, labelSlot, labelText);
+        DisplayText(state.ui, labelSlot, labelText);
         setNextWidgetLayoutIfPresent(state.ui, layout, valueId);
-        value = InputDouble(state.ui, valueId, "", value, precision, unit);
+        value = NumericField(state.ui, valueId, "", value, precision, unit);
     };
 
     renderDoubleField("position-x-label", "position-x", "Location X", _positionX, "m");
@@ -166,12 +166,12 @@ void NewShapePanel::render(PanelContext& context, const UiPanelState& panelState
     renderDoubleField("scale-z-label", "scale-z", "Scale Z", _scaleZ, nullptr, 3);
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "color-label");
-    Text(state.ui, "color-label", "Color");
+    DisplayText(state.ui, "color-label", "Color");
     setNextWidgetLayoutIfPresent(state.ui, layout, "color");
-    _colorHex = Input(state.ui, "color", "", _colorHex);
+    _colorHex = TextField(state.ui, "color", "", _colorHex);
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "create-shape");
-    if (Button(state.ui, "create-shape", "Create Shape"))
+    if (ActionButton(state.ui, "create-shape", "Create Shape"))
     {
         vsg::vec4 parsedColor{};
         if (!tryParseHexColor(_colorHex, parsedColor))
@@ -200,12 +200,12 @@ void NewShapePanel::render(PanelContext& context, const UiPanelState& panelState
     }
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "cancel");
-    if (Button(state.ui, "cancel", "Cancel"))
+    if (ActionButton(state.ui, "cancel", "Cancel"))
     {
         state.ui.requestedCommands.push_back("ui.panel.close=panel-new-shape");
         resetForm();
     }
 
     setNextWidgetLayoutIfPresent(state.ui, layout, "status");
-    Text(state.ui, "status", _status);
+    DisplayText(state.ui, "status", _status);
 }

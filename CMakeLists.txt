@@ -19,7 +19,7 @@ find_package(vsg 1.1.13 REQUIRED)
 find_program(GLSLANG_VALIDATOR NAMES glslangValidator REQUIRED)
 
 add_subdirectory(external/vsgImGui)
-add_subdirectory("../vsgLayt/yoga/yoga" "${CMAKE_CURRENT_BINARY_DIR}/external-yoga")
+add_subdirectory(external/yoga)
 
 set(DOP_GUI_SHADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 set(DOP_GUI_SHADER_SOURCES
