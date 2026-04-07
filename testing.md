@@ -43,6 +43,17 @@ Those wrappers do three jobs:
 
 The layout and Yoga code is useful for panel placement, but it is not the core testing idea. The testing pattern is much simpler than the full file makes it look.
 
+```mermaid
+flowchart LR
+    A[Panel Code] --> B[Widget Wrapper]
+    B --> C[UiState.registry]
+    B --> D{testMode?}
+    D -->|yes| E[Consume scripted action]
+    D -->|no| F[Call ImGui]
+    E --> G[Return value to panel]
+    F --> G
+```
+
 ## Simplified Widget Examples
 
 Below are stripped-down examples of the pattern behind `Button`, `Checkbox`, and `Input`.
@@ -172,6 +183,15 @@ So a headless test can:
 2. evaluate the UI tree
 3. inspect widget state through a query
 
+```mermaid
+flowchart LR
+    A[Script Command] --> B[Pending Ui Action]
+    B --> C[Widget Wrapper]
+    C --> D[Update WidgetState]
+    C --> E[Return value to panel]
+    D --> F[Query Surface]
+```
+
 ### Headless Example
 
 This script drives the New Shape dialog entirely without a desktop:
@@ -266,6 +286,18 @@ The only difference is where the edit came from:
 
 - headless: scripted action such as `set_text`
 - desktop: real ImGui input from the user
+
+```mermaid
+flowchart LR
+    A[App State Value] --> B[Input Wrapper]
+    B --> C{Mode}
+    C -->|Headless| D[consumeText]
+    C -->|Desktop| E[ImGui::InputText]
+    D --> F[WidgetState.textValue]
+    E --> F
+    F --> G[Return final value]
+    F --> H[ui.panel...widget... query]
+```
 
 ## Query Surface
 
