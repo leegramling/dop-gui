@@ -37,6 +37,7 @@ public:
         bool addedToViewer = false;
         bool pendingCreate = false;
         bool pendingDestroy = false;
+        bool screenSpaceEstablished = false;
         std::string traitsWindowTitle;
         int traitsX = 0;
         int traitsY = 0;

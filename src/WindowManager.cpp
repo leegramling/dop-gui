@@ -152,7 +152,7 @@ void focusNativeWindow(vsg::Window* window)
     xcb_flush(connection);
 }
 
-ImVec2 normalizeViewportScreenPos(ImGuiViewport* viewport)
+ImVec2 convertLocalViewportPosToScreen(ImGuiViewport* viewport)
 {
     if (!viewport) return ImVec2(0.0f, 0.0f);
 
@@ -175,11 +175,10 @@ ImVec2 normalizeViewportScreenPos(ImGuiViewport* viewport)
 void syncNativeWindowToViewport(vsg::Window* window, ImGuiViewport* viewport)
 {
     if (!window || !viewport) return;
-    ImVec2 screenPos = normalizeViewportScreenPos(viewport);
     configureNativeWindow(
         window,
-        static_cast<int32_t>(screenPos.x),
-        static_cast<int32_t>(screenPos.y),
+        static_cast<int32_t>(viewport->Pos.x),
+        static_cast<int32_t>(viewport->Pos.y),
         std::max(1u, static_cast<unsigned int>(viewport->Size.x)),
         std::max(1u, static_cast<unsigned int>(viewport->Size.y)));
 }
@@ -390,8 +389,12 @@ void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
     _callbackState.lastViewportId = viewport ? viewport->ID : 0;
     if (viewport)
     {
-        viewport->Pos = normalizeViewportScreenPos(viewport);
         auto& record = upsertManagedWindow(viewport);
+        if (!record.screenSpaceEstablished)
+        {
+            viewport->Pos = convertLocalViewportPosToScreen(viewport);
+            record.screenSpaceEstablished = true;
+        }
         record.platformWindowCreated = true;
         record.destroyed = false;
         syncManagedWindowFromViewport(record, viewport);
@@ -429,6 +432,7 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
             record->focused = false;
             record->destroyed = true;
             record->pendingDestroy = true;
+            record->screenSpaceEstablished = false;
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
@@ -607,7 +611,6 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
     if (viewport)
     {
         viewport->Pos = pos;
-        viewport->Pos = normalizeViewportScreenPos(viewport);
     }
     if (auto* owner = callbackOwner(); owner)
     {
@@ -617,6 +620,7 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
+        record.screenSpaceEstablished = true;
         if (record.traits)
         {
             record.traits->x = static_cast<int32_t>(viewport->Pos.x);
