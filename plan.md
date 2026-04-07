@@ -151,13 +151,21 @@
 - add scene-state and renderer support for `sphere`, `torus`, and `pyramid`
 - let the panel create new scene objects with transform and color data
 
+## Phase 4D: Windows Demo Build Cleanup
+
+- vendor Yoga under `external/` instead of relying on the sibling `../vsgLayt` source
+- update top-level CMake so the repo builds from repo-local and documented external dependencies
+- add a Windows-oriented `build.bat` entry point for configuring and building the project
+- add a `testing.md` guide covering headless and live GUI test/demo flows
+- rename or wrap unclear widget helper functions where needed so demo code reads clearly to contributors
+
 ## Current Focus
 
-Current focus is a deliberate hand-coded panel example after the authored-layout milestone: add a `New Shape` panel that demonstrates the fallback `Panel` path with explicit `init()` layout and `render()` callbacks while staying fully testable and extending scene/render support for new primitive kinds.
+Current focus is Windows demo and testing prep after the hand-coded panel milestone: make the repo more self-contained for cross-platform builds by vendoring Yoga, adding a `build.bat` path, writing a `testing.md` demo guide, and cleaning up widget helper naming where it improves readability.
 
 Success criteria:
 
-- keep the tested command/query and live playback seams stable while layout becomes more declarative
+- keep the tested command/query and live playback seams stable while the build and dependency story becomes more repo-local and Windows-friendly
 - prove the main panels can load their flex-layout structures from JSON5 and still drive Yoga layout rects
 - preserve `ui.layout.slot.*` inspection while changing the authored layout source
 - preserve stable slot ids and legacy flat widget queries while panel-local widget ids are introduced incrementally
@@ -171,13 +179,13 @@ Success criteria:
 - finish the current feature by moving selected-object controls onto the same generic panel-tree binder path, leaving popup and table behavior as the last intentional custom renderers to defer
 - keep deeper window/tear-out work documented but deferred until the callback path is viable
 - keep the fallback hand-coded panel path documented as an escape hatch, not the default authored UI path
-- prove the fallback path with one real hand-coded panel that is still queryable and scriptable through the same UI test infrastructure
-- add `sphere`, `torus`, and `pyramid` as new renderable scene kinds created through that panel
-- keep new-shape creation state flowing through plain application data before render sync
-- keep the hand-coded example narrow and complete so the next branch can return to broader scene-asset or declarative-UI work without carrying partial panel scaffolding
+- keep the current hand-coded new-shape example intact while making the build/demo workflow easier to explain on Windows
+- remove the remaining dependence on sibling Yoga sources so the repo can be demoed from a cleaner checkout
+- provide one documented Windows build path and one documented testing/demo path that can be walked through live
+- improve widget helper naming where it currently obscures intent for new contributors reading the code during a demo
 
 Next focus after current slice:
 
-- move `.gltf` / `.glb` scene growth into the next feature once the hand-coded panel example is complete
-- keep reducing legacy flat widget-id reliance once the new panel also works with panel-scoped commands and queries
-- revisit popup/table generalization in a later feature if we still want zero custom renderers in the declarative path
+- return to deeper tear-out work after the Windows demo branch if we still want native multi-window support
+- move `.gltf` / `.glb` scene growth into a later feature once the build/demo story is cleaner
+- keep reducing legacy flat widget-id reliance in later cleanup slices

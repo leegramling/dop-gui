@@ -2,17 +2,11 @@
 
 ## Active Slice
 
-- [x] Add a hand-coded `New Shape` panel as the documented fallback-panel development example.
-- [x] Define the `New Shape` panel Yoga layout in `init()` and widget callbacks in `render()`.
-- [x] Add shape type selection for `Sphere`, `Torus`, and `Pyramid`.
-- [x] Add transform inputs for location `x/y/z`, rotation `x/y/z`, and scale `x/y/z`.
-- [x] Add a color hex input for the created shape.
-- [x] Make the panel testable through the shared `ui.test.*` flow used by both headless and live UI execution.
-- [x] Add scene-state and renderer support for `sphere`, `torus`, and `pyramid`.
-- [x] Create new scene objects from panel callbacks and verify they appear in queries and rendering.
-- [x] Add `Scene -> Create` to open the dialog panel from the main menu.
-- [x] Add `Cancel` to the hand-coded dialog and close the panel on both `Create` and `Cancel`.
-- [x] Recompile live-created shape scene resources before VSG records them, so runtime creation no longer crashes.
+- [ ] Vendor Yoga under `external/` and stop depending on the sibling `../vsgLayt` source tree.
+- [ ] Update CMake to build against the vendored Yoga dependency rather than the current local-reference path.
+- [ ] Add a repo-local `build.bat` that configures and builds the project for a Windows demo path.
+- [ ] Add `testing.md` documenting headless and GUI test/demo flows, including the current scripts and expected outcomes.
+- [ ] Refactor the most confusing wrapped-widget helper names so contributors can read panel code without translating thin aliases mentally.
 
 ## Next Tasks
 
@@ -41,6 +35,7 @@
 - [x] Move the selected-object controls in both panels onto the shared generic panel-tree combo binder path so popup and table behavior are the only intentional custom renderers left in this feature.
 - [ ] Reduce the remaining split between panel-local widget ids and globally flat widget lookup so the declarative UI path can rely primarily on scoped queries and commands.
 - [x] Document and preserve a fallback hand-coded panel path for exceptional panels that still need an `initialize` builder flow and explicit `render` method before they move to JSON5-authored UI.
+- [ ] Add a Windows-specific build verification pass once `build.bat` exists and dependency paths are repo-local.
 
 ## Next Slice Candidates
 
@@ -54,6 +49,7 @@
 - [ ] Add test commands and queries for popups, tables, and scene-asset widgets.
 - [ ] Add scene queries for loaded asset instances and larger scene structures.
 - [x] Add test commands and queries for hand-coded panel-driven scene creation.
+- [ ] Add a documented Windows demo/test checklist that can be followed without local tribal knowledge.
 
 ## Follow-Up Validation
 
@@ -65,6 +61,8 @@
 - [ ] Confirm the `WindowManager` can observe ImGui platform window callbacks before any tear-out implementation starts.
 - [ ] Confirm the first `.glb` scene can load and be queried from the command/query surface.
 - [x] Confirm the hand-coded `New Shape` panel can create each supported shape kind through headless `ui.test.*` flows.
+- [ ] Confirm the project configures cleanly from repo-local dependencies without relying on sibling Yoga source checkouts.
+- [ ] Confirm the documented Windows build script matches the real configure/build flow.
 
 ## Constraints
 
@@ -75,6 +73,7 @@
 - [x] Use JSON5 for authored command and UI files.
 - [x] Do not add Lua-specific architecture unless a later requirement forces it.
 - [x] Do not implement full recording/playback yet unless required to establish the command/query seam.
+- [x] Keep `imgui.ini` ignored as local runtime state rather than demo/build source.
 
 ## Done Definition
 

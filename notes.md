@@ -2,6 +2,13 @@
 
 ## Merge Request Notes
 
+- [x] Create feature branch `feature/windows-demo-build-cleanup`.
+- [x] Record the next cleanup/demo slice as Windows build prep and dependency cleanup rather than new runtime UI behavior.
+- [ ] Move Yoga into repo-local `external/` ownership instead of depending on the sibling `../vsgLayt` source tree.
+- [ ] Add a Windows-oriented `build.bat` script for demo builds.
+- [ ] Add `testing.md` as the contributor/demo walkthrough for current headless and live UI testing flows.
+- [ ] Rename or wrap unclear widget helper functions where readability is weak in hand-coded panel examples and test/demo code.
+
 - [x] Create feature branch `feature/new-shape-panel-dev-example`.
 - [x] Create feature branch `feature/widget-layout-doxygen-gltf`.
 - [x] Create feature branch `feature/imgui-ui-layout-testable`.
