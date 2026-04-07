@@ -626,7 +626,8 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
                 resolvedPos.x < mainViewport->Size.x && resolvedPos.y < mainViewport->Size.y;
             if (looksLocalToMain)
             {
-                resolvedPos = queryNativeWindowPos(record.window.get(), ImVec2(static_cast<float>(record.x), static_cast<float>(record.y)));
+                viewport->Pos = ImVec2(static_cast<float>(record.x), static_cast<float>(record.y));
+                return;
             }
         }
         viewport->Pos = resolvedPos;
