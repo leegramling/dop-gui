@@ -73,9 +73,12 @@ bool PanelWindow::begin()
             ImVec2(FLT_MAX, FLT_MAX));
     }
 
-    if (_hostViewportId != 0)
+    if (const auto* mainViewport = ImGui::GetMainViewport())
     {
-        ImGui::SetNextWindowViewport(static_cast<ImGuiID>(_hostViewportId));
+        const auto viewportId = _hostViewportId != 0
+            ? static_cast<ImGuiID>(_hostViewportId)
+            : mainViewport->ID;
+        ImGui::SetNextWindowViewport(viewportId);
     }
 
     bool* openPtr = _closable ? &_isOpen : nullptr;
