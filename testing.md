@@ -534,3 +534,133 @@ If we wanted to start small, the first useful slice would be:
 2. capture one known panel image
 3. save it as an artifact
 4. only later add golden-image comparison
+
+### Could we create a testing macro record/playback system?
+
+Yes. The sibling [InputManager.cpp](/home/lgramling/dev/vsgLayt/src/InputManager.cpp) in `vsgLayt` already shows the right foundation for this.
+
+That implementation does two important things:
+
+- it records incoming low-level events into a queue
+- it later replays those queued events into `ImGuiIO`
+
+Examples from that file:
+
+- mouse button presses and releases
+- pointer move events
+- scroll wheel events
+- key press and key release events
+- window configure events
+- frame events used to advance `DeltaTime`
+
+So the basic model is already there:
+
+```mermaid
+flowchart LR
+    A[OS or VSG Event] --> B[QueuedEvent]
+    B --> C[Input Queue]
+    C --> D[processEvents]
+    D --> E[ImGuiIO]
+    E --> F[Real UI Behavior]
+```
+
+To turn that into a testing macro record/playback feature, we would add two layers on top of the existing event queue idea.
+
+#### Record mode
+
+In record mode, we would capture each input event and write it to a file with timing information.
+
+Likely recorded fields:
+
+- event type
+- mouse position
+- button id
+- scroll delta
+- key code
+- modifiers
+- window size changes
+- frame timing or relative timestamps
+
+For example:
+
+```json5
+{
+  events: [
+    { t: 0.000, type: "configure", width: 1280, height: 720 },
+    { t: 0.120, type: "move", x: 410, y: 170 },
+    { t: 0.135, type: "button_press", button: 1, x: 410, y: 170 },
+    { t: 0.182, type: "button_release", button: 1, x: 410, y: 170 },
+    { t: 0.320, type: "key_press", key: "S" },
+    { t: 0.340, type: "key_release", key: "S" },
+  ],
+}
+```
+
+#### Playback mode
+
+In playback mode, the app would load that file, inject the recorded events into the same queue, and let the normal `processEvents()` path replay them into `ImGuiIO`.
+
+That would keep the behavior close to real interactive use, because the UI would still be driven by the normal desktop event path.
+
+```mermaid
+flowchart LR
+    A[Macro File] --> B[Replay Loader]
+    B --> C[QueuedEvent]
+    C --> D[processEvents]
+    D --> E[ImGuiIO]
+    E --> F[Desktop UI]
+    F --> G[Optional screenshot or query]
+```
+
+#### What we would need to add
+
+To make this practical in `dop-gui`, we would need:
+
+1. a serializable event format
+   - JSON5 would fit the existing script style well
+
+2. record hooks in the real input path
+   - intercept the same events that currently flow into the app
+   - write them out with timestamps
+
+3. playback hooks in the input manager
+   - read the macro file
+   - enqueue events at the right frame or timestamp
+
+4. deterministic frame stepping
+   - playback is much more reliable if frame timing is controlled
+   - otherwise timing-sensitive drags and text input can drift
+
+5. stable window geometry
+   - fixed window size and panel layout
+   - otherwise recorded coordinates may not line up on another machine
+
+6. optional assertions after playback
+   - run queries after the macro finishes
+   - or capture screenshots for visual verification
+
+#### What this would be good for
+
+A macro recorder/playback system would be useful for:
+
+- real drag and drop testing
+- menu navigation testing
+- keyboard shortcut testing
+- docking and panel interaction testing
+- screenshot capture after a realistic interaction sequence
+
+#### What it would not replace
+
+It should not replace the current headless widget tests.
+
+The better split is:
+
+- headless tests for fast logic and widget-contract verification
+- macro playback for real interactive integration testing
+- optional screenshot capture for visual regressions
+
+So the likely path would be:
+
+1. keep the current `ui.test.*` headless actions
+2. add `ui.macro.record` / `ui.macro.playback` as a separate desktop-capable layer
+3. use playback together with queries and optional screenshots for high-value end-to-end cases
