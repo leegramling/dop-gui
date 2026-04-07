@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <xcb/xcb.h>
 
 namespace
 {
@@ -11,6 +12,131 @@ WindowManager* g_callbackOwner = nullptr;
 double positiveOrZero(float value)
 {
     return value > 0.0f ? static_cast<double>(value) : 0.0;
+}
+
+xcb_connection_t* nativeConnection(vsg::Window* window)
+{
+    if (!window || !window->traits()) return nullptr;
+    auto& connection = window->traits()->systemConnection;
+    if (!connection.has_value()) return nullptr;
+    if (auto* ptr = std::any_cast<xcb_connection_t*>(&connection)) return *ptr;
+    return nullptr;
+}
+
+std::optional<xcb_window_t> nativeWindowId(vsg::Window* window)
+{
+    if (!window || !window->traits()) return std::nullopt;
+    auto& nativeWindow = window->traits()->nativeWindow;
+    if (!nativeWindow.has_value()) return std::nullopt;
+    if (auto* value = std::any_cast<xcb_window_t>(&nativeWindow)) return *value;
+    if (auto* value = std::any_cast<std::uint32_t>(&nativeWindow)) return static_cast<xcb_window_t>(*value);
+    return std::nullopt;
+}
+
+void applyPlatformHandles(ImGuiViewport* viewport, vsg::Window* window, void* userData)
+{
+    if (!viewport) return;
+
+    viewport->PlatformUserData = userData;
+    viewport->PlatformHandle = window;
+    if (auto native = nativeWindowId(window))
+    {
+        viewport->PlatformHandleRaw = reinterpret_cast<void*>(static_cast<uintptr_t>(*native));
+    }
+    else
+    {
+        viewport->PlatformHandleRaw = window;
+    }
+}
+
+void clearPlatformHandles(ImGuiViewport* viewport)
+{
+    if (!viewport) return;
+    viewport->PlatformUserData = nullptr;
+    viewport->PlatformHandle = nullptr;
+    viewport->PlatformHandleRaw = nullptr;
+}
+
+void mapNativeWindow(vsg::Window* window)
+{
+    auto* connection = nativeConnection(window);
+    auto native = nativeWindowId(window);
+    if (!connection || !native) return;
+    xcb_map_window(connection, *native);
+    xcb_flush(connection);
+}
+
+void configureNativeWindow(vsg::Window* window, const std::optional<int32_t>& x, const std::optional<int32_t>& y,
+                           const std::optional<uint32_t>& width, const std::optional<uint32_t>& height)
+{
+    auto* connection = nativeConnection(window);
+    auto native = nativeWindowId(window);
+    if (!connection || !native) return;
+
+    uint16_t mask = 0;
+    uint32_t values[4];
+    int index = 0;
+    if (x)
+    {
+        mask |= XCB_CONFIG_WINDOW_X;
+        values[index++] = static_cast<uint32_t>(*x);
+    }
+    if (y)
+    {
+        mask |= XCB_CONFIG_WINDOW_Y;
+        values[index++] = static_cast<uint32_t>(*y);
+    }
+    if (width)
+    {
+        mask |= XCB_CONFIG_WINDOW_WIDTH;
+        values[index++] = *width;
+    }
+    if (height)
+    {
+        mask |= XCB_CONFIG_WINDOW_HEIGHT;
+        values[index++] = *height;
+    }
+
+    if (mask == 0) return;
+    xcb_configure_window(connection, *native, mask, values);
+    xcb_flush(connection);
+}
+
+ImVec2 queryNativeWindowPos(vsg::Window* window, ImVec2 fallback)
+{
+    auto* connection = nativeConnection(window);
+    auto native = nativeWindowId(window);
+    if (!connection || !native) return fallback;
+
+    auto cookie = xcb_get_geometry(connection, *native);
+    auto geometry = xcb_get_geometry_reply(connection, cookie, nullptr);
+    if (!geometry) return fallback;
+    const ImVec2 value(static_cast<float>(geometry->x), static_cast<float>(geometry->y));
+    free(geometry);
+    return value;
+}
+
+ImVec2 queryNativeWindowSize(vsg::Window* window, ImVec2 fallback)
+{
+    auto* connection = nativeConnection(window);
+    auto native = nativeWindowId(window);
+    if (!connection || !native) return fallback;
+
+    auto cookie = xcb_get_geometry(connection, *native);
+    auto geometry = xcb_get_geometry_reply(connection, cookie, nullptr);
+    if (!geometry) return fallback;
+    const ImVec2 value(static_cast<float>(geometry->width), static_cast<float>(geometry->height));
+    free(geometry);
+    return value;
+}
+
+void focusNativeWindow(vsg::Window* window)
+{
+    auto* connection = nativeConnection(window);
+    auto native = nativeWindowId(window);
+    if (!connection || !native) return;
+    xcb_set_input_focus(connection, XCB_INPUT_FOCUS_POINTER_ROOT, *native, XCB_CURRENT_TIME);
+    xcb_flush(connection);
 }
 }
 
@@ -44,6 +170,11 @@ void WindowManager::installImGuiPlatformCallbacks()
     io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
 
     auto& platformIo = ImGui::GetPlatformIO();
+    _callbackState.previousRendererCreateWindow = platformIo.Renderer_CreateWindow;
+    _callbackState.previousRendererDestroyWindow = platformIo.Renderer_DestroyWindow;
+    _callbackState.previousRendererSetWindowSize = platformIo.Renderer_SetWindowSize;
+    _callbackState.previousRendererRenderWindow = platformIo.Renderer_RenderWindow;
+    _callbackState.previousRendererSwapBuffers = platformIo.Renderer_SwapBuffers;
     platformIo.Platform_CreateWindow = &WindowManager::platformCreateWindow;
     platformIo.Platform_DestroyWindow = &WindowManager::platformDestroyWindow;
     platformIo.Platform_ShowWindow = &WindowManager::platformShowWindow;
@@ -55,6 +186,7 @@ void WindowManager::installImGuiPlatformCallbacks()
     platformIo.Platform_GetWindowFocus = &WindowManager::platformGetWindowFocus;
     platformIo.Platform_GetWindowMinimized = &WindowManager::platformGetWindowMinimized;
     platformIo.Platform_SetWindowTitle = &WindowManager::platformSetWindowTitle;
+    platformIo.Platform_CreateVkSurface = &WindowManager::platformCreateVkSurface;
     platformIo.Renderer_CreateWindow = &WindowManager::rendererCreateWindow;
     platformIo.Renderer_DestroyWindow = &WindowManager::rendererDestroyWindow;
     platformIo.Renderer_SetWindowSize = &WindowManager::rendererSetWindowSize;
@@ -123,6 +255,44 @@ void WindowManager::syncImGuiStatus(UiState& uiState) const
     const_cast<WindowManager*>(this)->emitStatusToStderrIfChanged(uiState);
 }
 
+void WindowManager::realizeManagedWindows()
+{
+    if (!ImGui::GetCurrentContext()) return;
+
+    for (auto& record : _managedWindows)
+    {
+        if (!record.pendingCreate || record.window || record.destroyed) continue;
+
+        record.traits = createSecondaryWindowTraits(ImGui::FindViewportByID(static_cast<ImGuiID>(record.viewportId)));
+        if (!record.traits) continue;
+
+        record.window = vsg::Window::create(record.traits);
+        record.hasVsgWindow = record.window.valid();
+        if (!record.window) continue;
+
+        if (auto* viewport = ImGui::FindViewportByID(static_cast<ImGuiID>(record.viewportId)))
+        {
+            applyPlatformHandles(viewport, record.window.get(), record.window.get());
+        }
+
+        record.pendingCreate = false;
+    }
+}
+
+void WindowManager::retireManagedWindows()
+{
+    auto it = _managedWindows.begin();
+    while (it != _managedWindows.end())
+    {
+        if (it->pendingDestroy && !it->addedToViewer)
+        {
+            it = _managedWindows.erase(it);
+            continue;
+        }
+        ++it;
+    }
+}
+
 vsg::ref_ptr<vsg::Window> WindowManager::primaryWindow() const
 {
     return _primaryWindow;
@@ -180,16 +350,10 @@ void WindowManager::recordPlatformCreateWindow(ImGuiViewport* viewport)
             {
                 record.window = vsg::Window::create(record.traits);
                 record.hasVsgWindow = record.window.valid();
+                record.pendingCreate = false;
                 if (record.window.valid())
                 {
-                    viewport->PlatformUserData = record.window.get();
-                    viewport->PlatformHandle = record.window.get();
-                    viewport->PlatformHandleRaw = record.window.get();
-                    if (_viewer)
-                    {
-                        _viewer->addWindow(record.window);
-                        record.addedToViewer = true;
-                    }
+                    applyPlatformHandles(viewport, record.window.get(), record.window.get());
                 }
             }
         }
@@ -205,18 +369,12 @@ void WindowManager::recordPlatformDestroyWindow(ImGuiViewport* viewport)
     {
         if (auto* record = findManagedWindow(viewport->ID))
         {
-            if (record->window && _viewer && record->addedToViewer)
-            {
-                _viewer->removeWindow(record->window);
-                record->addedToViewer = false;
-            }
-            record->window = {};
-            record->traits = {};
-            record->hasVsgWindow = false;
             record->platformWindowCreated = false;
             record->visible = false;
             record->focused = false;
             record->destroyed = true;
+            record->pendingDestroy = true;
+            clearPlatformHandles(viewport);
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
@@ -233,7 +391,6 @@ void WindowManager::recordRendererCreateWindow(ImGuiViewport* viewport)
         record.rendererWindowCreated = true;
         record.destroyed = false;
         record.hasVsgWindow = record.window.valid();
-        viewport->RendererUserData = record.window.get();
         syncManagedWindowFromViewport(record, viewport);
     }
 }
@@ -249,7 +406,7 @@ void WindowManager::recordRendererDestroyWindow(ImGuiViewport* viewport)
         {
             record->rendererWindowCreated = false;
             record->destroyed = true;
-            viewport->RendererUserData = nullptr;
+            record->pendingDestroy = true;
             syncManagedWindowFromViewport(*record, viewport);
         }
     }
@@ -278,9 +435,7 @@ void WindowManager::installMainViewportHandles()
     auto* mainViewport = ImGui::GetMainViewport();
     if (!mainViewport) return;
 
-    mainViewport->PlatformUserData = this;
-    mainViewport->PlatformHandle = _primaryWindow.get();
-    mainViewport->PlatformHandleRaw = _primaryWindow.get();
+    applyPlatformHandles(mainViewport, _primaryWindow.get(), this);
 }
 
 WindowManager::ManagedWindowRecord& WindowManager::upsertManagedWindow(ImGuiViewport* viewport)
@@ -369,8 +524,18 @@ void WindowManager::platformDestroyWindow(ImGuiViewport* viewport)
     if (auto* owner = callbackOwner()) owner->recordPlatformDestroyWindow(viewport);
 }
 
-void WindowManager::platformShowWindow(ImGuiViewport*)
+void WindowManager::platformShowWindow(ImGuiViewport* viewport)
 {
+    if (auto* owner = callbackOwner(); owner)
+    {
+        if (viewport)
+        {
+            if (auto* record = owner->findManagedWindow(viewport->ID))
+            {
+                mapNativeWindow(record->window.get());
+            }
+        }
+    }
 }
 
 void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
@@ -384,12 +549,20 @@ void WindowManager::platformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
             record.traits->x = static_cast<int32_t>(pos.x);
             record.traits->y = static_cast<int32_t>(pos.y);
         }
+        configureNativeWindow(record.window.get(), static_cast<int32_t>(pos.x), static_cast<int32_t>(pos.y), std::nullopt, std::nullopt);
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
 
 ImVec2 WindowManager::platformGetWindowPos(ImGuiViewport* viewport)
 {
+    if (auto* owner = callbackOwner(); owner && viewport)
+    {
+        if (auto* record = owner->findManagedWindow(viewport->ID))
+        {
+            return queryNativeWindowPos(record->window.get(), viewport->Pos);
+        }
+    }
     return viewport ? viewport->Pos : ImVec2(0.0f, 0.0f);
 }
 
@@ -404,12 +577,22 @@ void WindowManager::platformSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
             record.traits->width = std::max(1u, static_cast<unsigned int>(size.x));
             record.traits->height = std::max(1u, static_cast<unsigned int>(size.y));
         }
+        configureNativeWindow(record.window.get(), std::nullopt, std::nullopt,
+                              std::max(1u, static_cast<unsigned int>(size.x)),
+                              std::max(1u, static_cast<unsigned int>(size.y)));
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
 
 ImVec2 WindowManager::platformGetWindowSize(ImGuiViewport* viewport)
 {
+    if (auto* owner = callbackOwner(); owner && viewport)
+    {
+        if (auto* record = owner->findManagedWindow(viewport->ID))
+        {
+            return queryNativeWindowSize(record->window.get(), viewport->Size);
+        }
+    }
     return viewport ? viewport->Size : ImVec2(0.0f, 0.0f);
 }
 
@@ -419,6 +602,7 @@ void WindowManager::platformSetWindowFocus(ImGuiViewport* viewport)
     if (auto* owner = callbackOwner(); owner && viewport)
     {
         auto& record = owner->upsertManagedWindow(viewport);
+        focusNativeWindow(record.window.get());
         owner->syncManagedWindowFromViewport(record, viewport);
     }
 }
@@ -449,12 +633,26 @@ void WindowManager::platformSetWindowTitle(ImGuiViewport* viewport, const char* 
 
 void WindowManager::rendererCreateWindow(ImGuiViewport* viewport)
 {
-    if (auto* owner = callbackOwner()) owner->recordRendererCreateWindow(viewport);
+    if (auto* owner = callbackOwner())
+    {
+        owner->recordRendererCreateWindow(viewport);
+        if (owner->_callbackState.previousRendererCreateWindow)
+        {
+            owner->_callbackState.previousRendererCreateWindow(viewport);
+        }
+    }
 }
 
 void WindowManager::rendererDestroyWindow(ImGuiViewport* viewport)
 {
-    if (auto* owner = callbackOwner()) owner->recordRendererDestroyWindow(viewport);
+    if (auto* owner = callbackOwner())
+    {
+        owner->recordRendererDestroyWindow(viewport);
+        if (owner->_callbackState.previousRendererDestroyWindow)
+        {
+            owner->_callbackState.previousRendererDestroyWindow(viewport);
+        }
+    }
 }
 
 void WindowManager::rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
@@ -464,7 +662,30 @@ void WindowManager::rendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
     {
         auto& record = owner->upsertManagedWindow(viewport);
         owner->syncManagedWindowFromViewport(record, viewport);
+        if (owner->_callbackState.previousRendererSetWindowSize)
+        {
+            owner->_callbackState.previousRendererSetWindowSize(viewport, size);
+        }
     }
+}
+
+int WindowManager::platformCreateVkSurface(ImGuiViewport* viewport, ImU64, const void*, ImU64* outVkSurface)
+{
+    if (!viewport || !outVkSurface) return VK_ERROR_INITIALIZATION_FAILED;
+
+    if (auto* owner = callbackOwner())
+    {
+        if (auto* record = owner->findManagedWindow(viewport->ID))
+        {
+            if (record->window && record->window->getSurface())
+            {
+                *outVkSurface = reinterpret_cast<ImU64>(static_cast<VkSurfaceKHR>(*(record->window->getSurface())));
+                return VK_SUCCESS;
+            }
+        }
+    }
+
+    return VK_ERROR_SURFACE_LOST_KHR;
 }
 
 void WindowManager::emitStatusToStderrIfChanged(const UiState& uiState)
