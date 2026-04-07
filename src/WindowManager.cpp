@@ -535,8 +535,21 @@ void WindowManager::syncManagedWindowFromViewport(ManagedWindowRecord& record, I
     if (!viewport) return;
 
     record.viewportId = viewport->ID;
-    record.x = viewport->Pos.x;
-    record.y = viewport->Pos.y;
+    ImVec2 trackedPos = viewport->Pos;
+    if (record.screenSpaceEstablished)
+    {
+        const auto* mainViewport = ImGui::GetMainViewport();
+        const bool looksLocalToMain =
+            mainViewport &&
+            trackedPos.x >= 0.0f && trackedPos.y >= 0.0f &&
+            trackedPos.x < mainViewport->Size.x && trackedPos.y < mainViewport->Size.y;
+        if (looksLocalToMain)
+        {
+            trackedPos = ImVec2(static_cast<float>(record.x), static_cast<float>(record.y));
+        }
+    }
+    record.x = trackedPos.x;
+    record.y = trackedPos.y;
     record.width = positiveOrZero(viewport->Size.x);
     record.height = positiveOrZero(viewport->Size.y);
     record.focused = (viewport->Flags & ImGuiViewportFlags_IsFocused) != 0;
