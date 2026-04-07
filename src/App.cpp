@@ -258,6 +258,10 @@ int App::run()
             viewer->update();
             viewer->recordAndSubmit();
             viewer->present();
+            _uiManager->updatePlatformWindows();
+            _uiManager->renderPlatformWindows();
+            _windowManager->realizeManagedWindows();
+            _windowManager->retireManagedWindows();
         }
 
         return 0;

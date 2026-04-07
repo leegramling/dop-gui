@@ -55,6 +55,18 @@ public:
      * @return Event handler that forwards input to ImGui.
      */
     vsg::ref_ptr<vsg::Visitor> eventHandler() const;
+    /**
+     * @brief Run ImGui platform-window updates after the main frame has been rendered.
+     */
+    void updatePlatformWindows();
+    /**
+     * @brief Render any detached ImGui platform windows after they have been updated.
+     */
+    void renderPlatformWindows();
+    /**
+     * @brief Destroy detached ImGui platform windows before backend shutdown.
+     */
+    void shutdownPlatformWindows();
 
 private:
     struct PanelRegistration

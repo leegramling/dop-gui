@@ -45,7 +45,10 @@ UiManager::UiManager()
     registerPanel(std::make_unique<NewShapePanel>());
 }
 
-UiManager::~UiManager() = default;
+UiManager::~UiManager()
+{
+    shutdownPlatformWindows();
+}
 
 void UiManager::registerPanel(std::unique_ptr<Panel> panel)
 {
@@ -209,4 +212,18 @@ void UiManager::updatePlatformWindows()
     if (!_renderImGui || !ImGui::GetCurrentContext()) return;
     if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0) return;
     ImGui::UpdatePlatformWindows();
+}
+
+void UiManager::renderPlatformWindows()
+{
+    if (!_renderImGui || !ImGui::GetCurrentContext()) return;
+    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0) return;
+    ImGui::RenderPlatformWindowsDefault();
+}
+
+void UiManager::shutdownPlatformWindows()
+{
+    if (!ImGui::GetCurrentContext()) return;
+    if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0) return;
+    ImGui::DestroyPlatformWindows();
 }
