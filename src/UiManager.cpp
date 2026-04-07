@@ -53,6 +53,31 @@ bool viewportIdExists(std::uint64_t viewportId)
 
     return false;
 }
+
+ImGuiID mainDockspaceId()
+{
+    return ImGui::GetID("dop-gui-main-dockspace");
+}
+
+void applyStartupDockLayout(const ImGuiViewport* mainViewport)
+{
+    if (!mainViewport) return;
+
+    const ImGuiID dockspaceId = mainDockspaceId();
+    ImGui::DockBuilderRemoveNode(dockspaceId);
+    ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodeSize(dockspaceId, mainViewport->WorkSize);
+
+    ImGuiID sceneInfoDockId = dockspaceId;
+    ImGuiID remainderDockId = dockspaceId;
+    ImGuiID propertiesDockId = dockspaceId;
+    ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.28f, &sceneInfoDockId, &remainderDockId);
+    ImGui::DockBuilderSplitNode(remainderDockId, ImGuiDir_Left, 0.39f, &propertiesDockId, &remainderDockId);
+
+    ImGui::DockBuilderDockWindow("Scene Info", sceneInfoDockId);
+    ImGui::DockBuilderDockWindow("Properties", propertiesDockId);
+    ImGui::DockBuilderFinish(dockspaceId);
+}
 }
 
 UiManager::UiManager()
@@ -97,6 +122,7 @@ void UiManager::initialize(
     {
         panel.hostViewportId = 0;
     }
+    _mainDockLayoutApplied = false;
 
     if (!ImGui::GetCurrentContext())
     {
@@ -151,7 +177,13 @@ void UiManager::render(AppState& state)
 
     if (!state.ui.testMode && state.ui.dockingEnabled)
     {
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+        const auto* mainViewport = ImGui::GetMainViewport();
+        ImGui::DockSpaceOverViewport(mainDockspaceId(), mainViewport, ImGuiDockNodeFlags_PassthruCentralNode);
+        if (!_mainDockLayoutApplied)
+        {
+            applyStartupDockLayout(mainViewport);
+            _mainDockLayoutApplied = true;
+        }
     }
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())
@@ -203,6 +235,11 @@ void UiManager::render(AppState& state)
         if (!state.ui.testMode && !viewportIdExists(panelState.hostViewportId))
         {
             panelState.hostViewportId = 0;
+        }
+
+        if (!state.ui.testMode && state.ui.dockingEnabled && panelState.hostViewportId == 0)
+        {
+            ImGui::SetNextWindowDockID(mainDockspaceId(), ImGuiCond_Always);
         }
 
         panelController->ensureInitialized(panelState);

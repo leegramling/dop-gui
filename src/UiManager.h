@@ -84,4 +84,5 @@ private:
     std::vector<PanelRegistration> _panels;
     vsg::ref_ptr<vsgImGui::RenderImGui> _renderImGui;
     vsg::ref_ptr<vsg::Visitor> _sendEventsToImGui;
+    bool _mainDockLayoutApplied = false;
 };

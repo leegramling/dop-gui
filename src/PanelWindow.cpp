@@ -58,7 +58,7 @@ bool PanelWindow::begin()
     }
 
     const auto* mainViewport = ImGui::GetMainViewport();
-    if (_layout.enabled)
+    if (_layout.enabled && (_hostViewportId != 0 || !_uiState.dockingEnabled))
     {
         ImVec2 windowPos(static_cast<float>(_layout.x), static_cast<float>(_layout.y));
         if (_hostViewportId == 0 && mainViewport)
