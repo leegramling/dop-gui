@@ -835,3 +835,127 @@ So the likely path would be:
 1. keep the current `ui.test.*` headless actions
 2. add `ui.macro.record` / `ui.macro.playback` as a separate desktop-capable layer
 3. use playback together with queries and optional screenshots for high-value end-to-end cases
+
+### If we had a simulator running in the app `run()` while loop, and we needed to query scene and UI panels, do our current non-UI, headless, and desktop test paths let us run script commands and queries?
+
+Partially, but not equally well.
+
+All three paths can execute commands and queries today, but only the desktop path naturally matches a simulator that advances continuously inside the main app loop.
+
+#### Non-UI path
+
+This path is good for:
+
+- static commands
+- data queries
+- scene and camera mutations
+
+But it is not a good fit for a simulator that only advances while the real app loop is running frame by frame. In that path, tests typically execute commands and queries directly rather than living inside a long-running simulation loop.
+
+#### Headless UI path
+
+This path is good for:
+
+- panel logic
+- widget state
+- panel queries
+- scripted UI actions through `ui.test.*`
+
+But it is still not a true continuously updating desktop simulation path. It evaluates the UI without creating the full rendered desktop app. So if a simulator only advances inside the real frame loop, headless UI tests would not fully exercise that behavior unless we add explicit simulation stepping commands.
+
+#### Desktop path
+
+This is the best current fit for a simulator running in the app loop.
+
+In the desktop path:
+
+- the real app loop runs
+- scene updates can advance each frame
+- startup scripts can still issue commands
+- queries can still inspect scene and UI state
+
+So if the simulator lives in the normal frame/update loop, the desktop test path is the one that already matches that model.
+
+#### Practical conclusion
+
+Today:
+
+- desktop path works best for a live simulator
+- non-UI path works for static or explicitly stepped state changes
+- headless UI path works for panel/widget logic, but not a true continuously updating simulator unless that simulator is separately step-driven
+
+If we want all three paths to support simulation testing cleanly, the missing piece is explicit simulation control commands, for example:
+
+- `sim.step=1`
+- `sim.step.ms=100`
+- `sim.run.frames=60`
+- `sim.pause`
+- `sim.resume`
+
+With that kind of surface:
+
+- non-UI tests could step the simulator deterministically
+- headless UI tests could query panels against changing sim state
+- desktop tests could still run the full live loop
+
+So the short answer is:
+
+- yes, all current paths support commands and queries
+- no, they do not all support a continuous run-loop simulator equally well
+- desktop is the current best match for that use case
+
+### Does VSG have a headless or offscreen mode where we could run in CI, use Lavapipe or simulator commands, and save Vulkan-rendered images when requested?
+
+Likely yes, but that would be a new rendered test layer, not the same as the current pure headless UI path.
+
+VSG supports offscreen buffers as part of its rendering model, which means it should be possible to build an offscreen-render test mode that renders without a visible desktop window. Lavapipe is also a reasonable software Vulkan backend for CI, so the combination is a plausible path for cross-platform automated image capture.
+
+That would let us do things like:
+
+- run the real render path in CI
+- advance a simulator
+- issue commands or queries during the run
+- request a rendered image at a known point
+- save the result as a PNG artifact
+
+But this is not what the current `--ui-test-mode` does.
+
+Current `--ui-test-mode`:
+
+- evaluates panel logic
+- consumes scripted widget actions
+- does not create the full rendering path
+- does not produce rendered pixels
+
+So if we want rendered snapshots or frame captures, we would need a separate offscreen rendering mode, for example:
+
+- `--offscreen-test-mode`
+
+That new mode would need:
+
+1. real VSG/Vulkan initialization without a visible desktop window
+2. a software-render-capable CI path such as Lavapipe
+3. deterministic window size, DPI, fonts, and layout
+4. a framebuffer readback path
+5. PNG writing
+6. test commands that trigger capture at the right time
+
+Good uses for this mode would be:
+
+- simulator frame captures
+- scene regression images
+- panel snapshot images
+- screenshot-based integration tests
+
+The likely best long-term split is:
+
+- non-UI tests for commands, queries, and data mutation
+- headless UI tests for panel/widget logic
+- desktop tests for visible integration checks
+- offscreen rendered tests for CI image capture and visual regression
+
+So the short answer is:
+
+- yes, VSG plus Lavapipe looks like a viable offscreen CI testing path
+- but it would require a new offscreen rendered test mode in this app
+- it would complement the current test paths rather than replace them
