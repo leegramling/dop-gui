@@ -596,6 +596,163 @@ Important distinction:
 - `live-*` modes are for the visible desktop demo scripts
 - plain `script` mode is for non-UI or desktop script runs, not the headless `ui_*.json5` panel tests
 
+### Evaluating Results For `headless-scene-click`
+
+This helper runs:
+
+```bat
+test_run.bat headless-scene-click
+```
+
+which maps to:
+
+```text
+build\dop-gui\Release\dop-gui.exe --ui-test-mode --script tests\ui_scene_click_cli.json5
+```
+
+That script file is:
+
+```json5
+{
+  commands: [
+    "ui.test.click.menuitem-scene-cubes",
+  ],
+  queries: [
+    "ui.widget.menuitem-scene-cubes",
+    "data.scene.objects",
+  ],
+}
+```
+
+The JSON output is meant to be machine-readable. A successful run will emit results for the command and the follow-up queries.
+
+A real example looks like:
+
+```json
+{
+  "ok": true,
+  "commands": [
+    {
+      "ok": true,
+      "command": "ui.test.click.menuitem-scene-cubes",
+      "value": {
+        "label": "menuitem-scene-cubes",
+        "kind": "click"
+      }
+    }
+  ],
+  "queries": [
+    {
+      "ok": true,
+      "query": "ui.widget.menuitem-scene-cubes",
+      "value": {
+        "label": "menuitem-scene-cubes",
+        "panelId": "",
+        "widgetId": "menuitem-scene-cubes",
+        "type": "menuitem"
+      }
+    },
+    {
+      "ok": true,
+      "query": "data.scene.objects",
+      "value": [
+        { "id": "cube_left", "kind": "cube" },
+        { "id": "cube_center", "kind": "cube" },
+        { "id": "cube_right", "kind": "cube" }
+      ]
+    }
+  ]
+}
+```
+
+What each part means:
+
+- top-level `"ok": true`
+  - the script executed successfully as a whole
+
+- `"commands"`
+  - the results of each scripted command in order
+
+- command result entry
+  - confirms the scripted UI action was accepted
+  - for this case, the click on `menuitem-scene-cubes` was queued or applied
+
+- `"queries"`
+  - the results of each requested query in order
+
+- `ui.widget.menuitem-scene-cubes` query
+  - confirms the widget exists in the registered UI surface
+  - proves the panel/menu emitted the expected widget id
+  - shows the registered widget type is `menuitem`
+
+- `data.scene.objects` query
+  - confirms the application state changed after the click
+  - for this case, the cube scene objects should now be present
+
+So this one headless test is verifying three things at once:
+
+1. the UI widget exists
+2. the scripted UI action reached it
+3. the scene state changed as expected
+
+That is a strong pattern for CI because it checks both UI contract and downstream state mutation.
+
+#### How We Could Use This In CI
+
+There are two practical ways to use this output in a CI pipeline.
+
+##### 1. Through `ctest`
+
+This is the easiest path.
+
+The project already registers CTest cases in [CMakeLists.txt](/home/lgramling/dev/dop-gui/CMakeLists.txt) and uses `PASS_REGULAR_EXPRESSION` to validate the emitted JSON.
+
+So CI can simply run:
+
+```bash
+ctest --test-dir build/dop-gui --output-on-failure -R dop_gui_ui_scene_click
+```
+
+In that mode:
+
+- the test output stays structured JSON
+- CTest checks the expected content
+- CI fails automatically if the widget disappears or the scene does not switch
+
+##### 2. Direct script execution plus JSON inspection
+
+CI could also run:
+
+```bat
+test_run.bat headless-scene-click
+```
+
+or:
+
+```bat
+build\dop-gui\Release\dop-gui.exe --ui-test-mode --script tests\ui_scene_click_cli.json5
+```
+
+and then inspect the JSON output directly.
+
+That would let a pipeline:
+
+- archive the raw JSON as an artifact
+- parse it with PowerShell, Python, or another CI script
+- assert on specific keys such as:
+  - `"ok": true`
+  - `"query": "ui.widget.menuitem-scene-cubes"`
+  - cube object ids inside `"data.scene.objects"`
+
+This is useful if we want richer CI reporting than `PASS_REGULAR_EXPRESSION` alone.
+
+So the short version is:
+
+- the headless helper outputs structured JSON
+- that JSON is already suitable for CI assertions
+- CTest is the simplest current CI path
+- direct JSON parsing is the more flexible future path
+
 ## Headless Test Demo
 
 Run the focused automated suite:
