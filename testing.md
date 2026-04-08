@@ -895,6 +895,48 @@ flowchart LR
     I --> J["ui.panel.close=panel-new-shape queued"]
 ```
 
+### Do script commands run one UI step at a time?
+
+Yes. For scripted commands, the app already steps the UI after each command.
+
+In [ScriptRunner.cpp](/home/lgramling/dev/dop-gui/src/ScriptRunner.cpp), each command action is executed individually, and then the script runner calls:
+
+```cpp
+app.refreshUiState();
+```
+
+Then [App.cpp](/home/lgramling/dev/dop-gui/src/App.cpp) does:
+
+```cpp
+_uiManager->evaluate(_state);
+if (applyStateRequests())
+{
+    _uiManager->evaluate(_state);
+}
+```
+
+That means each scripted command gets its own UI evaluation step, and any follow-up UI-requested command such as:
+
+```text
+ui.panel.open=panel-new-shape
+```
+
+is also applied before the next scripted command runs.
+
+So the sequence:
+
+1. `ui.test.click.menuitem-scene-create`
+2. `ui.test.panel.panel-new-shape.set_text.shape-kind=Sphere`
+3. `ui.test.panel.panel-new-shape.click.create-shape`
+
+already behaves as:
+
+1. execute command 1, then evaluate UI
+2. execute command 2, then evaluate UI
+3. execute command 3, then evaluate UI
+
+That is why the `Create Shape` button sees the updated form values from earlier commands, even if the button would render before another widget in a single pass.
+
 ## Headless Test Demo
 
 Run the focused automated suite:
