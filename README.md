@@ -84,6 +84,16 @@ Dependencies available in `../vsg_deps`:
 
 These local paths should be treated as the source of truth for initial integration work on this machine.
 
+For fresh Linux/macOS installs, use [build_dependencies.sh](/home/lgramling/dev/dop-gui/build_dependencies.sh).
+
+It will:
+
+- clone the required VSG repositories into `../vsg_deps`
+- checkout pinned known-working refs
+- build and install them into `../vsg_deps/install`
+
+This is preferable to building whatever happens to be at the tip of `master` on a new machine.
+
 Repo-local third-party dependencies:
 
 - [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui) for the docking-capable ImGui/VSG bridge used by this project
@@ -178,6 +188,14 @@ build.bat
 ```
 
 If your Vulkan SDK or `glslangValidator.exe` is installed elsewhere, set `GLSLANG_VALIDATOR_DIR` to that directory instead.
+
+Linux/macOS fresh dependency install:
+
+```bash
+./build_dependencies.sh
+cmake -S . -B build/dop-gui -DCMAKE_BUILD_TYPE=Release
+cmake --build build/dop-gui -j 8
+```
 
 Linux/macOS:
 
