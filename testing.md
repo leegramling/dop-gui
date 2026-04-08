@@ -2,6 +2,39 @@
 
 This file is the current demo walkthrough for building, running, and explaining the testable UI pattern in `dop-gui`.
 
+## TL;DR
+
+Our testing approach works because most UI code does not call raw ImGui directly. Instead, panels go through wrapped widgets in [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp).
+
+Those wrappers add three important capabilities:
+
+1. a stable widget registry
+   - each widget gets a consistent id, type, panel id, and current value recorded in `UiState.registry`
+
+2. test-aware logic
+   - the same wrapper can either call real ImGui in desktop mode or consume scripted actions in headless mode
+
+3. a query surface
+   - tests can ask whether a panel exists, whether a widget was emitted, and what value it currently holds
+
+That is what makes our current test strategy possible. We are not only testing app state after commands. We are also testing that real panel code emits the expected wrapped widgets.
+
+The rest of this document expands on four main ideas:
+
+- testing modes
+  - non-UI command/query tests
+  - headless UI panel tests
+  - desktop integration/demo tests
+
+- scripting
+  - JSON5 files under [tests](/home/lgramling/dev/dop-gui/tests) drive commands, queries, and richer action sequences
+
+- panel testing
+  - each panel is tested through widget presence, widget actions, and follow-up queries
+
+- future rendering-based testing
+  - VSG offscreen rendering or Lavapipe-based CI rendering could add snapshot/image testing later, but that would be a new rendered test layer, not the current headless widget path
+
 ## Build
 
 Linux/macOS:
