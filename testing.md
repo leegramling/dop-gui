@@ -753,6 +753,148 @@ So the short version is:
 - CTest is the simplest current CI path
 - direct JSON parsing is the more flexible future path
 
+### Walk Through `Create Shape` Button Click
+
+This is the panel-scoped test command:
+
+```text
+ui.test.panel.panel-new-shape.click.create-shape
+```
+
+It does not create an object directly. It queues a fake button click and then lets the normal panel logic handle the result.
+
+#### 1. The command is parsed as a panel-scoped UI action
+
+In [Command.cpp](/home/lgramling/dev/dop-gui/src/Command.cpp), the `ui.test.panel.` prefix is recognized as a panel-scoped UI test command.
+
+The path:
+
+```text
+ui.test.panel.panel-new-shape.click.create-shape
+```
+
+is split into:
+
+- `panelId = "panel-new-shape"`
+- `widgetId = "create-shape"`
+- `kind = "click"`
+
+#### 2. The command stores a pending click
+
+`executePanelScopedUiClick()` pushes a `UiTestAction` into `state.ui.pendingActions`:
+
+```cpp
+UiTestAction{
+    .label = "create-shape",
+    .panelId = "panel-new-shape",
+    .widgetId = "create-shape",
+    .kind = "click",
+}
+```
+
+At this point:
+
+- no scene object has been created yet
+- no panel logic has run yet
+- the app has only queued a fake button click
+
+#### 3. The panel render reaches the button
+
+Later, when [NewShapePanel.cpp](/home/lgramling/dev/dop-gui/src/NewShapePanel.cpp) is evaluated, it reaches:
+
+```cpp
+setNextWidgetLayoutIfPresent(state.ui, layout, "create-shape");
+if (ActionButton(state.ui, "create-shape", "Create Shape"))
+{
+    ...
+}
+```
+
+`ActionButton(...)` is just a clearer alias for `Button(...)`.
+
+#### 4. The wrapped button consumes the pending click
+
+In [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp), the wrapped button does:
+
+```cpp
+auto& widget = ensureWidget(uiState, id, "button");
+const bool clicked = consumeClick(uiState, id);
+widget.boolValue = clicked;
+if (uiState.testMode)
+{
+    return clicked;
+}
+```
+
+Because this is a headless UI test:
+
+- `uiState.testMode` is `true`
+- `consumeClick(...)` looks up the queued action for:
+  - current panel: `panel-new-shape`
+  - widget id: `create-shape`
+  - kind: `click`
+
+When it finds the action, it marks it consumed and the wrapped button returns `true`.
+
+#### 5. The normal create-shape logic runs
+
+Because the wrapped button returned `true`, the panel enters its normal button handler in [NewShapePanel.cpp](/home/lgramling/dev/dop-gui/src/NewShapePanel.cpp).
+
+That code:
+
+- validates the color
+- converts the shape kind to the scene kind
+- creates a new `SceneObjectState`
+- pushes it into `state.scene.objects`
+- updates `state.scene.selectedObjectId`
+- queues `ui.panel.close=panel-new-shape`
+- resets the panel form
+
+So the test is not bypassing the panel. It is driving the same code path a real button press would trigger.
+
+#### 6. The button uses the current form values
+
+Usually earlier test commands have already filled in the form, for example:
+
+- `ui.test.panel.panel-new-shape.set_text.shape-kind=Sphere`
+- `ui.test.panel.panel-new-shape.set_text.position-x=1.50 m`
+- `ui.test.panel.panel-new-shape.set_text.color=#00FF00`
+
+Those values are consumed by the wrapped input fields earlier in the same panel evaluation, so by the time the button click runs, the panel fields already contain the test data.
+
+That means the button click is using the same form state a real user would have created through the UI.
+
+#### 7. The result can be queried
+
+After the button click, a query like:
+
+```text
+data.scene.object.sphere_1
+```
+
+can verify that the object was really created.
+
+That makes this a strong end-to-end panel test:
+
+1. the panel is open
+2. inputs are filled through wrapped widgets
+3. the button click is injected through the wrapped button
+4. the normal create logic runs
+5. the resulting scene object is queried from app state
+
+```mermaid
+flowchart LR
+    A["ui.test.panel.panel-new-shape.click.create-shape"] --> B["executePanelScopedUiClick()"]
+    B --> C["Pending UiTestAction(panel-new-shape, create-shape, click)"]
+    C --> D["NewShapePanel::render()"]
+    D --> E["ActionButton(state.ui, 'create-shape', 'Create Shape')"]
+    E --> F["Button() consumes pending click"]
+    F --> G["returns true in testMode"]
+    G --> H["normal create-shape handler runs"]
+    H --> I["SceneObjectState added to scene"]
+    I --> J["ui.panel.close=panel-new-shape queued"]
+```
+
 ## Headless Test Demo
 
 Run the focused automated suite:
