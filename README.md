@@ -183,11 +183,12 @@ Windows:
 
 ```bat
 set VSG_INSTALL_DIR=C:\Users\leegr\dev\vsg_deps\install
-set GLSLANG_VALIDATOR_DIR=C:\VulkanSDK\1.3.296.0\Bin
+set VULKAN_SDK=C:\VulkanSDK\1.3.239.0
+set GLSLANG_VALIDATOR_DIR=%VULKAN_SDK%\Bin
 build.bat
 ```
 
-If your Vulkan SDK or `glslangValidator.exe` is installed elsewhere, set `GLSLANG_VALIDATOR_DIR` to that directory instead.
+`build.bat` will use `VULKAN_SDK` to set `Vulkan_ROOT` for CMake automatically. If your Vulkan SDK or `glslangValidator.exe` is installed elsewhere, point `VULKAN_SDK` and `GLSLANG_VALIDATOR_DIR` at the correct directories before running `build.bat`.
 
 Linux/macOS fresh dependency install:
 
