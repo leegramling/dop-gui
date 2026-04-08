@@ -1,5 +1,7 @@
 # Declarative Object Properties
 
+![Declarative Object Properties](DeclarativeObjectProperties.png)
+
 `dop-gui` is the working executable and repository name for Declarative Object Properties, a VulkanSceneGraph application project aimed at:
 
 - declarative object properties

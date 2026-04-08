@@ -1,5 +1,7 @@
 # Declarative Object Properties Testing
 
+![Declarative Object Properties](DeclarativeObjectProperties.png)
+
 This file is the current demo walkthrough for building, running, and explaining the testable UI pattern in Declarative Object Properties (`dop-gui`).
 
 ## TL;DR
