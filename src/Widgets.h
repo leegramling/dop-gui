@@ -58,6 +58,17 @@ bool Button(UiState& uiState, const char* label);
  */
 bool Button(UiState& uiState, const char* id, const char* displayLabel);
 /**
+ * @brief Clearer alias for a wrapped action button.
+ * @param uiState UI-local state containing the widget registry and test actions.
+ * @param id Stable widget identifier.
+ * @param displayLabel Visible ImGui label.
+ * @return True when the button is activated during this evaluation.
+ */
+inline bool ActionButton(UiState& uiState, const char* id, const char* displayLabel)
+{
+    return Button(uiState, id, displayLabel);
+}
+/**
  * @brief Render or evaluate an input widget using the widget label as the ImGui label.
  * @param uiState UI-local state containing the widget registry and test actions.
  * @param label Stable widget label and visible ImGui label.
@@ -75,6 +86,18 @@ std::string Input(UiState& uiState, const char* label, const std::string& value)
  */
 std::string Input(UiState& uiState, const char* id, const char* displayLabel, const std::string& value);
 /**
+ * @brief Clearer alias for a wrapped text input field.
+ * @param uiState UI-local state containing the widget registry and test actions.
+ * @param id Stable widget identifier.
+ * @param displayLabel Visible ImGui label.
+ * @param value Current string value.
+ * @return Final string value after this evaluation.
+ */
+inline std::string TextField(UiState& uiState, const char* id, const char* displayLabel, const std::string& value)
+{
+    return Input(uiState, id, displayLabel, value);
+}
+/**
  * @brief Render or evaluate a floating-point input widget.
  * @param uiState UI-local state containing the widget registry and test actions.
  * @param id Stable widget identifier.
@@ -91,6 +114,26 @@ double InputDouble(
     double value,
     int precision = 3,
     const char* unitSuffix = nullptr);
+/**
+ * @brief Clearer alias for a wrapped numeric input field.
+ * @param uiState UI-local state containing the widget registry and test actions.
+ * @param id Stable widget identifier.
+ * @param displayLabel Visible ImGui label.
+ * @param value Current numeric value.
+ * @param precision Number of fractional digits to preserve in widget text.
+ * @param unitSuffix Optional unit suffix shown in the registry text and live UI.
+ * @return Final numeric value after this evaluation.
+ */
+inline double NumericField(
+    UiState& uiState,
+    const char* id,
+    const char* displayLabel,
+    double value,
+    int precision = 3,
+    const char* unitSuffix = nullptr)
+{
+    return InputDouble(uiState, id, displayLabel, value, precision, unitSuffix);
+}
 /**
  * @brief Render or evaluate a radio button widget.
  * @param uiState UI-local state containing the widget registry and test actions.
@@ -115,6 +158,34 @@ std::string ComboBox(
     const char* displayLabel,
     const std::string& currentValue,
     const std::vector<std::string>& options);
+/**
+ * @brief Clearer alias for a wrapped single-selection field.
+ * @param uiState UI-local state containing the widget registry and test actions.
+ * @param id Stable widget identifier.
+ * @param displayLabel Visible ImGui label.
+ * @param currentValue Current selected value.
+ * @param options Ordered list of available option values.
+ * @return Final selected option value after this evaluation.
+ */
+inline std::string SelectField(
+    UiState& uiState,
+    const char* id,
+    const char* displayLabel,
+    const std::string& currentValue,
+    const std::vector<std::string>& options)
+{
+    return ComboBox(uiState, id, displayLabel, currentValue, options);
+}
+/**
+ * @brief Clearer alias for wrapped text emission.
+ * @param uiState UI-local state containing the widget registry.
+ * @param label Stable widget label.
+ * @param value Text value to display or expose in test mode.
+ */
+inline void DisplayText(UiState& uiState, const char* label, const std::string& value)
+{
+    Text(uiState, label, value);
+}
 /**
  * @brief Render or evaluate a popup widget and its contents.
  * @param uiState UI-local state containing the widget registry and test actions.

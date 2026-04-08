@@ -1,8 +1,8 @@
-# dop-gui
+# Declarative Object Properties
 
-`dop-gui` is a VulkanSceneGraph application project aimed at:
+`dop-gui` is the working executable and repository name for Declarative Object Properties, a VulkanSceneGraph application project aimed at:
 
-- data oriented programming
+- declarative object properties
 - functional-style C++20
 - spec-driven development
 - small, reviewable implementation steps
@@ -39,6 +39,7 @@ We will drive work through four small markdown files in repo root:
 - [`task.md`](/home/lgramling/dev/dop-gui/task.md): the next small implementation steps
 - [`notes.md`](/home/lgramling/dev/dop-gui/notes.md): architecture notes, dependency findings, and decisions
 - [`HowToAddTestCommands.md`](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md): contributor guide for adding new command/query/UI-test coverage
+- [`testing.md`](/home/lgramling/dev/dop-gui/testing.md): current build/demo walkthrough for headless and live test flows
 
 Recommended loop:
 
@@ -81,18 +82,16 @@ Dependencies available in `../vsg_deps`:
 
 These local paths should be treated as the source of truth for initial integration work on this machine.
 
-## Local External vsgImGui
+Repo-local third-party dependencies:
 
-This project currently expects a local external `vsgImGui` checkout at [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui), but that directory is intentionally not committed to this repository.
+- [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui) for the docking-capable ImGui/VSG bridge used by this project
+- [`external/yoga`](/home/lgramling/dev/dop-gui/external/yoga) for layout computation used by authored and hand-coded panels
 
-Current dependency state:
+## Vendored vsgImGui
 
-- parent repo cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui`
-- `imgui` cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui/src/imgui`
-- `implot` cloned from local source `/home/lgramling/dev/vsg_deps/vsgImGui/src/implot`
-- `imgui` checked out at tag `v1.91.6-docking`
+This project vendors `vsgImGui` under [`external/vsgImGui`](/home/lgramling/dev/dop-gui/external/vsgImGui).
 
-This gives us a project-local docking-capable ImGui integration without depending on a network fetch during bootstrap.
+The vendored tree includes the `imgui` and `implot` sources needed by the current build, so a fresh checkout does not need a separate local `vsgImGui` clone just to configure the project.
 
 Build validation performed:
 
@@ -168,6 +167,14 @@ The next milestone is to create a minimal VSG application skeleton that:
 
 ## Build
 
+Windows:
+
+```bat
+build.bat
+```
+
+Linux/macOS:
+
 ```bash
 cmake -S . -B build/dop-gui -DCMAKE_BUILD_TYPE=Release
 cmake --build build/dop-gui -j 8
@@ -179,6 +186,7 @@ Binary:
 
 - `build/dop-gui/dop-gui`
 - `./test_run.sh` helper for startup script or startup command desktop runs
+- [`testing.md`](/home/lgramling/dev/dop-gui/testing.md) has the current demo/test walkthrough and expected outcomes
 
 Quick probe:
 
@@ -209,6 +217,12 @@ Current result in this session:
 - `--startup-delay-ms <ms>` can delay startup commands or scripts so the default scene is visible before automation applies
 - the first positional argument can be a scene file, for example `./build/dop-gui/dop-gui scenes/bootstrap_scene.json5`
 - example alternate scene: `./build/dop-gui/dop-gui scenes/cubes.json5`
+
+For the current demo path:
+
+- use `build.bat` on Windows
+- use `ctest` for the authoritative headless regression pass
+- use [`testing.md`](/home/lgramling/dev/dop-gui/testing.md) for the focused live demo flows such as `live-regression` and `live-scene-create`
 
 Why shaders are built ahead of time:
 

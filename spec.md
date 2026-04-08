@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file captures the stable top-level specification for `dop-gui`.
+This file captures the stable top-level specification for Declarative Object Properties (`dop-gui`).
 
 Use it for:
 
@@ -26,9 +26,9 @@ Those belong in:
 
 ## Product Intent
 
-`dop-gui` is a VulkanSceneGraph application built with:
+Declarative Object Properties (`dop-gui`) is a VulkanSceneGraph application built with:
 
-- data oriented programming
+- declarative object properties
 - functional-style C++20
 - spec-driven development
 
@@ -39,6 +39,7 @@ Documentation requirement:
 - public classes, structs, enums, methods, and free functions should carry Doxygen-style doc comments as they are introduced or refactored
 - the repo should include a contributor-facing `HowToAddTestCommands` guide for extending the command/query and UI test surfaces safely
 - contributor-facing workflow docs should explain how to add, serialize, and verify new command/query/UI-test actions
+- contributor-facing docs should explain the current Windows build and testing/demo entry points once they exist
 
 ## Core Architectural Goals
 
@@ -57,6 +58,8 @@ Documentation requirement:
 - keep the goal that standard authored widgets should need no panel-specific renderer code once the generic panel-tree binders cover their behavior
 - treat popup and table behaviors as the current acceptable custom-renderer exceptions for this feature branch, with standard authored controls such as selected-object combos expected to flow through the generic panel-tree binders
 - keep a documented hand-coded panel path available for development examples, where a panel can define Yoga layout in `init()` and explicit widget/callback behavior in `render()` when that is the point of the example
+- keep third-party layout dependencies repo-local and reproducible, preferring vendored externals over sibling-repo assumptions when preparing cross-platform demo builds
+- keep contributor-facing Windows demo build and test flows explicit enough that they can be followed from repository docs without local tribal knowledge
 
 ## Top-Level Components
 
