@@ -16,8 +16,16 @@ if /I "%MODE%"=="help" goto :usage
 if /I "%MODE%"=="-h" goto :usage
 if /I "%MODE%"=="--help" goto :usage
 
-call :build_app
-if errorlevel 1 exit /b 1
+if /I "%MODE%"=="rebuild" (
+    shift
+    set "MODE=%~1"
+    if "%MODE%"=="" set "MODE=script"
+    call :build_app
+    if errorlevel 1 exit /b 1
+) else (
+    call :ensure_app
+    if errorlevel 1 exit /b 1
+)
 
 if /I "%MODE%"=="script" goto :run_script
 if /I "%MODE%"=="command" goto :run_command
@@ -42,6 +50,13 @@ if errorlevel 1 exit /b 1
 if not exist "%DOP_GUI_EXE%" (
     echo Expected executable not found: "%DOP_GUI_EXE%"
     exit /b 1
+)
+exit /b 0
+
+:ensure_app
+if not exist "%DOP_GUI_EXE%" (
+    call :build_app
+    exit /b %ERRORLEVEL%
 )
 exit /b 0
 
@@ -90,6 +105,7 @@ exit /b %ERRORLEVEL%
 echo Usage:
 echo   test_run.bat script [script_file] [extra dop-gui args...]
 echo   test_run.bat command [command_text] [extra dop-gui args...]
+echo   test_run.bat rebuild ^<mode^> [mode args...]
 echo   test_run.bat live-bg [extra dop-gui args...]
 echo   test_run.bat live-grid-off [extra dop-gui args...]
 echo   test_run.bat live-scene-cubes [extra dop-gui args...]
@@ -107,6 +123,7 @@ echo   test_run.bat
 echo   test_run.bat script tests\desktop_bootstrap.json5
 echo   test_run.bat script tests\smoke_cli.json5
 echo   test_run.bat command state.reset.bootstrap
+echo   test_run.bat rebuild live-regression
 echo   test_run.bat live-scene-create
 echo   test_run.bat live-regression
 exit /b 0
