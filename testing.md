@@ -353,6 +353,169 @@ ui.panel.panel-new-shape.widget.shape-kind
 
 and that widget state will report the current text value as `Sphere`.
 
+## How Test Scripts Work
+
+Most automation in this repo is driven by JSON5 files under [tests](/home/lgramling/dev/dop-gui/tests).
+
+The parser in [ScriptRunner.cpp](/home/lgramling/dev/dop-gui/src/ScriptRunner.cpp) supports three main shapes:
+
+1. `commands`
+2. `queries`
+3. `actions`
+
+### `commands`
+
+`commands` is the simplest form. It is just an ordered list of command strings.
+
+Example:
+
+```json5
+{
+  commands: [
+    "scene.load.cubes",
+    "ui.test.set_bool.panel-display-grid=false",
+    "app.exit",
+  ],
+  queries: [],
+}
+```
+
+Use this when:
+
+- you want a simple scripted sequence
+- timing between steps does not matter much
+- the app can just run commands in order
+
+### `queries`
+
+`queries` is an ordered list of query names whose results are emitted as structured JSON output.
+
+Example:
+
+```json5
+{
+  commands: [],
+  queries: [
+    "ui.widgets",
+    "data.scene.selection",
+  ],
+}
+```
+
+Use this when:
+
+- you want to inspect widget or app state
+- you want a CTest assertion surface
+- you want to verify the output of prior commands
+
+### `actions`
+
+`actions` is a richer ordered list of objects. Each object can contain:
+
+- `command`
+- `query`
+- `sleepMs`
+
+Example:
+
+```json5
+{
+  actions: [
+    { command: "ui.test.click.menuitem-scene-create" },
+    { sleepMs: 1000 },
+    { query: "ui.panel.panel-new-shape" },
+  ],
+}
+```
+
+Use this when:
+
+- you need explicit interleaving of commands and queries
+- you want sleeps between steps
+- you want a more readable integration or headless flow
+
+### Where The Script Runs
+
+The same JSON5 mechanism can drive different runtime layers depending on how the app is launched.
+
+```mermaid
+flowchart TD
+    A[Test Script or CLI Request] --> B{Launch Mode}
+
+    B -->|--command or --query only| C[Non-UI path]
+    C --> D[No panel evaluation required]
+    D --> E[Good for scene, camera, runtime, and data tests]
+
+    B -->|--ui-test-mode --script| F[Headless UI path]
+    F --> G[UiManager::evaluate]
+    G --> H[Panel logic runs]
+    H --> I[Wrapped widgets register in UiState.registry]
+    I --> J[Good for per-panel widget tests]
+
+    B -->|--script or test_run live-*| K[Desktop path]
+    K --> L[Create window and real ImGui/VSG app]
+    L --> M[Run startup script]
+    M --> N[Good for integration and visible demo tests]
+```
+
+### What Each Path Tests
+
+#### Non-UI command/query path
+
+Examples:
+
+- [tests/smoke_cli.json5](/home/lgramling/dev/dop-gui/tests/smoke_cli.json5)
+- [tests/mutate_cli.json5](/home/lgramling/dev/dop-gui/tests/mutate_cli.json5)
+
+These are useful for:
+
+- scene commands
+- camera commands
+- runtime capability queries
+- data-only mutations
+
+They are not panel tests.
+
+#### Headless UI panel path
+
+Examples:
+
+- [tests/ui_background_cli.json5](/home/lgramling/dev/dop-gui/tests/ui_background_cli.json5)
+- [tests/ui_grid_cli.json5](/home/lgramling/dev/dop-gui/tests/ui_grid_cli.json5)
+- [tests/ui_properties_cli.json5](/home/lgramling/dev/dop-gui/tests/ui_properties_cli.json5)
+- [tests/ui_new_shape_cli.json5](/home/lgramling/dev/dop-gui/tests/ui_new_shape_cli.json5)
+- [tests/ui_scene_create_cli.json5](/home/lgramling/dev/dop-gui/tests/ui_scene_create_cli.json5)
+
+These are the main panel-level tests.
+
+They verify things like:
+
+- a panel exists
+- expected widgets are emitted by the panel
+- widget ids and types are stable
+- `ui.test.*` actions reach the panel
+- panel logic mutates app state correctly
+- widget state is queryable afterward
+
+This is how we currently test each UI panel in an automated way.
+
+#### Desktop integration path
+
+Examples:
+
+- [tests/live_regression.json5](/home/lgramling/dev/dop-gui/tests/live_regression.json5)
+- [tests/live_ui_scene_create.json5](/home/lgramling/dev/dop-gui/tests/live_ui_scene_create.json5)
+- [test_run.sh](/home/lgramling/dev/dop-gui/test_run.sh)
+- [test_run.bat](/home/lgramling/dev/dop-gui/test_run.bat)
+
+These are useful for:
+
+- visible end-to-end demos
+- checking that startup scripts work in the real desktop app
+- integration behavior across window, renderer, input, and UI
+
+These are not as strong as screenshot or macro-replay tests, but they do exercise the real desktop startup path.
+
 ## Headless Test Demo
 
 Run the focused automated suite:
