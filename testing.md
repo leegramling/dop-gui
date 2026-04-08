@@ -1380,3 +1380,136 @@ So the short answer is:
 - yes, VSG plus Lavapipe looks like a viable offscreen CI testing path
 - but it would require a new offscreen rendered test mode in this app
 - it would complement the current test paths rather than replace them
+
+### Could we use Robot Framework for testing?
+
+Yes. Robot Framework could be a useful outer test layer for this project, but it would work best as a wrapper around the test surfaces we already have rather than as a replacement for them.
+
+Robot Framework is strongest when it is orchestrating:
+
+- command-line tools
+- structured text output
+- process startup and shutdown
+- higher-level acceptance test flows
+
+That matches several parts of this repo well.
+
+#### Good fits for Robot Framework here
+
+##### 1. Headless command and query tests
+
+Robot could run commands like:
+
+```text
+build\dop-gui\Release\dop-gui.exe --ui-test-mode --script tests\ui_scene_click_cli.json5
+```
+
+and then assert on the emitted JSON.
+
+This would work well because our current output is already machine-readable and stable.
+
+##### 2. Running grouped acceptance scenarios
+
+Robot could drive larger workflows such as:
+
+- open New Shape panel
+- set fields
+- click Create Shape
+- verify created object
+- verify selected object
+
+That would be especially useful if we want readable acceptance tests written in a keyword-driven style instead of only JSON5 scripts plus CTest regexes.
+
+##### 3. Desktop process orchestration
+
+Robot could also launch:
+
+- `test_run.sh live-*`
+- `test_run.bat live-*`
+
+and verify exit codes, captured logs, or generated artifacts.
+
+##### 4. Future screenshot or macro-playback tests
+
+If we later add:
+
+- snapshot commands
+- offscreen rendering
+- macro record/playback
+
+Robot could become a convenient top-level orchestrator for those longer flows.
+
+#### What Robot Framework would not replace
+
+Robot should not replace the current internal test seams:
+
+- wrapped widget registry
+- `ui.test.*` commands
+- query surface
+- CTest coverage
+
+Those are still the core mechanisms that make the app testable.
+
+Robot would sit above them.
+
+The likely layering would be:
+
+1. C++ app exposes commands, queries, and UI test surfaces
+2. JSON5 scripts define reusable low-level flows
+3. CTest validates fast automated regressions
+4. Robot Framework orchestrates higher-level acceptance scenarios
+
+#### Practical ways to use Robot Framework here
+
+##### Option 1: Wrap the existing CLI
+
+This is the easiest place to start.
+
+Robot test cases could:
+
+- run `dop-gui --ui-test-mode --script ...`
+- capture stdout
+- assert on returned JSON fields
+
+This gives value quickly without changing the app much.
+
+##### Option 2: Wrap helper scripts
+
+Robot could run:
+
+- `test_run.bat headless-scene-click`
+- `test_run.bat headless-new-shape`
+- `test_run.bat live-regression`
+
+That is convenient for demo-like flows, though slightly less direct than calling the executable itself.
+
+##### Option 3: Add app-specific Robot keywords later
+
+If we wanted deeper integration, we could add small helper tools or Python keywords for:
+
+- launching the app
+- parsing result JSON
+- asserting widget/query fields
+- waiting for artifacts like screenshots
+
+That would make Robot tests cleaner, but it is optional.
+
+#### Best first use
+
+The best first use of Robot Framework here would be:
+
+1. run existing headless scripts
+2. parse their JSON results
+3. assert on high-value acceptance outcomes
+
+That would give us:
+
+- readable acceptance tests
+- cross-platform process orchestration
+- no need to rewrite the existing command/query/UI-test design
+
+So the short answer is:
+
+- yes, Robot Framework could fit well
+- it should be used as an orchestration and acceptance layer
+- it works best on top of the current command/query/headless surfaces, not instead of them
