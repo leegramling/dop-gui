@@ -172,8 +172,12 @@ The next milestone is to create a minimal VSG application skeleton that:
 Windows:
 
 ```bat
+set VSG_INSTALL_DIR=C:\Users\leegr\dev\vsg_deps\install
+set GLSLANG_VALIDATOR_DIR=C:\VulkanSDK\1.3.296.0\Bin
 build.bat
 ```
+
+If your Vulkan SDK or `glslangValidator.exe` is installed elsewhere, set `GLSLANG_VALIDATOR_DIR` to that directory instead.
 
 Linux/macOS:
 
