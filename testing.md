@@ -551,6 +551,51 @@ These are useful for:
 
 These are not as strong as screenshot or macro-replay tests, but they do exercise the real desktop startup path.
 
+### Windows Helper Examples
+
+On Windows, [test_run.bat](/home/lgramling/dev/dop-gui/test_run.bat) exposes both desktop and headless helper modes.
+
+Example help output:
+
+```text
+Usage:
+  test_run.bat script [script_file] [extra dop-gui args...]
+  test_run.bat command [command_text] [extra dop-gui args...]
+  test_run.bat rebuild <mode> [mode args...]
+  test_run.bat headless-script [script_file] [extra dop-gui args...]
+  test_run.bat headless-query [query_text] [extra dop-gui args...]
+  test_run.bat headless-bg [extra dop-gui args...]
+  test_run.bat headless-grid [extra dop-gui args...]
+  test_run.bat headless-scene-click [extra dop-gui args...]
+  test_run.bat headless-scene-create [extra dop-gui args...]
+  test_run.bat headless-new-shape [extra dop-gui args...]
+  test_run.bat headless-properties [extra dop-gui args...]
+  test_run.bat headless-regression [extra dop-gui args...]
+  test_run.bat live-bg [extra dop-gui args...]
+  test_run.bat live-grid-off [extra dop-gui args...]
+  test_run.bat live-scene-cubes [extra dop-gui args...]
+  test_run.bat live-scene-create [extra dop-gui args...]
+  test_run.bat live-regression [extra dop-gui args...]
+```
+
+Examples:
+
+```bat
+test_run.bat headless-query ui.widgets
+test_run.bat headless-scene-click
+test_run.bat headless-new-shape
+test_run.bat headless-regression
+test_run.bat live-scene-create
+test_run.bat live-regression
+test_run.bat rebuild live-regression
+```
+
+Important distinction:
+
+- `headless-*` modes are for `ui_*.json5` and `regression_cli.json5`
+- `live-*` modes are for the visible desktop demo scripts
+- plain `script` mode is for non-UI or desktop script runs, not the headless `ui_*.json5` panel tests
+
 ## Headless Test Demo
 
 Run the focused automated suite:
