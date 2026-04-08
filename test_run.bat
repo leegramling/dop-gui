@@ -50,7 +50,7 @@ set "SCRIPT_FILE=%~2"
 if "%SCRIPT_FILE%"=="" set "SCRIPT_FILE=%DEFAULT_SCRIPT%"
 shift
 shift
-"%DOP_GUI_EXE%" --script "%SCRIPT_FILE%" --stay-open %*
+"%DOP_GUI_EXE%" --script "%SCRIPT_FILE%" --stay-open %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :run_command
@@ -58,32 +58,32 @@ set "COMMAND_TEXT=%~2"
 if "%COMMAND_TEXT%"=="" set "COMMAND_TEXT=state.reset.bootstrap"
 shift
 shift
-"%DOP_GUI_EXE%" --command "%COMMAND_TEXT%" --stay-open %*
+"%DOP_GUI_EXE%" --command "%COMMAND_TEXT%" --stay-open %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :live_bg
 shift
-"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_bg_blue.json5" --stay-open --startup-delay-ms 5000 %*
+"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_bg_blue.json5" --stay-open --startup-delay-ms 5000 %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :live_grid_off
 shift
-"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_grid_off.json5" --stay-open --startup-delay-ms 5000 %*
+"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_grid_off.json5" --stay-open --startup-delay-ms 5000 %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :live_scene_cubes
 shift
-"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_scene_cubes.json5" --stay-open --startup-delay-ms 5000 %*
+"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_scene_cubes.json5" --stay-open --startup-delay-ms 5000 %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :live_scene_create
 shift
-"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_scene_create.json5" --stay-open %*
+"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_ui_scene_create.json5" --stay-open %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :live_regression
 shift
-"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_regression.json5" --stay-open %*
+"%DOP_GUI_EXE%" --script "%ROOT_DIR%\tests\live_regression.json5" --stay-open %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit /b %ERRORLEVEL%
 
 :usage
