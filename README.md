@@ -1,8 +1,8 @@
-# dop-gui
+# Declarative Object Properties
 
-`dop-gui` is a VulkanSceneGraph application project aimed at:
+`dop-gui` is the working executable and repository name for Declarative Object Properties, a VulkanSceneGraph application project aimed at:
 
-- data oriented programming
+- declarative object properties
 - functional-style C++20
 - spec-driven development
 - small, reviewable implementation steps

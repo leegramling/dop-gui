@@ -6,7 +6,7 @@ This file defines how humans and coding agents should work in this repository.
 
 Build a VulkanSceneGraph application using:
 
-- data oriented programming
+- declarative object properties
 - functional-style C++20
 - spec-driven workflow
 

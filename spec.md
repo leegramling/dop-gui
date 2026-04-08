@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file captures the stable top-level specification for `dop-gui`.
+This file captures the stable top-level specification for Declarative Object Properties (`dop-gui`).
 
 Use it for:
 
@@ -26,9 +26,9 @@ Those belong in:
 
 ## Product Intent
 
-`dop-gui` is a VulkanSceneGraph application built with:
+Declarative Object Properties (`dop-gui`) is a VulkanSceneGraph application built with:
 
-- data oriented programming
+- declarative object properties
 - functional-style C++20
 - spec-driven development
 
