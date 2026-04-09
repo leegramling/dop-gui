@@ -4,6 +4,22 @@
 
 This file is the current demo walkthrough for building, running, and explaining the testable UI pattern in Declarative Object Properties (`dop-gui`).
 
+## Table of Contents
+
+- [TL;DR](#tldr)
+- [Build](#build)
+- [How UI Testing Works](#how-ui-testing-works)
+- [Simplified Widget Examples](#simplified-widget-examples)
+- [Headless and Desktop Paths](#headless-and-desktop-paths)
+- [What `Input` Does in Each Path](#what-input-does-in-each-path)
+- [How Queries See Widget Values](#how-queries-see-widget-values)
+- [Example Scripts](#example-scripts)
+- [Evaluating Results for `headless-scene-click`](#evaluating-results-for-headless-scene-click)
+- [Testing Modes and Script Paths](#testing-modes-and-script-paths)
+- [How Each UI Panel Is Tested](#how-each-ui-panel-is-tested)
+- [Walk Through Create Shape Button Click](#walk-through-create-shape-button-click)
+- [QA](#qa)
+
 ## TL;DR
 
 Our testing approach works because most UI code does not call raw ImGui directly. Instead, panels go through wrapped widgets in [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp).
