@@ -1,0 +1,7 @@
+{
+  queries: [
+    "ui.panel.panel-scene-info",
+    "ui.panel.panel-scene-info.widgets",
+    "ui.widgets",
+  ],
+}
