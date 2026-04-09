@@ -1059,6 +1059,87 @@ If the panel logic skips the widget call, the widget query fails immediately. So
 
 What it does not catch is real desktop rendering behavior such as focus, docking, OS input, or Vulkan integration. That is what the desktop tests are for.
 
+### How are widget names added and queried for commands, and how would a tester discover them?
+
+Widget names are not discovered from ImGui at runtime. They are registered explicitly by our UI wrapper code and stored in the runtime widget registry.
+
+The key path is:
+
+1. a panel or menu calls a wrapped widget
+2. the wrapper calls `ensureWidget(...)` in [Widgets.cpp](/home/lgramling/dev/dop-gui/src/Widgets.cpp)
+3. `ensureWidget(...)` stores or updates a `WidgetState` in `state.ui.registry`
+4. later, commands and queries look widgets up with `findWidget(...)` in [AppState.cpp](/home/lgramling/dev/dop-gui/src/AppState.cpp)
+
+For panel widgets, the name comes from the stable widget id used by the panel code, for example:
+
+- `shape-kind`
+- `position-x`
+- `create-shape`
+
+For menus, [UiManager.cpp](/home/lgramling/dev/dop-gui/src/UiManager.cpp) synthesizes stable names with `sanitizeLabel(...)`, for example:
+
+- menu: `menu-scene`
+- menu item: `menuitem-scene-create`
+
+That is why a test command like:
+
+```text
+ui.test.click.menuitem-scene-create
+```
+
+works. The menu item is registered under exactly that name during UI evaluation.
+
+The runtime widget data is stored as a `WidgetState` with fields like:
+
+- `label`
+- `panelId`
+- `widgetId`
+- `type`
+
+A simplified one-widget JSON example for the `Scene -> Create` menu item would look like:
+
+```json
+{
+  "label": "menuitem-scene-create",
+  "panelId": "",
+  "widgetId": "menuitem-scene-create",
+  "type": "menuitem",
+  "textValue": "",
+  "boolValue": false,
+  "layout": {
+    "enabled": false,
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  }
+}
+```
+
+There are two useful ways for a tester to discover these names without reading code:
+
+- `ui.panel.<panel-id>.widgets`
+- `ui.widgets`
+
+Use them like this:
+
+- `ui.panel.panel-scene-info.widgets`
+  This returns the authored widget ids for the Scene Info panel.
+- `ui.widgets`
+  This returns the widgets actually registered in the current UI evaluation pass.
+
+So the practical workflow for a test team is:
+
+1. open or evaluate the relevant panel
+2. query `ui.panel.<panel-id>.widgets` to discover authored widget ids
+3. optionally query `ui.widgets` to confirm what was actually registered
+4. write commands like:
+   - `ui.test.click.menuitem-scene-create`
+   - `ui.test.panel.panel-new-shape.set_text.shape-kind=Sphere`
+   - `ui.test.panel.panel-new-shape.click.create-shape`
+
+This is especially important for icon buttons or other controls where the visible UI is not a good stable test identifier. The test surface should rely on stable widget ids, not on pixel positions or icon glyphs.
+
 ### Could we use Lavapipe or another offline renderer to capture real desktop tests, and what would we need for panel snapshot images?
 
 Yes, probably, but that would be a different test layer than the current headless widget tests.
