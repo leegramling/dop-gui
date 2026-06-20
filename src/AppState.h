@@ -39,7 +39,7 @@ struct SceneState
  */
 struct CameraPoseState
 {
-    vsg::dvec3 eye{0.0, -2.5, 1.5};
+    vsg::dvec3 eye{0.0, -12.0, 10.0};
     vsg::dvec3 center{0.0, 0.0, 0.0};
     vsg::dvec3 up{0.0, 0.0, 1.0};
 };
@@ -188,6 +188,7 @@ struct UiLayoutState
 struct UiState
 {
     bool testMode = false;
+    float scale = 1.5f;
     bool displayGrid = true;
     bool exitRequested = false;
     std::string themeMode = "dark";

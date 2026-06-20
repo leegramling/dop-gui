@@ -410,6 +410,24 @@ Open design notes for this branch:
 
 ## Declarative Layout Direction
 
+## Simple UI Branch Direction
+
+The active panels now use normal ImGui item flow through the test-aware widget wrappers. Yoga layout, the generic panel tree, layout-slot helpers, the previous panel implementations, and the previous layout JSON are preserved under `src/oldui/` but are not compiled.
+
+Testing keeps the established panel and widget IDs and all command/query behavior. Coordinate-specific Yoga tests are archived with the old UI; active tests intentionally verify interactions and application state instead of layout rectangles.
+
+The active ImGui UI uses a fixed `1.5` application scale to match a 150% desktop display setting. Font rendering and ImGui style spacing are scaled once during UI initialization.
+
+The floor reference is a 10x10 world-unit grid with one-unit cells (`-5` through `+5` on X and Y). Scene cameras use a 45-degree vertical field of view from `[0, -12, 10]`, with near/far clipping planes at `0.1` and `100`, so the full grid is framed by default.
+
+The default live docking layout places Scene Info in a left column and Properties in a right column, leaving the center for the scene view. It is rebuilt once when the app starts, and authored floating-window position hints are disabled while docking is active so they cannot override the dock assignment.
+
+The default main window is `1600x900`, 25% larger in each dimension than the previous `1280x720` window.
+
+Scene Info includes a live `Window Size: width x height` readout sourced from the primary VSG window extent.
+
+Ordered script `actions` execute synchronously in authored order. Each UI test command queues one targeted action and immediately refreshes the full UI before the next action or query executes. Panel draw order determines where within that refresh the target is consumed, but it does not reorder script actions or named queries. Named widget queries resolve by panel/widget ID rather than registry position. `tests/ui_property_order_cli.json5` verifies Y can be set and observed before a later X update even though Properties draws X before Y.
+
 - [x] Current widget existence and behavior are JSON5-authored.
 - [x] Current Yoga layout is still builder-defined in C++ panel code.
 - [x] The next architectural target is a declarative JSON5 layout schema rather than expanding builder code indefinitely.

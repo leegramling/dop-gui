@@ -69,6 +69,7 @@ private:
 
     AppState* _state = nullptr;
     WindowManager* _windowManager = nullptr;
+    bool _defaultDockLayoutApplied = false;
     std::vector<PanelRegistration> _panels;
     vsg::ref_ptr<vsgImGui::RenderImGui> _renderImGui;
     vsg::ref_ptr<vsg::Visitor> _sendEventsToImGui;

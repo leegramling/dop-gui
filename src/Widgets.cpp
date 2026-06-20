@@ -156,6 +156,20 @@ void recordWidgetRect(WidgetState& widget, const std::optional<UiLayoutRectState
 }
 }
 
+void queueUiCommand(UiState& uiState, const std::string& commandName, const std::string& value)
+{
+    if (commandName.empty()) return;
+    uiState.requestedCommands.push_back(value.empty() ? commandName : commandName + "=" + value);
+}
+
+std::vector<std::string> collectSceneObjectIds(const SceneState& scene)
+{
+    std::vector<std::string> ids;
+    ids.reserve(scene.objects.size());
+    for (const auto& object : scene.objects) ids.push_back(object.id);
+    return ids;
+}
+
 void registerWidget(UiState& uiState, std::string_view label, std::string_view type)
 {
     (void)ensureWidget(uiState, label, type);

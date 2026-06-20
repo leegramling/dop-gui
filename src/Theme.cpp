@@ -2,7 +2,7 @@
 
 #include <vsgImGui/imgui.h>
 
-void Theme::applyDefault(const std::string& mode)
+void Theme::applyDefault(const std::string& mode, float scale)
 {
     auto& style = ImGui::GetStyle();
     if (mode == "light")
@@ -13,7 +13,7 @@ void Theme::applyDefault(const std::string& mode)
     {
         ImGui::StyleColorsDark(&style);
     }
-    style.WindowRounding = 6.0f;
-    style.FrameRounding = 4.0f;
-    style.GrabRounding = 4.0f;
+    style.WindowRounding = 6.0f * scale;
+    style.FrameRounding = 4.0f * scale;
+    style.GrabRounding = 4.0f * scale;
 }

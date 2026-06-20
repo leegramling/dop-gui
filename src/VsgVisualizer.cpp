@@ -4,6 +4,7 @@
 #include <array>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -37,14 +38,50 @@ vsg::ref_ptr<vsg::VertexIndexDraw> createMesh(
 
 vsg::ref_ptr<vsg::Node> createGridGeometry()
 {
-    auto vertices = vsg::vec3Array::create({
-        {-5.0f, -0.03f, -0.01f}, {5.0f, -0.03f, -0.01f}, {5.0f, 0.03f, -0.01f}, {-5.0f, 0.03f, -0.01f},
-        {-0.03f, -5.0f, -0.01f}, {0.03f, -5.0f, -0.01f}, {0.03f, 5.0f, -0.01f}, {-0.03f, 5.0f, -0.01f},
-    });
-    auto colors = vsg::vec4Array::create(8);
-    for (std::size_t i = 0; i < 8; ++i) (*colors)[i] = vsg::vec4(0.35f, 0.35f, 0.35f, 1.0f);
+    constexpr int halfGrid = 5;
+    constexpr float elevation = -0.01f;
+    constexpr float lineHalfWidth = 0.01f;
+    constexpr float axisHalfWidth = 0.03f;
+    std::vector<vsg::vec3> generatedVertices;
+    std::vector<vsg::vec4> generatedColors;
+    std::vector<uint32_t> generatedIndices;
 
-    auto indices = vsg::uintArray::create({0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7});
+    const auto addQuad = [&](const std::array<vsg::vec3, 4>& quad, const vsg::vec4& color)
+    {
+        const auto base = static_cast<uint32_t>(generatedVertices.size());
+        generatedVertices.insert(generatedVertices.end(), quad.begin(), quad.end());
+        generatedColors.insert(generatedColors.end(), 4, color);
+        generatedIndices.insert(generatedIndices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+    };
+
+    for (int line = -halfGrid; line <= halfGrid; ++line)
+    {
+        const float coordinate = static_cast<float>(line);
+        const float halfWidth = line == 0 ? axisHalfWidth : lineHalfWidth;
+        const vsg::vec4 color = line == 0
+            ? vsg::vec4(0.48f, 0.48f, 0.48f, 1.0f)
+            : vsg::vec4(0.28f, 0.28f, 0.28f, 1.0f);
+
+        addQuad({{
+            {-static_cast<float>(halfGrid), coordinate - halfWidth, elevation},
+            {static_cast<float>(halfGrid), coordinate - halfWidth, elevation},
+            {static_cast<float>(halfGrid), coordinate + halfWidth, elevation},
+            {-static_cast<float>(halfGrid), coordinate + halfWidth, elevation},
+        }}, color);
+        addQuad({{
+            {coordinate - halfWidth, -static_cast<float>(halfGrid), elevation},
+            {coordinate + halfWidth, -static_cast<float>(halfGrid), elevation},
+            {coordinate + halfWidth, static_cast<float>(halfGrid), elevation},
+            {coordinate - halfWidth, static_cast<float>(halfGrid), elevation},
+        }}, color);
+    }
+
+    auto vertices = vsg::vec3Array::create(generatedVertices.size());
+    auto colors = vsg::vec4Array::create(generatedColors.size());
+    auto indices = vsg::uintArray::create(generatedIndices.size());
+    for (std::size_t i = 0; i < generatedVertices.size(); ++i) (*vertices)[i] = generatedVertices[i];
+    for (std::size_t i = 0; i < generatedColors.size(); ++i) (*colors)[i] = generatedColors[i];
+    for (std::size_t i = 0; i < generatedIndices.size(); ++i) (*indices)[i] = generatedIndices[i];
     auto draw = createMesh(vertices, indices, colors);
 
     auto stateGroup = vsg::StateGroup::create();
@@ -336,10 +373,10 @@ void VsgVisualizer::initialize(const AppState& state, vsg::ref_ptr<vsg::Window> 
     const auto& pose = state.view.cameraPose;
     _lookAt = vsg::LookAt::create(pose.eye, pose.center, pose.up);
     auto perspective = vsg::Perspective::create(
-        30.0,
+        45.0,
         static_cast<double>(window->extent2D().width) / static_cast<double>(window->extent2D().height),
-        0.01,
-        50.0);
+        0.1,
+        100.0);
     _camera = vsg::Camera::create(perspective, _lookAt, vsg::ViewportState::create(window->extent2D()));
 
     _commandGraph = vsg::CommandGraph::create(window);

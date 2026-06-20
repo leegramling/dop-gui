@@ -1275,7 +1275,7 @@ For example:
 ```json5
 {
   events: [
-    { t: 0.000, type: "configure", width: 1280, height: 720 },
+    { t: 0.000, type: "configure", width: 1600, height: 900 },
     { t: 0.120, type: "move", x: 410, y: 170 },
     { t: 0.135, type: "button_press", button: 1, x: 410, y: 170 },
     { t: 0.182, type: "button_release", button: 1, x: 410, y: 170 },

@@ -1,0 +1,11 @@
+{
+  actions: [
+    { query: "data.scene.object.bootstrap_triangle.transform" },
+    { command: "ui.test.panel.panel-properties.set_text.position-y=2.50 m" },
+    { query: "ui.panel.panel-properties.widget.position-y" },
+    { query: "data.scene.object.bootstrap_triangle.transform" },
+    { command: "ui.test.panel.panel-properties.set_text.position-x=1.25 m" },
+    { query: "ui.panel.panel-properties.widget.position-x" },
+    { query: "data.scene.object.bootstrap_triangle.transform" },
+  ],
+}

@@ -4,8 +4,8 @@ void InputManager::configure(vsg::CommandLine& arguments)
 {
     _windowTraits = vsg::WindowTraits::create();
     _windowTraits->windowTitle = "dop-gui";
-    _windowTraits->width = 1280;
-    _windowTraits->height = 720;
+    _windowTraits->width = 1600;
+    _windowTraits->height = 900;
     _windowTraits->debugLayer = arguments.read({"--debug", "-d"});
     _windowTraits->apiDumpLayer = arguments.read({"--api", "-a"});
     _windowTraits->samples = VK_SAMPLE_COUNT_4_BIT;

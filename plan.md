@@ -161,6 +161,8 @@
 
 ## Current Focus
 
+The `simpleUI` branch temporarily replaces the Yoga-backed panel path with direct ImGui-flow panels so command, query, and interaction testing can proceed without layout-engine complexity. The prior implementation remains in `src/oldui/` for later restoration or reference.
+
 Current focus is Windows demo and testing prep after the hand-coded panel milestone: make the repo more self-contained for cross-platform builds by vendoring Yoga, adding a `build.bat` path, writing a `testing.md` demo guide, and cleaning up widget helper naming where it improves readability.
 
 Success criteria:

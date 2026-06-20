@@ -2,6 +2,15 @@
 
 ## Active Slice
 
+### Simple UI Testing Slice
+
+- [x] Replace active Scene Info, Properties, and New Shape panel layout with direct ImGui flow.
+- [x] Preserve the Yoga-backed implementation under `src/oldui/`.
+- [x] Remove Yoga and panel-tree sources from the active build.
+- [x] Preserve panel/widget IDs and behavior-focused UI tests.
+- [x] Archive coordinate-specific layout tests.
+- [x] Build and pass the active CTest suite.
+
 - [ ] Vendor Yoga under `external/` and stop depending on the sibling `../vsgLayt` source tree.
 - [ ] Update CMake to build against the vendored Yoga dependency rather than the current local-reference path.
 - [ ] Add a repo-local `build.bat` that configures and builds the project for a Windows demo path.

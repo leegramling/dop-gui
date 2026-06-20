@@ -55,7 +55,7 @@ bool PanelWindow::begin()
         return _opened;
     }
 
-    if (_layout.enabled)
+    if (_layout.enabled && !_uiState.dockingEnabled)
     {
         ImGui::SetNextWindowPos(ImVec2(static_cast<float>(_layout.x), static_cast<float>(_layout.y)), ImGuiCond_Once);
         if (_layout.width > 0.0 && _layout.height > 0.0)

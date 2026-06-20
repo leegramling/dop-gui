@@ -10,6 +10,7 @@
 #include "WindowManager.h"
 
 #include <vsgImGui/SendEventsToImGui.h>
+#include <vsgImGui/imgui_internal.h>
 
 namespace
 {
@@ -35,6 +36,25 @@ bool menuHasPendingClick(const UiState& uiState, const std::string& menuLabel, c
     }
 
     return false;
+}
+
+void createDefaultDockLayout(ImGuiID dockspaceId, const ImGuiViewport& viewport)
+{
+    ImGui::DockBuilderRemoveNode(dockspaceId);
+    ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodePos(dockspaceId, viewport.WorkPos);
+    ImGui::DockBuilderSetNodeSize(dockspaceId, viewport.WorkSize);
+
+    ImGuiID leftColumn = 0;
+    ImGuiID remaining = 0;
+    ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.28f, &leftColumn, &remaining);
+
+    ImGuiID rightColumn = 0;
+    ImGuiID center = 0;
+    ImGui::DockBuilderSplitNode(remaining, ImGuiDir_Right, 0.28f, &rightColumn, &center);
+    ImGui::DockBuilderDockWindow("Scene Info", leftColumn);
+    ImGui::DockBuilderDockWindow("Properties", rightColumn);
+    ImGui::DockBuilderFinish(dockspaceId);
 }
 }
 
@@ -87,6 +107,8 @@ void UiManager::initialize(
 
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.FontGlobalScale = state.ui.scale;
+    ImGui::GetStyle().ScaleAllSizes(state.ui.scale);
     if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
 }
 
@@ -101,14 +123,21 @@ void UiManager::evaluate(AppState& state)
 
 void UiManager::render(AppState& state)
 {
-    if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode);
+    if (!state.ui.testMode) Theme::applyDefault(state.ui.themeMode, state.ui.scale);
     if (_windowManager) _windowManager->syncImGuiStatus(state.ui);
     state.ui.registry.clear();
     state.ui.layoutSlots.clear();
 
     if (!state.ui.testMode && state.ui.dockingEnabled)
     {
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+        const auto* viewport = ImGui::GetMainViewport();
+        const ImGuiID dockspaceId = ImGui::DockSpaceOverViewport(
+            0, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+        if (!_defaultDockLayoutApplied)
+        {
+            createDefaultDockLayout(dockspaceId, *viewport);
+            _defaultDockLayoutApplied = true;
+        }
     }
 
     if (state.ui.testMode || ImGui::BeginMainMenuBar())

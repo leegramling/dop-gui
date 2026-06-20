@@ -5,6 +5,12 @@
 #include <functional>
 #include <string_view>
 
+/** Queue a command produced by a UI interaction. */
+void queueUiCommand(UiState& uiState, const std::string& commandName, const std::string& value = {});
+
+/** Return scene object ids in display order. */
+std::vector<std::string> collectSceneObjectIds(const SceneState& scene);
+
 /**
  * @brief Register a widget label and type in the UI registry.
  * @param uiState UI-local state containing the widget registry.

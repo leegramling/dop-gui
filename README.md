@@ -41,6 +41,7 @@ We will drive work through four small markdown files in repo root:
 - [`task.md`](/home/lgramling/dev/dop-gui/task.md): the next small implementation steps
 - [`notes.md`](/home/lgramling/dev/dop-gui/notes.md): architecture notes, dependency findings, and decisions
 - [`HowToAddTestCommands.md`](/home/lgramling/dev/dop-gui/HowToAddTestCommands.md): contributor guide for adding new command/query/UI-test coverage
+- [`newScript.md`](/home/lgramling/dev/dop-gui/newScript.md): alternatives and staged design for assertions, branching, Robot Framework, GoogleTest, and GUI input record/replay
 - [`testing.md`](/home/lgramling/dev/dop-gui/testing.md): current build/demo walkthrough for headless and live test flows
 
 Recommended loop:

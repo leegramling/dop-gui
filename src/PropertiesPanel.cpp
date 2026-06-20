@@ -1,52 +1,20 @@
 #include "PropertiesPanel.h"
 
-#include "UiLayoutUtils.h"
 #include "Widgets.h"
-
-#include <vsgImGui/imgui.h>
-
-#include <unordered_map>
 
 namespace
 {
-using DoubleAccessor = double* (*)(SceneObjectState&);
-
-double* positionX(SceneObjectState& object) { return &object.position.x; }
-double* positionY(SceneObjectState& object) { return &object.position.y; }
-double* positionZ(SceneObjectState& object) { return &object.position.z; }
-double* rotationX(SceneObjectState& object) { return &object.rotation.x; }
-double* rotationY(SceneObjectState& object) { return &object.rotation.y; }
-double* rotationZ(SceneObjectState& object) { return &object.rotation.z; }
-double* scaleX(SceneObjectState& object) { return &object.scale.x; }
-double* scaleY(SceneObjectState& object) { return &object.scale.y; }
-double* scaleZ(SceneObjectState& object) { return &object.scale.z; }
-
-const std::unordered_map<std::string_view, DoubleAccessor>& selectedObjectDoubleBindings()
+void renderNumber(
+    UiState& ui,
+    const char* labelId,
+    const char* valueId,
+    const char* label,
+    double& value,
+    int precision,
+    const char* unit = nullptr)
 {
-    static const std::unordered_map<std::string_view, DoubleAccessor> bindings{
-        {"scene.selected.position.x", &positionX},
-        {"scene.selected.position.y", &positionY},
-        {"scene.selected.position.z", &positionZ},
-        {"scene.selected.rotation.x", &rotationX},
-        {"scene.selected.rotation.y", &rotationY},
-        {"scene.selected.rotation.z", &rotationZ},
-        {"scene.selected.scale.x", &scaleX},
-        {"scene.selected.scale.y", &scaleY},
-        {"scene.selected.scale.z", &scaleZ},
-    };
-    return bindings;
-}
-
-double* resolveSelectedObjectDouble(AppState& state, std::string_view bind)
-{
-    auto* selectedObject = findSceneObject(state.scene, state.scene.selectedObjectId);
-    if (!selectedObject) return nullptr;
-
-    const auto& bindings = selectedObjectDoubleBindings();
-    const auto it = bindings.find(bind);
-    if (it == bindings.end()) return nullptr;
-
-    return it->second(*selectedObject);
+    DisplayText(ui, labelId, label);
+    value = NumericField(ui, valueId, "", value, precision, unit);
 }
 }
 
@@ -58,62 +26,38 @@ std::string_view PropertiesPanel::id() const
 PanelMinSize PropertiesPanel::minSize(const UiPanelState& panelState) const
 {
     (void)panelState;
-    return PanelMinSize{.width = 360.0f, .height = 356.0f, .enabled = true};
-}
-
-void PropertiesPanel::init(const UiPanelState& panelState)
-{
-    _root = UiPanelTree::build(panelState);
-
-    _root.setWidgetRenderer("selected-object-summary", [](UiPanelRenderContext& context, const UiPanelWidgetNode& node)
-    {
-        auto& state = context.panelContext.state;
-        setNextWidgetLayoutIfPresent(state.ui, context.layout, node.slots.valueSlotId);
-        Text(
-            state.ui,
-            node.spec.slotId.c_str(),
-            state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
-    });
-
-    for (const auto& widget : _root.widgets())
-    {
-        if (widget.spec.type == "combo" && widget.spec.bind == "scene.selectedObjectId")
-        {
-            _root.bindStringCombo(
-                widget.spec.id,
-                [](AppState& state) { return &state.scene.selectedObjectId; },
-                [](AppState& state) { return collectSceneObjectIds(state.scene); });
-            continue;
-        }
-        if (widget.spec.type != "input_double") continue;
-
-        _root.bindDoubleInput(widget.spec.id, [bind = widget.spec.bind](AppState& state)
-        {
-            return resolveSelectedObjectDouble(state, bind);
-        });
-    }
+    return PanelMinSize{.width = 320.0f, .height = 356.0f, .enabled = true};
 }
 
 void PropertiesPanel::render(PanelContext& context, const UiPanelState& panelState)
 {
+    (void)panelState;
     auto& state = context.state;
-    YogaLayout propertiesLayout;
-    propertiesLayout.setLayout(_root.layoutSpec());
-    ImVec2 origin{0.0f, 0.0f};
-    ImVec2 avail{
-        panelState.layout.width > 0.0 ? static_cast<float>(panelState.layout.width) : 320.0f,
-        panelState.layout.height > 0.0 ? static_cast<float>(panelState.layout.height) : 520.0f};
-    if (!state.ui.testMode)
+    const auto objectIds = collectSceneObjectIds(state.scene);
+
+    DisplayText(state.ui, "panel-properties-selected-object-label", "Selected Object");
+    const auto selected = SelectField(
+        state.ui, "selected-object", "", state.scene.selectedObjectId, objectIds);
+    if (selected != state.scene.selectedObjectId)
     {
-        origin = ImGui::GetCursorPos();
-        avail = ImGui::GetContentRegionAvail();
+        queueUiCommand(state.ui, "scene.select_object", selected);
     }
-    propertiesLayout.resize(origin.x, origin.y, avail.x, avail.y);
-    registerLayoutSlots(state.ui, std::string(id()), propertiesLayout, _root.slotIds());
-    UiPanelRenderContext renderContext{
-        .panelContext = context,
-        .panelState = panelState,
-        .layout = propertiesLayout,
-    };
-    _root.render(renderContext);
+
+    DisplayText(
+        state.ui,
+        "panel-properties-selected-object",
+        state.scene.selectedObjectId.empty() ? "Selected: none" : "Selected: " + state.scene.selectedObjectId);
+
+    auto* object = findSceneObject(state.scene, state.scene.selectedObjectId);
+    if (!object) return;
+
+    renderNumber(state.ui, "position-x-label", "position-x", "Location X", object->position.x, 2, "m");
+    renderNumber(state.ui, "position-y-label", "position-y", "Location Y", object->position.y, 2, "m");
+    renderNumber(state.ui, "position-z-label", "position-z", "Location Z", object->position.z, 2, "m");
+    renderNumber(state.ui, "rotation-x-label", "rotation-x", "Rotation X", object->rotation.x, 2, "deg");
+    renderNumber(state.ui, "rotation-y-label", "rotation-y", "Rotation Y", object->rotation.y, 2, "deg");
+    renderNumber(state.ui, "rotation-z-label", "rotation-z", "Rotation Z", object->rotation.z, 2, "deg");
+    renderNumber(state.ui, "scale-x-label", "scale-x", "Scale X", object->scale.x, 6);
+    renderNumber(state.ui, "scale-y-label", "scale-y", "Scale Y", object->scale.y, 6);
+    renderNumber(state.ui, "scale-z-label", "scale-z", "Scale Z", object->scale.z, 6);
 }
