@@ -582,7 +582,7 @@ That delivers real assertions immediately without committing the project to Lua 
 
 ## Runnable C++ JSON Result Example
 
-`tests/JsonResultTest.cpp` is a dependency-free C++ integration example registered as `dop_gui_cpp_json_result`. It launches `dop-gui`, reads the JSON result of a transform query, parses the response into typed objects and arrays, and returns nonzero when an expectation fails.
+`tests/JsonResultTest.cpp` is a dependency-free C++ integration example registered as `dop_gui_cpp_json_result`. Shared parsing and process-launch code lives in `tests/support/JsonTestSupport.*`, so a test only imports the helper, calls `runDopGuiQuery(...)`, and asserts typed values.
 
 Run it through CTest:
 

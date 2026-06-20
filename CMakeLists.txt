@@ -78,8 +78,14 @@ target_compile_definitions(dop-gui PRIVATE
 )
 
 if(BUILD_TESTING)
+    add_library(dop-gui-test-support STATIC
+        tests/support/JsonTestSupport.cpp
+    )
+    target_include_directories(dop-gui-test-support PUBLIC tests/support)
+    target_compile_features(dop-gui-test-support PUBLIC cxx_std_20)
+
     add_executable(dop-gui-json-result-test tests/JsonResultTest.cpp)
-    target_compile_features(dop-gui-json-result-test PRIVATE cxx_std_20)
+    target_link_libraries(dop-gui-json-result-test PRIVATE dop-gui-test-support)
     add_test(
         NAME dop_gui_cpp_json_result
         COMMAND dop-gui-json-result-test $<TARGET_FILE:dop-gui>
